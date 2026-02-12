@@ -23,6 +23,10 @@ export default function InstructorCourseContentPage() {
 
   const [course, setCourse] = useState<Course | null>(null)
   const [modules, setModules] = useState<CourseModule[]>([])
+  const [priceNGN, setPriceNGN] = useState("0")
+  const [priceUSD, setPriceUSD] = useState("0")
+  const [priceEUR, setPriceEUR] = useState("0")
+  const [priceGBP, setPriceGBP] = useState("0")
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -36,6 +40,10 @@ export default function InstructorCourseContentPage() {
         const data = await res.json()
         setCourse(data.course)
         setModules(data.course?.modules || [])
+        setPriceNGN(String(data.course?.price?.NGN ?? 0))
+        setPriceUSD(String(data.course?.price?.USD ?? 0))
+        setPriceEUR(String(data.course?.price?.EUR ?? 0))
+        setPriceGBP(String(data.course?.price?.GBP ?? 0))
       } catch (error) {
         console.error("Failed to load course:", error)
       }
@@ -198,6 +206,12 @@ export default function InstructorCourseContentPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          price: {
+            NGN: Number(priceNGN) || 0,
+            USD: Number(priceUSD) || 0,
+            EUR: Number(priceEUR) || 0,
+            GBP: Number(priceGBP) || 0,
+          },
           modules: modules.map((module, moduleIndex) => ({
             ...module,
             order: moduleIndex + 1,
@@ -256,6 +270,31 @@ export default function InstructorCourseContentPage() {
           Add Module
         </Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Course Pricing</CardTitle>
+          <CardDescription>Set pricing across supported currencies</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">NGN</label>
+            <Input type="number" value={priceNGN} onChange={(e) => setPriceNGN(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">USD</label>
+            <Input type="number" value={priceUSD} onChange={(e) => setPriceUSD(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">EUR</label>
+            <Input type="number" value={priceEUR} onChange={(e) => setPriceEUR(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">GBP</label>
+            <Input type="number" value={priceGBP} onChange={(e) => setPriceGBP(e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-6">
         {modules.map((module, moduleIndex) => (
@@ -368,15 +407,83 @@ export default function InstructorCourseContentPage() {
                             <FileVideo className="h-4 w-4" />
                             Video URL
                           </label>
-                          <Input
-                            value={lesson.content.videoUrl || ""}
-                            onChange={(e) =>
-                              updateLessonContent(moduleIndex, lessonIndex, {
-                                videoUrl: e.target.value,
-                              })
-                            }
-                            placeholder="https://..."
-                          />
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              value={lesson.content.videoUrl || ""}
+                              onChange={(e) =>
+                                updateLessonContent(moduleIndex, lessonIndex, {
+                                  videoUrl: e.target.value,
+                                })
+                              }
+                              placeholder="https://..."
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                updateLesson(moduleIndex, lessonIndex, {
+                                  pendingApproval: true,
+                                  approved: false,
+                                })
+                              }
+                            >
+                              Submit for review
+                            </Button>
+                          </div>
+
+                          {/* Preview (embedded) - do not display raw URL anywhere */}
+                          {lesson.content.videoUrl && (
+                            (() => {
+                              const url = lesson.content.videoUrl as string
+                              const ytMatch = url.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([A-Za-z0-9_-]{11})/)
+                              if (ytMatch && ytMatch[1]) {
+                                const videoId = ytMatch[1]
+                                return (
+                                  <div className="mt-2 aspect-video overflow-hidden rounded">
+                                    <iframe
+                                      title={lesson.title}
+                                      src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                      className="w-full h-full"
+                                    />
+                                  </div>
+                                )
+                              }
+                              if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
+                                return (
+                                  <video controls className="mt-2 w-full aspect-video object-contain">
+                                    <source src={url} />
+                                  </video>
+                                )
+                              }
+                              return null
+                            })()
+                          )}
+                          {/* Rejection note (if any) visible to the instructor */}
+                          {lesson.content.rejectionNote && (
+                            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
+                              <div className="text-sm font-semibold text-red-700">Rejection note</div>
+                              <div className="text-sm text-red-600 mt-1">{lesson.content.rejectionNote}</div>
+                              <div className="mt-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    updateLesson(moduleIndex, lessonIndex, {
+                                      pendingApproval: true,
+                                      approved: false,
+                                    })
+                                    updateLessonContent(moduleIndex, lessonIndex, {
+                                      rejectionNote: undefined,
+                                    })
+                                  }}
+                                >
+                                  Resubmit for review
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -472,6 +579,8 @@ export default function InstructorCourseContentPage() {
                       <div className="flex gap-2">
                         <Badge variant="outline">{lesson.type}</Badge>
                         {lesson.isFree && <Badge className="bg-green-500">Free</Badge>}
+                        {lesson.pendingApproval && <Badge className="bg-yellow-400">Pending Review</Badge>}
+                        {lesson.approved && <Badge className="bg-green-500">Approved</Badge>}
                       </div>
                     </CardContent>
                   </Card>

@@ -12,11 +12,11 @@ export interface SessionData {
   role: string
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d"
+const JWT_SECRET = (process.env.JWT_SECRET || "your-secret-key-change-in-production").trim()
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d").trim()
 const OTP_EXPIRES_MINUTES = Number(process.env.OTP_EXPIRES_MINUTES || 15)
-const BOOTSTRAP_ADMIN_EMAIL = process.env.BOOTSTRAP_ADMIN_EMAIL
-const BOOTSTRAP_ADMIN_PASSWORD = process.env.BOOTSTRAP_ADMIN_PASSWORD
+const ADMIN_ACCOUNTS_EMAIL = process.env.ADMIN_ACCOUNTS_EMAIL?.trim()
+const ADMIN_ACCOUNTS_PASSWORD = process.env.ADMIN_ACCOUNTS_PASSWORD?.trim()
 
 // Password hashing utility
 async function hashPassword(password: string): Promise<string> {
@@ -37,23 +37,21 @@ function generateOtpCode(): string {
 
 // Generate JWT token
 function generateToken(user: User): string {
-  return jwt.sign(
-    {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    },
-    JWT_SECRET,
-    {
-      expiresIn: JWT_EXPIRES_IN,
-    }
-  )
+  const payload = {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  }
+  const options: any = {
+    expiresIn: JWT_EXPIRES_IN,
+  }
+  return jwt.sign(payload, JWT_SECRET as string, options)
 }
 
 // Verify JWT token
 function verifyToken(token: string): SessionData | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as SessionData
+    const decoded = jwt.verify(token, JWT_SECRET as string) as SessionData
     return decoded
   } catch (error) {
     return null
@@ -72,14 +70,16 @@ export const authService = {
   async login(email: string, password: string): Promise<{ user: User; token: string } | null> {
     const db = getDB()
     const user = await db.findUserByEmail(email)
+    const normalizedEmail = email?.trim().toLowerCase()
+    const normalizedAdminAccountEmail = ADMIN_ACCOUNTS_EMAIL?.toLowerCase()
 
     if (!user) {
-      if (BOOTSTRAP_ADMIN_EMAIL && BOOTSTRAP_ADMIN_PASSWORD) {
-        if (email === BOOTSTRAP_ADMIN_EMAIL && password === BOOTSTRAP_ADMIN_PASSWORD) {
+      if (normalizedAdminAccountEmail && ADMIN_ACCOUNTS_PASSWORD) {
+        if (normalizedEmail === normalizedAdminAccountEmail && password === ADMIN_ACCOUNTS_PASSWORD) {
           const created = await db.createUser({
             email,
             password: await hashPassword(password),
-            name: "Bootstrap Admin",
+            name: "Admin Account",
             role: "admin",
             status: "active",
             emailVerified: true,
@@ -93,13 +93,8 @@ export const authService = {
       return null
     }
 
-    // Allow bootstrap admin to bypass OTP check if matches env creds
-    if (
-      BOOTSTRAP_ADMIN_EMAIL &&
-      BOOTSTRAP_ADMIN_PASSWORD &&
-      email === BOOTSTRAP_ADMIN_EMAIL &&
-      password === BOOTSTRAP_ADMIN_PASSWORD
-    ) {
+    // Allow admin account to bypass OTP check if matches env creds
+    if (normalizedAdminAccountEmail && ADMIN_ACCOUNTS_PASSWORD && normalizedEmail === normalizedAdminAccountEmail && password === ADMIN_ACCOUNTS_PASSWORD) {
       const token = generateToken(user)
       const { password: _, ...userWithoutPassword } = user
       return { user: userWithoutPassword as User, token }

@@ -29,7 +29,7 @@ async function main() {
     throw new Error("Missing --email or --password")
   }
 
-  const client = new MongoClient(uri)
+  const client = new MongoClient(uri!)
   await client.connect()
   const db = client.db(dbName)
   const users = db.collection("users")

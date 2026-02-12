@@ -14,7 +14,7 @@ import type { Currency } from '@/lib/types'
 export function CurrencySelector() {
   const { currency, setCurrency } = usePreferencesStore()
 
-  const currencies: Currency[] = ['USD', 'NGN', 'GBP']
+  const currencies: Currency[] = ['USD', 'NGN', 'EUR', 'GBP']
 
   return (
     <Select value={currency} onValueChange={(value) => setCurrency(value as Currency)}>
@@ -33,3 +33,4 @@ export function CurrencySelector() {
     </Select>
   )
 }
+

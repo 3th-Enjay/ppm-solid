@@ -3,9 +3,12 @@ import { ZodError } from "zod"
 import { getDB } from "@/lib/db"
 import { enrollmentProgressSchema } from "@/lib/validation"
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { progress, completedLessons } = enrollmentProgressSchema.parse(body)
 

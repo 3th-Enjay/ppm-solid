@@ -49,6 +49,7 @@ export default function NewCoursePage() {
   const [level, setLevel] = useState<CourseLevel | "">("")
   const [priceNGN, setPriceNGN] = useState("45000")
   const [priceUSD, setPriceUSD] = useState("99")
+  const [priceEUR, setPriceEUR] = useState("89")
   const [priceGBP, setPriceGBP] = useState("79")
   const [thumbnail, setThumbnail] = useState("")
   const [duration, setDuration] = useState("0")
@@ -86,6 +87,7 @@ export default function NewCoursePage() {
           price: {
             NGN: Number(priceNGN) || 0,
             USD: Number(priceUSD) || 0,
+            EUR: Number(priceEUR) || 0,
             GBP: Number(priceGBP) || 0,
           },
           thumbnail: thumbnail.trim() || "/placeholder.jpg",
@@ -108,6 +110,10 @@ export default function NewCoursePage() {
       setDescription("")
       setCategory("")
       setLevel("")
+      setPriceNGN("45000")
+      setPriceUSD("99")
+      setPriceEUR("89")
+      setPriceGBP("79")
       setThumbnail("")
       setDuration("0")
       setPublishNow(false)
@@ -217,7 +223,7 @@ export default function NewCoursePage() {
             <CardTitle>Pricing</CardTitle>
             <CardDescription>Set pricing for each currency</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="price-ngn">NGN</Label>
               <Input
@@ -234,6 +240,15 @@ export default function NewCoursePage() {
                 type="number"
                 value={priceUSD}
                 onChange={(e) => setPriceUSD(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="price-eur">EUR</Label>
+              <Input
+                id="price-eur"
+                type="number"
+                value={priceEUR}
+                onChange={(e) => setPriceEUR(e.target.value)}
               />
             </div>
             <div className="grid gap-2">

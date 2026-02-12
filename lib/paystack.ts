@@ -25,12 +25,14 @@ const PAYSTACK_BASE_URL = process.env.PAYSTACK_BASE_URL || "https://api.paystack
 const currencyDecimals: Record<Currency, number> = {
   NGN: currencyConfig.NGN.decimals,
   USD: currencyConfig.USD.decimals,
+  EUR: currencyConfig.EUR.decimals,
   GBP: currencyConfig.GBP.decimals,
 }
 
 const currencySymbols: Record<Currency, string> = {
   NGN: currencyConfig.NGN.symbol,
   USD: currencyConfig.USD.symbol,
+  EUR: currencyConfig.EUR.symbol,
   GBP: currencyConfig.GBP.symbol,
 }
 

@@ -23,6 +23,10 @@ export default function AdminCourseContentPage() {
 
   const [course, setCourse] = useState<Course | null>(null)
   const [modules, setModules] = useState<CourseModule[]>([])
+  const [priceNGN, setPriceNGN] = useState("0")
+  const [priceUSD, setPriceUSD] = useState("0")
+  const [priceEUR, setPriceEUR] = useState("0")
+  const [priceGBP, setPriceGBP] = useState("0")
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -36,6 +40,10 @@ export default function AdminCourseContentPage() {
         const data = await res.json()
         setCourse(data.course)
         setModules(data.course?.modules || [])
+        setPriceNGN(String(data.course?.price?.NGN ?? 0))
+        setPriceUSD(String(data.course?.price?.USD ?? 0))
+        setPriceEUR(String(data.course?.price?.EUR ?? 0))
+        setPriceGBP(String(data.course?.price?.GBP ?? 0))
       } catch (error) {
         console.error("Failed to load course:", error)
       }
@@ -198,6 +206,12 @@ export default function AdminCourseContentPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          price: {
+            NGN: Number(priceNGN) || 0,
+            USD: Number(priceUSD) || 0,
+            EUR: Number(priceEUR) || 0,
+            GBP: Number(priceGBP) || 0,
+          },
           modules: modules.map((module, moduleIndex) => ({
             ...module,
             order: moduleIndex + 1,
@@ -256,6 +270,31 @@ export default function AdminCourseContentPage() {
           Add Module
         </Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Course Pricing</CardTitle>
+          <CardDescription>Set pricing across supported currencies</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">NGN</label>
+            <Input type="number" value={priceNGN} onChange={(e) => setPriceNGN(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">USD</label>
+            <Input type="number" value={priceUSD} onChange={(e) => setPriceUSD(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">EUR</label>
+            <Input type="number" value={priceEUR} onChange={(e) => setPriceEUR(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">GBP</label>
+            <Input type="number" value={priceGBP} onChange={(e) => setPriceGBP(e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-6">
         {modules.map((module, moduleIndex) => (

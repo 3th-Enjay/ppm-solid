@@ -31,7 +31,7 @@ interface CartState {
   addToCart: (item: CartItem) => void
   removeFromCart: (courseId: string) => void
   clearCart: () => void
-  getTotal: (currency: "NGN" | "USD" | "GBP") => number
+  getTotal: (currency: Currency) => number
 }
 
 export const useCartStore = create<CartState>()(
@@ -60,15 +60,19 @@ export const useCartStore = create<CartState>()(
 )
 
 interface PreferencesState {
-  currency: "NGN" | "USD" | "GBP"
-  setCurrency: (currency: "NGN" | "USD" | "GBP") => void
+  currency: Currency
+  currencySelected: boolean
+  setCurrency: (currency: Currency) => void
+  setCurrencySelected: (selected: boolean) => void
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
   persist(
     (set) => ({
       currency: "USD",
+      currencySelected: false,
       setCurrency: (currency) => set({ currency }),
+      setCurrencySelected: (selected) => set({ currencySelected: selected }),
     }),
     {
       name: "preferences-storage",

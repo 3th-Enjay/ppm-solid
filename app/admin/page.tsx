@@ -179,9 +179,7 @@ export default function AdminDashboardPage() {
   const stats = useMemo(() => {
     const students = users.filter((u) => u.role === "student")
     const instructors = users.filter((u) => u.role === "instructor")
-    const completedPayments = payments.filter(
-      (p) => p.status === "completed" || p.status === "success"
-    )
+    const completedPayments = payments.filter((p) => p.status === "completed")
     const pendingPayments = payments.filter((p) => p.status === "pending")
 
     const totalRevenue = completedPayments.reduce((sum, p) => {

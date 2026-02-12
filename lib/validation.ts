@@ -29,6 +29,7 @@ export const contactSchema = z.object({
 export const coursePriceSchema = z.object({
   NGN: z.number().min(0, "NGN price must be positive"),
   USD: z.number().min(0, "USD price must be positive"),
+  EUR: z.number().min(0, "EUR price must be positive"),
   GBP: z.number().min(0, "GBP price must be positive"),
 })
 
@@ -41,6 +42,7 @@ export const courseCreateSchema = z.object({
   thumbnail: z.string().optional(),
   instructorId: z.string().min(1, "Instructor is required"),
   published: z.boolean().optional(),
+  approved: z.boolean().optional(),
   modules: z.array(z.any()).optional(),
   totalDuration: z.number().optional(),
   enrollmentCount: z.number().optional(),

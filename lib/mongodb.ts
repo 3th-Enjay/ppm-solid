@@ -1,5 +1,6 @@
 // MongoDB connection utilities
 import { MongoClient } from "mongodb"
+import type { Document } from "mongodb"
 
 const uri = process.env.MONGODB_URI
 const dbName = process.env.MONGODB_DB || "PromptCare Academy"
@@ -33,7 +34,7 @@ export async function getDatabase() {
   return client.db(dbName)
 }
 
-export async function getCollection<T>(name: string) {
+export async function getCollection<T extends Document>(name: string) {
   const db = await getDatabase()
   return db.collection<T>(name)
 }

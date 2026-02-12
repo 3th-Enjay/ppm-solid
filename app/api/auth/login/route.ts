@@ -1,14 +1,58 @@
 import { NextResponse } from "next/server"
 import { authService } from "@/lib/auth"
 import { loginSchema } from "@/lib/validation"
-import { ZodError } from "zod"
+import jwt from "jsonwebtoken"
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
 
-    // Validate input
-    const validated = loginSchema.parse(body)
+    const parsed = loginSchema.safeParse(body)
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      const firstMessage = Object.values(fieldErrors).flat().find(Boolean) || "Invalid login payload"
+      return NextResponse.json({ error: firstMessage, details: fieldErrors }, { status: 400 })
+    }
+
+    const validated = parsed.data
+
+    // Explicit bypass: check env ADMIN_ACCOUNTS credentials first
+    const ADMIN_ACCOUNTS_EMAIL = process.env.ADMIN_ACCOUNTS_EMAIL?.trim().toLowerCase()
+    const ADMIN_ACCOUNTS_PASSWORD = process.env.ADMIN_ACCOUNTS_PASSWORD?.trim()
+    const normalizedInputEmail = validated.email.trim().toLowerCase()
+
+    if (
+      ADMIN_ACCOUNTS_EMAIL &&
+      ADMIN_ACCOUNTS_PASSWORD &&
+      normalizedInputEmail === ADMIN_ACCOUNTS_EMAIL &&
+      validated.password === ADMIN_ACCOUNTS_PASSWORD
+    ) {
+      // Generate token for admin account from env
+      const adminUser = {
+        id: "admin-bootstrap",
+        email: validated.email,
+        name: "Admin Account",
+        role: "admin" as const,
+        status: "active" as const,
+        emailVerified: true,
+        enrolledCourses: [],
+      }
+      const JWT_SECRET = (process.env.JWT_SECRET || "your-secret-key-change-in-production").trim()
+      const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d").trim()
+      const payload = {
+        userId: adminUser.id,
+        email: adminUser.email,
+        role: adminUser.role,
+      }
+      const options: any = { expiresIn: JWT_EXPIRES_IN }
+      const generatedToken = jwt.sign(payload as any, JWT_SECRET as string, options)
+
+      return NextResponse.json({
+        success: true,
+        user: adminUser,
+        token: generatedToken,
+      })
+    }
 
     // Attempt login
     const result = await authService.login(validated.email, validated.password)
@@ -17,23 +61,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid credentials or email not verified" }, { status: 401 })
     }
 
-    const isAdminLogin = request.headers.get("x-admin-login") === "true"
-    if (result.user.role === "admin" && !isAdminLogin) {
-      return NextResponse.json({ error: "Admins must use /login-admin" }, { status: 403 })
-    }
-    if (result.user.role !== "admin" && isAdminLogin) {
-      return NextResponse.json({ error: "Only admins can use /login-admin" }, { status: 403 })
-    }
+    // Allow admins to log in via the normal /login route too.
+    // (Previously required /login-admin; that page is being removed.)
 
     return NextResponse.json({
       success: true,
       user: result.user,
       token: result.token,
     })
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
 }

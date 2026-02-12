@@ -8,7 +8,7 @@ export function proxy(request: NextRequest) {
   const authToken = request.cookies.get("auth-storage")?.value
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/courses", "/about", "/contact", "/faq", "/login", "/register", "/forgot-password", "/login-admin"]
+  const publicRoutes = ["/", "/courses", "/about", "/contact", "/faq", "/login", "/register", "/forgot-password"]
 
   // Check if route is public or a course detail page
   const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/courses/")
@@ -19,7 +19,7 @@ export function proxy(request: NextRequest) {
   }
 
   // If authenticated user tries to access auth pages, redirect to dashboard
-  if (authToken && (pathname === "/login" || pathname === "/register" || pathname === "/login-admin")) {
+  if (authToken && (pathname === "/login" || pathname === "/register")) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
+import type { User } from "@/lib/types"
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ user: safeUser })
     }
 
-    let users = await db.getAllUsers()
+    let users: User[] = await db.getAllUsers()
     if (role) {
       users = users.filter((u) => u.role === role)
     }

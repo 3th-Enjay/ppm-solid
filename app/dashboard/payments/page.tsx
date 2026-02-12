@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
-import type { Payment } from "@/lib/types"
+import type { Course, Payment } from "@/lib/types"
 import { formatCurrency, formatDate } from "@/lib/utils/format"
 
 export default function PaymentsPage() {
@@ -19,7 +19,7 @@ export default function PaymentsPage() {
       try {
         const res = await fetch(`/api/payments?userId=${user.id}`)
         const data = await res.json()
-        setPayments(data.payments || [])
+        setPayments((data.payments || []) as Payment[])
       } catch (error) {
         console.error("Failed to load payments:", error)
         setPayments([])
@@ -35,7 +35,8 @@ export default function PaymentsPage() {
         const res = await fetch("/api/courses?includeDrafts=true")
         const data = await res.json()
         const map: Record<string, string> = {}
-        for (const course of data.courses || []) {
+        const courses: Course[] = data.courses || []
+        for (const course of courses) {
           map[course.id] = course.title
         }
         setCourseTitles(map)

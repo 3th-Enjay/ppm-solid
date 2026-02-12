@@ -132,11 +132,47 @@ export default function LearnPage() {
       <div className="flex-1 flex flex-col">
         {/* Video Player */}
         <div className="bg-black aspect-video flex items-center justify-center">
-          <div className="text-white text-center">
-            <PlayCircle className="h-20 w-20 mx-auto mb-4 opacity-50" />
-            <p className="text-lg">{currentLesson.title}</p>
-            <p className="text-sm text-gray-400 mt-2">Video player simulation</p>
-          </div>
+          {currentLesson.type === "video" && currentLesson.content?.videoUrl ? (
+            (() => {
+              const url = currentLesson.content.videoUrl as string
+              // extract YouTube video id if possible
+              const ytMatch = url.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([A-Za-z0-9_-]{11})/)
+              if (ytMatch && ytMatch[1]) {
+                const videoId = ytMatch[1]
+                return (
+                  <iframe
+                    title={currentLesson.title}
+                    src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full"
+                  />
+                )
+              }
+
+              // Fallback: show a native video tag if the URL looks like a plain video file
+              if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
+                return <video src={url} controls className="w-full h-full object-contain" />
+              }
+
+              // Otherwise show a link to the URL
+              return (
+                <div className="text-white text-center">
+                  <PlayCircle className="h-20 w-20 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg">{currentLesson.title}</p>
+                  <a href={url} target="_blank" rel="noreferrer" className="text-sm text-gray-300 mt-2 underline">
+                    Open lesson resource
+                  </a>
+                </div>
+              )
+            })()
+          ) : (
+            <div className="text-white text-center">
+              <PlayCircle className="h-20 w-20 mx-auto mb-4 opacity-50" />
+              <p className="text-lg">{currentLesson.title}</p>
+              <p className="text-sm text-gray-400 mt-2">Video player simulation</p>
+            </div>
+          )}
         </div>
 
         {/* Lesson Info */}

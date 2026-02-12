@@ -4,9 +4,12 @@ import { getDB } from "@/lib/db"
 import { paymentRefundSchema } from "@/lib/validation"
 import { paystackService } from "@/lib/paystack"
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const validated = paymentRefundSchema.parse(body)
 

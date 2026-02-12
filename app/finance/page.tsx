@@ -73,7 +73,7 @@ export default function FinanceDashboard() {
     try {
       const res = await fetch("/api/payments")
       const data = await res.json()
-      const allPayments = data.payments || []
+      const allPayments: Payment[] = data.payments || []
       setPayments(allPayments)
 
       // Calculate stats

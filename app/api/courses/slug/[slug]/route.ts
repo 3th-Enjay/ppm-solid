@@ -1,9 +1,14 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
+import { authService } from "@/lib/auth"
+import { maskCourseForUser } from "@/lib/utils/course-masking"
 
-export async function GET(request: Request, { params }: { params: { slug: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
   try {
-    const { slug } = params
+    const { slug } = await params
     const db = getDB()
     const course = await db.getCourseBySlug(slug)
 
@@ -11,10 +16,15 @@ export async function GET(request: Request, { params }: { params: { slug: string
       return NextResponse.json({ error: "Course not found" }, { status: 404 })
     }
 
-    const instructor = await db.findUserById(course.instructorId)
-    const { password: _, ...safeInstructor } = instructor || {}
+    const authHeader = request.headers.get("authorization")
+    const token = authHeader?.replace("Bearer ", "")
+    const user = token ? await authService.getCurrentUser(token) : null
+    const safeCourse = maskCourseForUser(course, user)
 
-    return NextResponse.json({ course, instructor: instructor ? safeInstructor : null })
+    const instructor = await db.findUserById(course.instructorId)
+    const { password: _password, otpHash: _otpHash, otpExpiresAt: _otpExpiresAt, ...safeInstructor } = instructor || {}
+
+    return NextResponse.json({ course: safeCourse, instructor: instructor ? safeInstructor : null })
   } catch (error) {
     console.error("Get course by slug error:", error)
     return NextResponse.json({ error: "Failed to get course" }, { status: 500 })

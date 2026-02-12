@@ -1,8 +1,9 @@
 // Formatting utilities
-export function formatCurrency(amount: number, currency: "NGN" | "USD" | "GBP"): string {
+export function formatCurrency(amount: number, currency: "NGN" | "USD" | "EUR" | "GBP"): string {
   const symbols = {
     NGN: "₦",
     USD: "$",
+    EUR: "€",
     GBP: "£",
   }
 

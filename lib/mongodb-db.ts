@@ -104,7 +104,7 @@ export class MongoDBDatabase {
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
-    return result?.value ? toObject<User>(result.value) : undefined
+    return result ? toObject<User>(result) : undefined
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -185,7 +185,7 @@ export class MongoDBDatabase {
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
-    return result?.value ? toObject<Course>(result.value) : undefined
+    return result ? toObject<Course>(result) : undefined
   }
 
   async deleteCourse(id: string): Promise<boolean> {
@@ -238,7 +238,7 @@ export class MongoDBDatabase {
       { $set: updates },
       { returnDocument: 'after' }
     )
-    return result?.value ? toObject<Enrollment>(result.value) : undefined
+    return result ? toObject<Enrollment>(result) : undefined
   }
 
   async getAllEnrollments(): Promise<Enrollment[]> {
@@ -289,7 +289,7 @@ export class MongoDBDatabase {
       { $set: updates },
       { returnDocument: 'after' }
     )
-    return result?.value ? toObject<Payment>(result.value) : undefined
+    return result ? toObject<Payment>(result) : undefined
   }
 
   async updatePaymentByReference(reference: string, updates: Partial<Payment>): Promise<Payment | undefined> {
@@ -299,7 +299,7 @@ export class MongoDBDatabase {
       { $set: updates },
       { returnDocument: 'after' }
     )
-    return result?.value ? toObject<Payment>(result.value) : undefined
+    return result ? toObject<Payment>(result) : undefined
   }
 
   async getAllPayments(): Promise<Payment[]> {

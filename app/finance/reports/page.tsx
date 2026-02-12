@@ -25,7 +25,7 @@ export default function ReportsPage() {
     try {
       const res = await fetch("/api/payments")
       const data = await res.json()
-      const allPayments = data.payments || []
+      const allPayments: Payment[] = data.payments || []
       
       const successfulPayments = allPayments.filter(
         (p) => p.status === "completed" || p.status === "success"

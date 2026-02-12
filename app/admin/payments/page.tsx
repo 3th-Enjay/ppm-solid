@@ -45,7 +45,7 @@ export default function AdminPaymentsPage() {
     try {
       const res = await fetch("/api/payments")
       const data = await res.json()
-      const allPayments = data.payments || []
+      const allPayments: Payment[] = data.payments || []
       setPayments(allPayments)
     } catch (error) {
       console.error("Error loading payments:", error)

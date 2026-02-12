@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
+import type { Payment } from "@/lib/types"
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,9 +13,11 @@ export async function GET(request: NextRequest) {
     const courseIds = searchParams.get("courseIds")
 
     const db = getDB()
-    let payments = reference
-      ? await db.getPaymentByReference(reference).then((p) => (p ? [p] : []))
-      : await db.getAllPayments()
+    let payments: Payment[] = await db.getAllPayments()
+    if (reference) {
+      const payment = await db.getPaymentByReference(reference)
+      payments = payment ? [payment] : []
+    }
 
     if (userId) {
       payments = payments.filter((p) => p.userId === userId)
