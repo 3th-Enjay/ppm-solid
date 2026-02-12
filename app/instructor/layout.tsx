@@ -7,20 +7,22 @@ import { useAuthStore } from "@/lib/store"
 import { BookOpen, Home, BarChart3, Settings, LogOut, Upload } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { getRoleHomePath } from "@/lib/role-routing"
 
 export default function InstructorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, clearAuth } = useAuthStore()
+  const { user, clearAuth, hydrated } = useAuthStore()
 
   useEffect(() => {
+    if (!hydrated) return
     if (!user) {
       router.push("/login")
     } else if (user.role !== "instructor") {
-      router.push("/dashboard")
+      router.replace(getRoleHomePath(user.role))
     }
-  }, [user, router])
+  }, [user, hydrated, router])
 
-  if (!user || user.role !== "instructor") {
+  if (!hydrated || !user || user.role !== "instructor") {
     return null
   }
 

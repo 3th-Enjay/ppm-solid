@@ -8,20 +8,22 @@ import { useAuthStore } from "@/lib/store"
 import { BookOpen, Users, BarChart3, Settings, CreditCard, LogOut } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { getRoleHomePath } from "@/lib/role-routing"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, clearAuth } = useAuthStore()
+  const { user, clearAuth, hydrated } = useAuthStore()
 
   useEffect(() => {
+    if (!hydrated) return
     if (!user) {
       router.replace("/login?redirect=/admin")
     } else if (user.role !== "admin") {
-      router.replace("/dashboard")
+      router.replace(getRoleHomePath(user.role))
     }
-  }, [user, router])
+  }, [user, hydrated, router])
 
-  if (!user || user.role !== "admin") {
+  if (!hydrated || !user || user.role !== "admin") {
     return null
   }
 

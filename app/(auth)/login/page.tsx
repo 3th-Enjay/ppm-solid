@@ -16,6 +16,7 @@ import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
 import { loginSchema } from "@/lib/validation"
 import { useToast } from "@/hooks/use-toast"
+import { getSafeRedirectForRole } from "@/lib/role-routing"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -65,18 +66,10 @@ export default function LoginPage() {
         description: `Logged in as ${result.user.name}`,
       })
 
-      const roleRedirectMap: Record<string, string> = {
-        student: "/dashboard",
-        admin: "/admin",
-        instructor: "/instructor",
-        finance: "/finance",
-      }
-
       const requestedRedirect = typeof window !== "undefined"
         ? new URLSearchParams(window.location.search).get("redirect")
         : null
-      const roleDefaultRedirect = roleRedirectMap[result.user.role] || "/dashboard"
-      const destination = requestedRedirect?.startsWith("/") ? requestedRedirect : roleDefaultRedirect
+      const destination = getSafeRedirectForRole(result.user.role, requestedRedirect)
 
       // Use replace so login page isn't kept in browser history after auth
       router.replace(destination)

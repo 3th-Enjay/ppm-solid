@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
 import { userUpdateSchema } from "@/lib/validation"
 import { ZodError } from "zod"
+import { getTokenFromRequest } from "@/lib/jwt"
+import { authService } from "@/lib/auth"
 
 export async function PATCH(
   request: NextRequest,
@@ -9,8 +11,28 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
+    const token = getTokenFromRequest(request)
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const session = authService.decodeToken(token)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const validated = userUpdateSchema.parse(body)
+    const isAdmin = session.role === "admin"
+    const isSelf = session.userId === id
+
+    if (!isAdmin && !isSelf) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    if (!isAdmin && validated.status) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const db = getDB()
     const updated = await db.updateUser(id, validated)

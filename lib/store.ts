@@ -6,8 +6,10 @@ import type { User, CartItem, Currency } from "./types"
 interface AuthState {
   user: User | null
   token: string | null
+  hydrated: boolean
   setAuth: (user: User, token: string) => void
   clearAuth: () => void
+  setHydrated: (value: boolean) => void
   isAuthenticated: () => boolean
 }
 
@@ -16,12 +18,17 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       token: null,
-      setAuth: (user, token) => set({ user, token }),
-      clearAuth: () => set({ user: null, token: null }),
+      hydrated: false,
+      setAuth: (user, token) => set({ user, token, hydrated: true }),
+      clearAuth: () => set({ user: null, token: null, hydrated: true }),
+      setHydrated: (value) => set({ hydrated: value }),
       isAuthenticated: () => !!get().token,
     }),
     {
       name: "auth-storage",
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true)
+      },
     },
   ),
 )

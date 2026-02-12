@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -320,7 +320,7 @@ export default function AdminDashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalStudents} students â€¢ {stats.totalInstructors} instructors
+              {stats.totalStudents} students • {stats.totalInstructors} instructors
             </p>
           </CardContent>
         </Card>
@@ -353,7 +353,7 @@ export default function AdminDashboardPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">â‚¦{stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">₦{stats.totalRevenue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">{stats.pendingPayments} pending payments</p>
           </CardContent>
         </Card>
@@ -375,7 +375,7 @@ export default function AdminDashboardPage() {
                     <div>
                       <div className="text-sm font-semibold">{payment.reference}</div>
                       <div className="text-xs text-muted-foreground">
-                        {payment.userId} â€¢ {formatDate(payment.createdAt)}
+                        {payment.userId} • {formatDate(payment.createdAt)}
                       </div>
                     </div>
                     <div className="text-right">
@@ -454,7 +454,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {log.actorEmail}
-                        {log.targetEmail ? ` â€¢ ${log.targetEmail}` : ""}
+                        {log.targetEmail ? ` • ${log.targetEmail}` : ""}
                       </div>
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -525,7 +525,20 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <Link href="/admin/analytics">
+          <Card className="hover:border-primary transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                Analytics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Track platform performance and growth trends.</p>
+            </CardContent>
+          </Card>
+        </Link>
         <Link href="/admin/courses">
           <Card className="hover:border-primary transition-colors cursor-pointer">
             <CardHeader>
@@ -569,3 +582,5 @@ export default function AdminDashboardPage() {
     </div>
   )
 }
+
+
