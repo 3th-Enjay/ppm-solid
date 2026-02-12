@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Logo */}
           <div className="flex h-16 items-center border-b px-6">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="ml-2 text-lg font-bold">LMS Academy</span>
+            <span className="ml-2 text-lg font-bold">Prompt Care Academy</span>
           </div>
 
           {/* Navigation */}
@@ -91,3 +91,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   )
 }
+

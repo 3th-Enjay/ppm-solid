@@ -7,8 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { Course, Enrollment, Payment, User } from "@/lib/types"
+import { useAuthStore } from "@/lib/store"
 
 export default function AdminAnalyticsPage() {
+  const { token } = useAuthStore()
   const [users, setUsers] = useState<User[]>([])
   const [courses, setCourses] = useState<Course[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
@@ -16,9 +18,14 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     const loadData = async () => {
+      if (!token) return
       try {
         const [usersRes, coursesRes, enrollmentsRes, paymentsRes] = await Promise.all([
-          fetch("/api/users"),
+          fetch("/api/users", {
+            headers: {
+              Authorization: `Bearer ${token || ""}`,
+            },
+          }),
           fetch("/api/courses?includeDrafts=true"),
           fetch("/api/enrollments?all=true"),
           fetch("/api/payments"),
@@ -39,7 +46,7 @@ export default function AdminAnalyticsPage() {
     }
 
     loadData()
-  }, [])
+  }, [token])
 
   const analytics = useMemo(() => {
     const students = users.filter((u) => u.role === "student")

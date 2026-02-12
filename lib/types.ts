@@ -1,4 +1,4 @@
-// Core type definitions for the LMS platform
+// Core type definitions for the Prompt Care Academy platform
 
 export type UserRole = "student" | "instructor" | "admin" | "finance"
 
@@ -157,3 +157,4 @@ export interface AdminLog {
   targetRole?: UserRole
   createdAt: Date
 }
+

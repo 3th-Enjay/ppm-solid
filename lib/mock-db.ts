@@ -5,7 +5,7 @@ import type { User, Course, Enrollment, Payment, Certificate, Quiz, Assignment, 
 export const mockUsers: User[] = [
   {
     id: "user-1",
-    email: "student@promptcare.com",
+    email: "student@promptcareacademy.com",
     password: "Student@123",
     name: "John Student",
     role: "student",
@@ -18,7 +18,7 @@ export const mockUsers: User[] = [
   },
   {
     id: "user-2",
-    email: "admin@promptcare.com",
+    email: "admin@promptcareacademy.com",
     password: "Admin@123",
     name: "Sarah Admin",
     role: "admin",
@@ -31,7 +31,7 @@ export const mockUsers: User[] = [
   },
   {
     id: "user-3",
-    email: "instructor@promptcare.com",
+    email: "instructor@promptcareacademy.com",
     password: "Instructor@123",
     name: "Michael Instructor",
     role: "instructor",
@@ -44,7 +44,7 @@ export const mockUsers: User[] = [
   },
   {
     id: "user-4",
-    email: "finance@promptcare.com",
+    email: "finance@promptcareacademy.com",
     password: "Finance@123",
     name: "Emma Finance",
     role: "finance",
@@ -593,3 +593,4 @@ export function getDB() {
 
 export const db = getDB()
 export const mockDB = db
+

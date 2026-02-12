@@ -47,7 +47,7 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
           {/* Logo */}
           <div className="flex h-16 items-center border-b px-6">
             <BookOpen className="h-6 w-6 text-primary" />
-            <span className="ml-2 text-lg font-bold">PromptCare</span>
+            <span className="ml-2 text-lg font-bold">Prompt Care Academy</span>
           </div>
 
           {/* Navigation */}
@@ -93,3 +93,4 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
     </div>
   )
 }
+

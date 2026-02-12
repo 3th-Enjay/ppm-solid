@@ -1,9 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
 import type { User } from "@/lib/types"
+import { getTokenFromRequest } from "@/lib/jwt"
+import { authService } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
+    const token = getTokenFromRequest(request)
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    const session = authService.decodeToken(token)
+    if (!session || session.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const role = searchParams.get("role")
     const id = searchParams.get("id")

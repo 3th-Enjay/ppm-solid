@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* PromptCare Academy - Premium Brand Colors */
+  /* Prompt Care Academy - Premium Brand Colors */
   --background: #F9FAFB;
   --foreground: #1F2937;
   --card: #FFFFFF;
@@ -34,7 +34,7 @@
   --input: #F3F4F6;
   --ring: #10B981;
 
-  /* Chart colors - PromptCare brand palette */
+  /* Chart colors - Prompt Care Academy brand palette */
   --chart-1: #10B981;
   --chart-2: #8B5CF6;
   --chart-3: #F59E0B;
@@ -184,3 +184,4 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
+

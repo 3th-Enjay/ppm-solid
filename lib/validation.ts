@@ -105,3 +105,15 @@ export const userUpdateSchema = z.object({
   avatar: z.string().optional(),
   status: z.enum(["active", "suspended"]).optional(),
 })
+
+export const adminSettingsSchema = z.object({
+  siteName: z.string().min(2),
+  siteDescription: z.string().min(10),
+  contactEmail: z.string().email(),
+  supportEmail: z.string().email(),
+  emailNotifications: z.boolean(),
+  courseApproval: z.boolean(),
+  autoEnrollment: z.boolean(),
+  certificateGeneration: z.boolean(),
+  maintenanceMode: z.boolean(),
+})

@@ -1,47 +1,127 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Save, Bell, CreditCard, Mail, Shield } from "lucide-react"
+import { Save, Bell, Mail, Shield } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuthStore } from "@/lib/store"
+
+type AdminSettings = {
+  siteName: string
+  siteDescription: string
+  contactEmail: string
+  supportEmail: string
+  emailNotifications: boolean
+  courseApproval: boolean
+  autoEnrollment: boolean
+  certificateGeneration: boolean
+  maintenanceMode: boolean
+}
+
+const DEFAULT_SETTINGS: AdminSettings = {
+  siteName: "Prompt Care Academy",
+  siteDescription: "Professional online learning platform",
+  contactEmail: "admin@promptcareacademy.com",
+  supportEmail: "support@promptcareacademy.com",
+  emailNotifications: true,
+  courseApproval: false,
+  autoEnrollment: true,
+  certificateGeneration: true,
+  maintenanceMode: false,
+}
 
 export default function AdminSettingsPage() {
   const { toast } = useToast()
-  const [settings, setSettings] = useState({
-    siteName: "LMS Academy",
-    siteDescription: "Professional online learning platform",
-    contactEmail: "admin@lmsacademy.com",
-    supportEmail: "support@lmsacademy.com",
-    paystackPublicKey: "pk_test_xxxxx",
-    paystackSecretKey: "sk_test_xxxxx",
-    emailNotifications: true,
-    courseApproval: false,
-    autoEnrollment: true,
-    certificateGeneration: true,
-  })
+  const { token } = useAuthStore()
+  const [settings, setSettings] = useState<AdminSettings>(DEFAULT_SETTINGS)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
-  const handleSave = () => {
-    // Save settings
-    toast({
-      title: "Settings saved",
-      description: "Your changes have been saved successfully.",
-    })
+  useEffect(() => {
+    const loadSettings = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch("/api/admin/settings", {
+          headers: {
+            Authorization: `Bearer ${token || ""}`,
+          },
+        })
+        const data = await res.json()
+        if (!res.ok || !data.settings) {
+          throw new Error(data.error || "Failed to load settings")
+        }
+        setSettings(data.settings)
+      } catch (error: any) {
+        toast({
+          title: "Settings load failed",
+          description: error.message || "Using default settings values.",
+          variant: "destructive",
+        })
+        setSettings(DEFAULT_SETTINGS)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (token) {
+      loadSettings()
+    } else {
+      setLoading(false)
+    }
+  }, [token, toast])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: JSON.stringify(settings),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.settings) {
+        throw new Error(data.error || "Failed to save settings")
+      }
+      setSettings(data.settings)
+      toast({
+        title: "Settings saved",
+        description: "Your changes have been saved successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Save failed",
+        description: error.message || "Could not save settings.",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <p className="text-sm text-muted-foreground">Loading settings...</p>
+      </div>
+    )
   }
 
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-balance">Settings</h1>
-        <p className="text-muted-foreground mt-2">Configure your LMS academy settings</p>
+        <p className="text-muted-foreground mt-2">Configure your Prompt Care Academy platform settings</p>
       </div>
 
       <div className="max-w-3xl space-y-6">
-        {/* General Settings */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -67,10 +147,20 @@ export default function AdminSettingsPage() {
                 rows={3}
               />
             </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="maintenanceMode">Maintenance Mode</Label>
+                <p className="text-sm text-muted-foreground">Temporarily pause learner-facing access.</p>
+              </div>
+              <Switch
+                id="maintenanceMode"
+                checked={settings.maintenanceMode}
+                onCheckedChange={(checked) => setSettings({ ...settings, maintenanceMode: checked })}
+              />
+            </div>
           </CardContent>
         </Card>
 
-        {/* Email Settings */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -100,38 +190,6 @@ export default function AdminSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Payment Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Payment Gateway (Paystack)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="publicKey">Public Key</Label>
-              <Input
-                id="publicKey"
-                value={settings.paystackPublicKey}
-                onChange={(e) => setSettings({ ...settings, paystackPublicKey: e.target.value })}
-                placeholder="pk_test_xxxxx"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="secretKey">Secret Key</Label>
-              <Input
-                id="secretKey"
-                type="password"
-                value={settings.paystackSecretKey}
-                onChange={(e) => setSettings({ ...settings, paystackSecretKey: e.target.value })}
-                placeholder="sk_test_xxxxx"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Feature Settings */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -143,7 +201,7 @@ export default function AdminSettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="emailNotifications">Email Notifications</Label>
-                <p className="text-sm text-muted-foreground">Send email notifications to students</p>
+                <p className="text-sm text-muted-foreground">Send email notifications to students.</p>
               </div>
               <Switch
                 id="emailNotifications"
@@ -154,7 +212,7 @@ export default function AdminSettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="courseApproval">Course Approval</Label>
-                <p className="text-sm text-muted-foreground">Require admin approval for new courses</p>
+                <p className="text-sm text-muted-foreground">Require admin approval for new courses.</p>
               </div>
               <Switch
                 id="courseApproval"
@@ -165,7 +223,7 @@ export default function AdminSettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="autoEnrollment">Auto Enrollment</Label>
-                <p className="text-sm text-muted-foreground">Automatically enroll students after payment</p>
+                <p className="text-sm text-muted-foreground">Automatically enroll students after payment.</p>
               </div>
               <Switch
                 id="autoEnrollment"
@@ -176,7 +234,7 @@ export default function AdminSettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="certificateGeneration">Certificate Generation</Label>
-                <p className="text-sm text-muted-foreground">Generate certificates upon course completion</p>
+                <p className="text-sm text-muted-foreground">Generate certificates upon course completion.</p>
               </div>
               <Switch
                 id="certificateGeneration"
@@ -187,11 +245,12 @@ export default function AdminSettingsPage() {
           </CardContent>
         </Card>
 
-        <Button onClick={handleSave} className="w-full">
+        <Button onClick={handleSave} className="w-full" disabled={saving}>
           <Save className="h-4 w-4 mr-2" />
-          Save Settings
+          {saving ? "Saving..." : "Save Settings"}
         </Button>
       </div>
     </div>
   )
 }
+

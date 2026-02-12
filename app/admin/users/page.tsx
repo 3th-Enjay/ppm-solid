@@ -46,7 +46,11 @@ export default function AdminUsersPage() {
       setLoading(true)
       try {
         const [usersRes, enrollmentsRes] = await Promise.all([
-          fetch("/api/users"),
+          fetch("/api/users", {
+            headers: {
+              Authorization: `Bearer ${token || ""}`,
+            },
+          }),
           fetch("/api/enrollments?all=true"),
         ])
         const usersData = await usersRes.json()
@@ -63,7 +67,7 @@ export default function AdminUsersPage() {
     }
 
     loadData()
-  }, [])
+  }, [token])
 
   const enrollmentByUserId = useMemo(() => {
     return enrollments.reduce<Record<string, number>>((acc, enrollment) => {

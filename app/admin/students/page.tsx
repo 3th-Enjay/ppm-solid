@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Search, Mail, BookOpen, Award, Ban, CheckCircle, Users } from "lucide-react"
 import type { User, Enrollment, Course } from "@/lib/types"
 import { formatDate } from "@/lib/utils/format"
+import { useAuthStore } from "@/lib/store"
 
 export default function AdminStudentsPage() {
+  const { token } = useAuthStore()
   const [students, setStudents] = useState<User[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredStudents, setFilteredStudents] = useState<User[]>([])
@@ -18,9 +20,14 @@ export default function AdminStudentsPage() {
 
   useEffect(() => {
     const loadData = async () => {
+      if (!token) return
       try {
         const [studentsRes, enrollmentsRes, coursesRes] = await Promise.all([
-          fetch("/api/users?role=student"),
+          fetch("/api/users?role=student", {
+            headers: {
+              Authorization: `Bearer ${token || ""}`,
+            },
+          }),
           fetch("/api/enrollments?all=true"),
           fetch("/api/courses?includeDrafts=true"),
         ])
@@ -47,7 +54,7 @@ export default function AdminStudentsPage() {
     }
 
     loadData()
-  }, [])
+  }, [token])
 
   useEffect(() => {
     if (searchQuery) {
@@ -77,7 +84,10 @@ export default function AdminStudentsPage() {
       try {
         const res = await fetch(`/api/users/${userId}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token || ""}`,
+          },
           body: JSON.stringify({ status: newStatus }),
         })
         if (!res.ok) {

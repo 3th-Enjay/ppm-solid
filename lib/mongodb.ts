@@ -3,7 +3,7 @@ import { MongoClient } from "mongodb"
 import type { Document } from "mongodb"
 
 const uri = process.env.MONGODB_URI
-const dbName = process.env.MONGODB_DB || "PromptCare Academy"
+const dbName = process.env.MONGODB_DB || "Prompt Care Academy"
 
 
 type GlobalMongo = typeof globalThis & {
@@ -38,4 +38,5 @@ export async function getCollection<T extends Document>(name: string) {
   const db = await getDatabase()
   return db.collection<T>(name)
 }
+
 

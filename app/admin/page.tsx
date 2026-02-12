@@ -65,8 +65,10 @@ export default function AdminDashboardPage() {
   const [passwordSuccess, setPasswordSuccess] = useState("")
 
   useEffect(() => {
-    loadAdminData()
-  }, [])
+    if (token) {
+      loadAdminData()
+    }
+  }, [token])
 
   useEffect(() => {
     if (token) {
@@ -77,7 +79,11 @@ export default function AdminDashboardPage() {
   const loadAdminData = async () => {
     try {
       const [usersRes, enrollmentsRes, paymentsRes, coursesRes] = await Promise.all([
-        fetch("/api/users"),
+        fetch("/api/users", {
+          headers: {
+            Authorization: `Bearer ${token || ""}`,
+          },
+        }),
         fetch("/api/enrollments?all=true"),
         fetch("/api/payments"),
         fetch("/api/courses?includeDrafts=true"),

@@ -10,23 +10,23 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "PromptCare Academy - Premium Online Learning Platform",
+  title: "Prompt Care Academy - Premium Online Learning Platform",
   description:
-    "Transform your career with PromptCare Academy. Learn web development, UI/UX design, digital marketing, data analytics and more from industry experts. Join 10,000+ students today.",
+    "Transform your career with Prompt Care Academy. Learn web development, UI/UX design, digital marketing, data analytics and more from industry experts. Join 10,000+ students today.",
   generator: "v0.app",
   icons: {
     icon: "/icon.png",
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "PromptCare Academy - Premium Online Learning",
+    title: "Prompt Care Academy - Premium Online Learning",
     description: "Transform your career with expert-led courses and certification programs",
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PromptCare Academy",
+    title: "Prompt Care Academy",
     description: "Premium online learning platform for professional development",
   },
 }
@@ -47,3 +47,4 @@ export default function RootLayout({
     </html>
   )
 }
+

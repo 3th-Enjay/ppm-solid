@@ -12,7 +12,7 @@ export function Logo({ className, variant = "full" }: LogoProps) {
       <Link href="/" className={`flex items-center ${className}`}>
         <Image
           src="/icon.png"
-          alt="PromptCare Academy"
+          alt="Prompt Care Academy"
           width={40}
           height={40}
           priority
@@ -25,16 +25,17 @@ export function Logo({ className, variant = "full" }: LogoProps) {
   return (
     <Link href="/" className={`flex items-center gap-3 font-bold text-xl ${className}`}>
       <Image
-        src="/promptcare-logo.png"
-        alt="PromptCare Academy"
+        src="/Prompt Care Academy-logo.png"
+        alt="Prompt Care Academy"
         width={120}
         height={40}
         priority
         className="h-10 w-auto"
       />
       <span className="hidden sm:inline bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-bold text-lg">
-        PromptCare Academy
+        Prompt Care Academy
       </span>
     </Link>
   )
 }
+

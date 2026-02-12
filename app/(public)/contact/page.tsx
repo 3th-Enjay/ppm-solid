@@ -54,8 +54,8 @@ export default function ContactPage() {
     {
       icon: Mail,
       title: "Email Us",
-      details: "support@PromptCare Academy.com",
-      link: "mailto:support@PromptCare Academy.com",
+      details: "support@promptcareacademy.com",
+      link: "mailto:support@promptcareacademy.com",
     },
     {
       icon: Phone,
@@ -195,4 +195,5 @@ export default function ContactPage() {
     </div>
   )
 }
+
 

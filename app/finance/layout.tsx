@@ -46,7 +46,7 @@ export default function FinanceLayout({ children }: { children: React.ReactNode 
           {/* Logo */}
           <div className="flex h-16 items-center border-b px-6">
             <DollarSign className="h-6 w-6 text-primary" />
-            <span className="ml-2 text-lg font-bold">PromptCare</span>
+            <span className="ml-2 text-lg font-bold">Prompt Care Academy</span>
           </div>
 
           {/* Navigation */}
@@ -92,3 +92,4 @@ export default function FinanceLayout({ children }: { children: React.ReactNode 
     </div>
   )
 }
+
