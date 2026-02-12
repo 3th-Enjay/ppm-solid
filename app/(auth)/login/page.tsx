@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,14 +12,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
 import { loginSchema } from "@/lib/validation"
 import { useToast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { setAuth } = useAuthStore()
   const { toast } = useToast()
 
@@ -28,6 +27,7 @@ export default function LoginPage() {
     password: "",
     remember: false,
   })
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -72,7 +72,9 @@ export default function LoginPage() {
         finance: "/finance",
       }
 
-      const requestedRedirect = searchParams.get("redirect")
+      const requestedRedirect = typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("redirect")
+        : null
       const roleDefaultRedirect = roleRedirectMap[result.user.role] || "/dashboard"
       const destination = requestedRedirect?.startsWith("/") ? requestedRedirect : roleDefaultRedirect
 
@@ -121,15 +123,27 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="********"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                disabled={loading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="********"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  disabled={loading}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  disabled={loading}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center space-x-2">
