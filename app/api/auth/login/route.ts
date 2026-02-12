@@ -3,6 +3,20 @@ import { authService } from "@/lib/auth"
 import { loginSchema } from "@/lib/validation"
 import jwt from "jsonwebtoken"
 
+const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
+
+function withAuthCookie(token: string, body: unknown) {
+  const response = NextResponse.json(body)
+  response.cookies.set("token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: COOKIE_MAX_AGE_SECONDS,
+  })
+  return response
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -17,8 +31,8 @@ export async function POST(request: Request) {
     const validated = parsed.data
 
     // Explicit bypass: check env ADMIN_ACCOUNTS credentials first
-    const ADMIN_ACCOUNTS_EMAIL = process.env.ADMIN_ACCOUNTS_EMAIL?.trim().toLowerCase()
-    const ADMIN_ACCOUNTS_PASSWORD = process.env.ADMIN_ACCOUNTS_PASSWORD?.trim()
+    const ADMIN_ACCOUNTS_EMAIL = (process.env.ADMIN_ACCOUNTS_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL)?.trim().toLowerCase()
+    const ADMIN_ACCOUNTS_PASSWORD = (process.env.ADMIN_ACCOUNTS_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD)?.trim()
     const normalizedInputEmail = validated.email.trim().toLowerCase()
 
     if (
@@ -47,7 +61,7 @@ export async function POST(request: Request) {
       const options: any = { expiresIn: JWT_EXPIRES_IN }
       const generatedToken = jwt.sign(payload as any, JWT_SECRET as string, options)
 
-      return NextResponse.json({
+      return withAuthCookie(generatedToken, {
         success: true,
         user: adminUser,
         token: generatedToken,
@@ -61,10 +75,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid credentials or email not verified" }, { status: 401 })
     }
 
-    // Allow admins to log in via the normal /login route too.
-    // (Previously required /login-admin; that page is being removed.)
-
-    return NextResponse.json({
+    return withAuthCookie(result.token, {
       success: true,
       user: result.user,
       token: result.token,
@@ -73,3 +84,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
 }
+

@@ -15,8 +15,8 @@ export interface SessionData {
 const JWT_SECRET = (process.env.JWT_SECRET || "your-secret-key-change-in-production").trim()
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d").trim()
 const OTP_EXPIRES_MINUTES = Number(process.env.OTP_EXPIRES_MINUTES || 15)
-const ADMIN_ACCOUNTS_EMAIL = process.env.ADMIN_ACCOUNTS_EMAIL?.trim()
-const ADMIN_ACCOUNTS_PASSWORD = process.env.ADMIN_ACCOUNTS_PASSWORD?.trim()
+const ADMIN_ACCOUNTS_EMAIL = (process.env.ADMIN_ACCOUNTS_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL)?.trim()
+const ADMIN_ACCOUNTS_PASSWORD = (process.env.ADMIN_ACCOUNTS_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD)?.trim()
 
 // Password hashing utility
 async function hashPassword(password: string): Promise<string> {
@@ -285,3 +285,4 @@ export const authService = {
     return verifyToken(token)
   },
 }
+

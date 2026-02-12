@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { setAuth } = useAuthStore()
   const { toast } = useToast()
 
@@ -64,19 +65,21 @@ export default function LoginPage() {
         description: `Logged in as ${result.user.name}`,
       })
 
-      // Redirect based on role
-      if (result.user.role === "student") {
-        router.push("/dashboard")
-      } else if (result.user.role === "admin") {
-        router.push("/admin")
-      } else if (result.user.role === "instructor") {
-        router.push("/instructor")
-      } else if (result.user.role === "finance") {
-        router.push("/finance")
-      } else {
-        router.push("/dashboard")
+      const roleRedirectMap: Record<string, string> = {
+        student: "/dashboard",
+        admin: "/admin",
+        instructor: "/instructor",
+        finance: "/finance",
       }
-    } catch (error) {
+
+      const requestedRedirect = searchParams.get("redirect")
+      const roleDefaultRedirect = roleRedirectMap[result.user.role] || "/dashboard"
+      const destination = requestedRedirect?.startsWith("/") ? requestedRedirect : roleDefaultRedirect
+
+      // Use replace so login page isn't kept in browser history after auth
+      router.replace(destination)
+      router.refresh()
+    } catch {
       setError("Please check your credentials and try again")
       setLoading(false)
     }
@@ -121,7 +124,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="********"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required

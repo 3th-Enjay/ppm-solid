@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server"
 
 export async function POST() {
-  // In a real app, this would invalidate the token on the server
-  return NextResponse.json({ success: true })
+  const response = NextResponse.json({ success: true })
+  response.cookies.set("token", "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  })
+  return response
 }

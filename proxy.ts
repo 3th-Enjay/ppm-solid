@@ -4,22 +4,24 @@ import type { NextRequest } from "next/server"
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Get auth token from cookie or header
-  const authToken = request.cookies.get("auth-storage")?.value
+  // Read JWT auth token from secure cookie set by /api/auth/login
+  const authToken = request.cookies.get("token")?.value
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/courses", "/about", "/contact", "/faq", "/login", "/register", "/forgot-password"]
+  const publicRoutes = ["/", "/courses", "/about", "/contact", "/faq", "/login", "/login-admin", "/register", "/forgot-password"]
 
   // Check if route is public or a course detail page
   const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/courses/")
 
-  // If trying to access protected route without auth, redirect to login
+  // If trying to access protected route without auth, redirect to login and preserve target
   if (!isPublicRoute && !authToken) {
-    return NextResponse.redirect(new URL("/login", request.url))
+    const loginUrl = new URL("/login", request.url)
+    loginUrl.searchParams.set("redirect", pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  // If authenticated user tries to access auth pages, redirect to dashboard
-  if (authToken && (pathname === "/login" || pathname === "/register")) {
+  // If authenticated user tries to access auth pages, redirect to default dashboard
+  if (authToken && (pathname === "/login" || pathname === "/login-admin" || pathname === "/register")) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
