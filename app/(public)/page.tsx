@@ -68,7 +68,7 @@ export default function HomePage() {
               transition={{ duration: 0.5 }}
               className="space-y-6"
             >
-              <Badge className="mb-2">Welcome to Promptcare Academy</Badge>
+              <Badge className="mb-2">Welcome to Prompt Care Academy</Badge>
               <h1 className="text-4xl md:text-6xl font-bold text-balance">
                 Master New Skills with Expert-Led Online Courses
               </h1>
@@ -114,7 +114,7 @@ export default function HomePage() {
               <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[520px] rounded-2xl overflow-hidden">
                   <Image 
                     src="/promptcare-hero.jpeg" 
-                    alt="Promptcare Academy hero"
+                    alt="Prompt Care Academy hero"
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
@@ -141,7 +141,7 @@ export default function HomePage() {
       <section className="py-20 bg-muted/50">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Promptcare Academy?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Prompt Care Academy?</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               We provide the best learning experience with cutting-edge features
             </p>

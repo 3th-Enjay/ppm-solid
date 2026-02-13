@@ -86,7 +86,7 @@ export default function FAQPage() {
             <HelpCircle className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Frequently Asked Questions</h1>
-          <p className="text-xl text-muted-foreground">Find answers to common questions about Promptcare Academy</p>
+          <p className="text-xl text-muted-foreground">Find answers to common questions about Prompt Care Academy</p>
         </motion.div>
 
         {/* FAQs by Category */}

@@ -124,7 +124,7 @@ export function PublicFooter() {
         </div>
 
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {currentYear} Promptcare Academy. All rights reserved.</p>
+          <p>&copy; {currentYear} Prompt Care Academy. All rights reserved.</p>
         </div>
       </div>
     </footer>

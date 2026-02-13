@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Users, Award, BookOpen, TrendingUp, HeartHandshake, ShieldCheck, Anchor, Sparkles, Stethoscope } from "lucide-react"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, useScroll, useTransform } from "framer-motion"
+import { useEffect, useRef, useState } from "react"
 import { Testimonials } from "@/components/testimonials"
 import Image from "next/image"
 import aboutImage from "@/public/promptcare-about.jpeg"
@@ -13,6 +14,22 @@ import storyImage from "@/public/promptcare-story.jpeg"
 import ceoImage from "@/public/ceo-promptcare.jpeg"
 
 export default function AboutPage() {
+  const [storyExpanded, setStoryExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const visionRef = useRef<HTMLDivElement | null>(null)
+  const { scrollYProgress: visionScroll } = useScroll({
+    target: visionRef,
+    offset: ["start end", "center start"],
+  })
+  const visionTextY = useTransform(visionScroll, [0, 1], [60, 0])
+  const visionImageY = useTransform(visionScroll, [0, 1], [-60, 0])
+
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 768)
+    update()
+    window.addEventListener("resize", update)
+    return () => window.removeEventListener("resize", update)
+  }, [])
   const stats = [
     { label: "Active Students", value: "10,000+", icon: Users },
     { label: "Expert Instructors", value: "50+", icon: Award },
@@ -71,12 +88,17 @@ export default function AboutPage() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto text-center space-y-6"
           >
-            <Badge className="mb-2">About Promptcare Academy</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-balance">Training the hands and hearts that care</h1>
-            <p className="text-xl text-muted-foreground text-pretty">
-              We're on a mission to redefine the standard of care in Nigeria by empowering caregivers with world-class clinical expertise and
-              a deep-rooted culture of empathy, ensuring every patient and family receives the excellence, dignity, and
-              professional support they deserve.
+            <Badge className="mb-2 inline-flex animate-bounce">About Prompt Care Academy</Badge>
+            <h1 className="text-4xl md:text-5xl font-bold text-balance text-foreground relative overflow-hidden">
+              <span className="relative z-0">Training the hands and hearts that care</span>
+              <span className="pointer-events-none absolute inset-0 z-10 mix-blend-screen bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.5),transparent)] bg-[length:200%_200%] animate-[sheen_4s_linear_infinite]" />
+            </h1>
+            <p className="text-xl text-pretty text-foreground">
+              <span className="relative z-0">
+                We're on a mission to redefine the standard of care in Nigeria by empowering caregivers with world-class clinical expertise and
+                a deep-rooted culture of empathy, ensuring every patient and family receives the excellence, dignity, and
+                professional support they deserve.
+              </span>
             </p>
           </motion.div>
 
@@ -107,30 +129,37 @@ export default function AboutPage() {
 
       {/* Vision Section */}
       <section className="py-16">
-        <div className="container">
-           <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="container" ref={visionRef}>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="space-y-4"
+              className="space-y-4 min-h-[306px] sm:min-h-[357px] lg:min-h-[442px] flex flex-col justify-center"
+              style={{ y: isMobile ? 0 : visionTextY }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold">Our Vision</h2>
-              <p className="text-muted-foreground text-lg">
-                To be the foremost authority in caregiver education in Africa, recognized for producing healthcare
-                professionals who are sought after globally for their technical mastery, unwavering ethics, and
-                transformative compassion.
+              <h2 className="text-4xl md:text-5xl font-bold text-foreground relative overflow-hidden">
+                <span className="relative z-0">Our Vision</span>
+                <span className="pointer-events-none absolute inset-0 z-10 mix-blend-screen bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.5),transparent)] bg-[length:200%_200%] animate-[sheen_4s_linear_infinite]" />
+              </h2>
+              <p className="text-xl md:text-2xl text-foreground">
+                <span className="relative z-0">
+                  To be the foremost authority in caregiver education in Africa, recognized for producing healthcare
+                  professionals who are sought after globally for their technical mastery, unwavering ethics, and
+                  transformative compassion.
+                </span>
               </p>
             </motion.div>
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: -40 }}
+              whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
               className="relative"
+              style={{ y: isMobile ? 0 : visionImageY }}
             >
-              <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[520px] rounded-2xl overflow-hidden">
+              <div className="relative w-full h-[320px] sm:h-[380px] lg:h-[460px] rounded-2xl overflow-hidden">
                 <Image
                   src={aboutImage}
                   alt="Prompt Care Academy"
@@ -141,6 +170,23 @@ export default function AboutPage() {
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* Enroll CTA */}
+      <section className="py-12">
+        <div className="container">
+          <Card className="bg-muted/50">
+            <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+              <h3 className="text-2xl font-semibold">Ready to enroll and start studying?</h3>
+              <p className="text-muted-foreground max-w-2xl">
+                Explore our courses to find the right learning path and begin your journey with Prompt Care Academy.
+              </p>
+              <Button asChild>
+                <Link href="/courses">Explore Our Courses</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -171,42 +217,50 @@ export default function AboutPage() {
                   I chose to stay and build. I established Prompt Home Health to bridge the gap, bringing the rigorous standards
                   I had mastered abroad to the soil that raised me.
                 </p>
-                <p>
-                  For over sixteen years, I have steered that mission through the complexities of the Nigerian healthcare
-                  landscape. Since 2009, we have been at the bedsides of parents and grandparents, providing care where there
-                  was once only a silence.
-                </p>
-                <p>
-                  However, throughout this journey, I faced a recurring heartbreak: the search for caregivers who possessed
-                  both the technical skill of a professional nurse and the compassionate heart of a devoted child. I realized
-                  that while many had the will to care, they lacked the how.
-                </p>
-                <p>
-                  I didn’t wait for a global trend or a government solution. Long before the Japa syndrome began to dominate the
-                  national conversation, I was already in the room, personally training my staff for free. I was pouring my
-                  American clinical expertise into local hands, driven by the simple belief that our patients deserved better.
-                </p>
-                <p>
-                  Prompt Care Academy is the definitive realization of this lifelong odyssey. This Academy stands as a proven
-                  standard—a transition from being at the bedside to empowering thousands of others to stand there with
-                  confidence. We are scaling a legacy of excellence that has been practiced and refined on Nigerian soil since
-                  my return in 2009.
-                </p>
-                <p>
-                  Born from the hard-won lessons of a son who served as his father’s primary caregiver, Prompt Care Academy
-                  provides the world-class training that only decades of international and local experience can produce. We are
-                  here to train the hearts and hands of those who care.
-                </p>
-                <p className="pt-4 font-medium text-foreground">
-                  By Dr. Ike M. Okoye
-                  <br />
-                  Founder and CEO,
-                  <br />
-                  Prompt Care Academy
-                </p>
+                {storyExpanded && (
+                  <>
+                    <p>
+                      For over sixteen years, I have steered that mission through the complexities of the Nigerian healthcare
+                      landscape. Since 2009, we have been at the bedsides of parents and grandparents, providing care where there
+                      was once only a silence.
+                    </p>
+                    <p>
+                      However, throughout this journey, I faced a recurring heartbreak: the search for caregivers who possessed
+                      both the technical skill of a professional nurse and the compassionate heart of a devoted child. I realized
+                      that while many had the will to care, they lacked the how.
+                    </p>
+                    <p>
+                      I didn’t wait for a global trend or a government solution. Long before the Japa syndrome began to dominate the
+                      national conversation, I was already in the room, personally training my staff for free. I was pouring my
+                      American clinical expertise into local hands, driven by the simple belief that our patients deserved better.
+                    </p>
+                    <p>
+                      Prompt Care Academy is the definitive realization of this lifelong odyssey. This Academy stands as a proven
+                      standard—a transition from being at the bedside to empowering thousands of others to stand there with
+                      confidence. We are scaling a legacy of excellence that has been practiced and refined on Nigerian soil since
+                      my return in 2009.
+                    </p>
+                    <p>
+                      Born from the hard-won lessons of a son who served as his father’s primary caregiver, Prompt Care Academy
+                      provides the world-class training that only decades of international and local experience can produce. We are
+                      here to train the hearts and hands of those who care.
+                    </p>
+                    <p className="pt-4 font-medium text-foreground">
+                      By Dr. Ike M. Okoye
+                      <br />
+                      Founder and CEO,
+                      <br />
+                      Prompt Care Academy
+                    </p>
+                  </>
+                )}
               </div>
-              <Button asChild className="mt-6">
-                <Link href="/courses">Explore Our Courses</Link>
+              <Button
+                variant="outline"
+                className="mt-6"
+                onClick={() => setStoryExpanded((prev) => !prev)}
+              >
+                {storyExpanded ? "Read less" : "Read more"}
               </Button>
             </motion.div>
 
@@ -250,7 +304,7 @@ export default function AboutPage() {
                 transition={{ duration: 0.4, delay: 0.1 * index }}
                 viewport={{ once: true }}
               >
-                <Card className="h-full">
+                <Card className="h-full origin-center animate-[spin-shake_0.8s_ease-in-out_12,spin-shake_2.4s_ease-in-out_infinite_10s] transition-transform duration-300 hover:animate-none hover:scale-[1.04]">
                   <CardContent className="p-6 space-y-4">
                     <div className="bg-primary/10 w-12 h-12 rounded-lg flex items-center justify-center">
                       <value.icon className="w-6 h-6 text-primary" />
@@ -270,7 +324,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Meet Our Team</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">The passionate people behind Promptcare Academy</p>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">The passionate people behind Prompt Care Academy</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -313,7 +367,7 @@ export default function AboutPage() {
             <CardContent className="p-12 text-center relative z-10">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Start Your Learning Journey?</h2>
               <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-                Join thousands of students already learning with Promptcare Academy
+                Join thousands of students already learning with Prompt Care Academy
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" variant="secondary" asChild>

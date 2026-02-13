@@ -16,7 +16,7 @@ const testimonials: Testimonial[] = [
   {
     name: "Amina Hassan",
     role: "Nursing Student",
-    content: "Promptcare Academy has transformed my career. The courses are comprehensive, and the instructors are incredibly supportive. I've gained practical skills that I use every day in my work.",
+    content: "Prompt Care Academy has transformed my career. The courses are comprehensive, and the instructors are incredibly supportive. I've gained practical skills that I use every day in my work.",
     rating: 5,
   },
   {
@@ -34,19 +34,19 @@ const testimonials: Testimonial[] = [
   {
     name: "Emeka Nwosu",
     role: "Caregiver",
-    content: "As someone new to healthcare, Promptcare Academy provided me with the foundation I needed. The courses are well-structured, and the support team is always ready to help.",
+    content: "As someone new to healthcare, Prompt Care Academy provided me with the foundation I needed. The courses are well-structured, and the support team is always ready to help.",
     rating: 5,
   },
   {
     name: "Grace Adeyemi",
     role: "Nursing Graduate",
-    content: "The quality of education here is exceptional. I've recommended Promptcare Academy to many of my colleagues. The practical skills I learned are invaluable.",
+    content: "The quality of education here is exceptional. I've recommended Prompt Care Academy to many of my colleagues. The practical skills I learned are invaluable.",
     rating: 5,
   },
   {
     name: "Michael Okafor",
     role: "Healthcare Administrator",
-    content: "The courses are up-to-date with current industry standards. I've enhanced my skills significantly and feel more confident in my role. Thank you, Promptcare Academy!",
+    content: "The courses are up-to-date with current industry standards. I've enhanced my skills significantly and feel more confident in my role. Thank you, Prompt Care Academy!",
     rating: 5,
   },
 ]
