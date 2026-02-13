@@ -58,12 +58,10 @@ export const mockUsers: User[] = [
 ]
 
 export const mockCategories: Category[] = [
-  { id: "cat-1", name: "Development", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
-  { id: "cat-2", name: "Design", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
-  { id: "cat-3", name: "Business", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
-  { id: "cat-4", name: "Marketing", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
-  { id: "cat-5", name: "Photography", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
-  { id: "cat-6", name: "Music", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+  { id: "cat-1", name: "The Foundation Pillar", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+  { id: "cat-2", name: "The Clinical Pillar", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+  { id: "cat-3", name: "The Leadership Pillar", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+  { id: "cat-4", name: "The Family Pillar", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
 ]
 
 // Seeded Courses
@@ -74,7 +72,7 @@ export const mockCourses: Course[] = [
     slug: "complete-web-development-bootcamp",
     description:
       "Master modern web development with HTML, CSS, JavaScript, React, Node.js, and more. Build real-world projects and launch your career as a full-stack developer.",
-    category: "Development",
+    category: "The Foundation Pillar",
     level: "Beginner Courses",
     instructorId: "user-3",
     price: {
@@ -168,7 +166,7 @@ export const mockCourses: Course[] = [
     slug: "ui-ux-design-masterclass",
     description:
       "Learn the principles of great design. Master Figma, create stunning interfaces, and build a professional design portfolio.",
-    category: "Design",
+    category: "The Clinical Pillar",
     level: "Intermediate Courses",
     instructorId: "user-3",
     price: {
@@ -212,7 +210,7 @@ export const mockCourses: Course[] = [
     slug: "digital-marketing-strategy",
     description:
       "Master SEO, social media marketing, content marketing, and analytics. Grow any business online with proven strategies.",
-    category: "Marketing",
+    category: "The Leadership Pillar",
     level: "Beginner Courses",
     instructorId: "user-3",
     price: {
@@ -237,7 +235,7 @@ export const mockCourses: Course[] = [
     slug: "business-analytics-python",
     description:
       "Learn data analysis, visualization, and business intelligence using Python, Pandas, and industry-standard tools.",
-    category: "Business",
+    category: "The Family Pillar",
     level: "Intermediate Courses",
     instructorId: "user-3",
     price: {

@@ -11,87 +11,67 @@ import { motion } from "framer-motion"
 export default function FAQPage() {
   const faqs = [
     {
-      category: "Getting Started",
+      category: "General Questions",
       questions: [
         {
-          question: "How do I create an account?",
+          question: "What makes Prompt Care Academy different from other training centers?",
           answer:
-            'Click the "Sign Up" button in the top right corner, fill in your details, and verify your email address. You can start browsing courses immediately after registration.',
+            "Our difference lies in our DNA. We are the sister company to Prompt Home Health, which has led the industry in Nigeria since 2009. Our curriculum is designed by our Founder, Dr. Ike M. Okoye, who brings 10 years of American nursing experience and 16 years of Nigerian home care leadership. We don’t just teach theory; we teach a proven, world-class standard refined on Nigerian soil.",
         },
         {
-          question: "Are the courses really free to browse?",
+          question: "Is this academy only for professional caregivers?",
           answer:
-            "Yes! You can browse all course information, view curriculum, and watch free preview lessons without any payment. You only pay when you're ready to enroll in a course.",
+            "Not at all. While we offer professional certifications, we have specific Beginner and Family Caregiver modules designed for sons, daughters, and spouses who are currently caring for loved ones at home and want to ensure they are doing it safely and professionally.",
         },
         {
-          question: "What payment methods do you accept?",
+          question: "Where is the academy located?",
           answer:
-            "We accept all major credit cards (Visa, Mastercard, American Express) through our secure payment processor Paystack. We support multiple currencies including USD, GBP, and NGN.",
+            "Suite B 16, Area 11 Shopping Complex, Ahmadu Bello Way, Garki Abuja, Nigeria. 72B Nike Lake Road, Trans Ekulu, Enugu. We believe in hands-on training, so our facility is equipped with modern caregiving aids to ensure students practice in a real-world environment.",
         },
       ],
     },
     {
-      category: "Courses",
+      category: "Enrollment & Courses",
       questions: [
         {
-          question: "How long do I have access to a course?",
+          question: "Do I need a medical background to enroll?",
           answer:
-            "Once you purchase a course, you have lifetime access to all course materials, including any future updates. Learn at your own pace without any time restrictions.",
+            "No. Our Beginner Courses are designed for individuals with no prior medical experience. We start with the heart—the ethics and basics of care—before moving to the technical hands.",
         },
         {
-          question: "Can I download course videos?",
+          question: "How long do the courses take to complete?",
           answer:
-            "Course videos are available for streaming only to protect our instructors' content. However, you can access your courses from any device at any time with an internet connection.",
+            "Course duration varies by level: Beginner/Foundation: 2–4 weeks. Intermediate/Specialized: 4–6 weeks. Pro/Advanced: 8+ weeks. These can be adjusted based on your specific schedule.",
         },
         {
-          question: "Do you offer certificates?",
+          question: "Will I get a certificate upon completion?",
           answer:
-            "Yes! Upon completing a course, you'll receive a certificate of completion that you can share on LinkedIn, add to your resume, or display on your portfolio.",
-        },
-        {
-          question: "What if I'm not satisfied with a course?",
-          answer:
-            "We offer a 30-day money-back guarantee. If you're not satisfied with a course for any reason within 30 days of purchase, contact our support team for a full refund.",
+            "Yes. Every graduate receives a Prompt Care Academy Certificate of Completion. Our Pro-level graduates receive a Global Professional Certification, which signifies that they have been trained to international clinical standards.",
         },
       ],
     },
     {
-      category: "Learning",
+      category: "Career & Impact",
       questions: [
         {
-          question: "Can I learn at my own pace?",
+          question: "Does the Academy provide jobs after graduation?",
           answer:
-            "All courses are self-paced. You can start, pause, and resume lessons whenever you want. There are no deadlines or schedules to follow.",
+            "While we do not guarantee employment, our sister company, Prompt Home Health, often recruits top-performing graduates from the Academy. Additionally, being Prompt Trained is a significant advantage in the Nigerian healthcare job market due to our 16-year reputation.",
         },
         {
-          question: "Are there quizzes and assignments?",
+          question: "Can this training help me if I want to work abroad?",
           answer:
-            "Yes, most courses include quizzes to test your knowledge and practical assignments to apply what you've learned. These help reinforce your understanding of the material.",
-        },
-        {
-          question: "Can I interact with instructors?",
-          answer:
-            "While courses are pre-recorded for flexibility, many instructors actively participate in course discussions and Q&A sections. Premium courses may include direct instructor support.",
+            "Our curriculum is built on American nursing standards (CNA/RN levels). While you must still meet the specific visa and licensing requirements of any country you travel to, the technical skills and Global Professional training you receive here will put you at a distinct advantage internationally.",
         },
       ],
     },
     {
-      category: "Account & Billing",
+      category: "Specialized Care",
       questions: [
         {
-          question: "How do I update my payment information?",
+          question: "Why do you focus so much on Alzheimer’s and Dementia?",
           answer:
-            "Go to your account settings, click on 'Billing,' and update your payment methods. You can add, remove, or set a default payment method at any time.",
-        },
-        {
-          question: "Can I share my account with others?",
-          answer:
-            "Each account is for individual use only. Sharing accounts violates our terms of service and may result in account suspension. Consider gift cards for friends or family.",
-        },
-        {
-          question: "How do I cancel or request a refund?",
-          answer:
-            "Visit your purchase history, find the course, and click 'Request Refund' within 30 days of purchase. Our support team will process your request within 3-5 business days.",
+            "This is a personal mission for our Founder. Having returned to Nigeria in 2009 to care for his father, Dr. Okoye recognized that memory care is one of the most underserved areas in our healthcare system. Our Dementia Mastery course is our flagship program, designed to solve a crisis many Nigerian families face in silence.",
         },
       ],
     },
@@ -148,12 +128,12 @@ export default function FAQPage() {
           <Card className="bg-muted/50">
             <CardContent className="p-8 text-center">
               <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-2xl font-semibold mb-2">Still have questions?</h3>
+              <h3 className="text-2xl font-semibold mb-2">Don’t see your question here?</h3>
               <p className="text-muted-foreground mb-6">
-                Can't find the answer you're looking for? Our support team is here to help.
+                Contact Our Admissions Team or 09030910091
               </p>
               <Button asChild>
-                <Link href="/contact">Contact Support</Link>
+                <Link href="/contact">Contact Admissions</Link>
               </Button>
             </CardContent>
           </Card>

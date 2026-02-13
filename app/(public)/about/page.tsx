@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Users, Award, BookOpen, TrendingUp, Target, Heart, Zap } from "lucide-react"
+import { Users, Award, BookOpen, TrendingUp, HeartHandshake, ShieldCheck, Anchor, Sparkles, Stethoscope } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Testimonials } from "@/components/testimonials"
@@ -22,19 +22,34 @@ export default function AboutPage() {
 
   const values = [
     {
-      icon: Target,
-      title: "Quality Education",
-      description: "We provide world-class education accessible to everyone, everywhere.",
+      icon: HeartHandshake,
+      title: "H – Humanity (Compassion First)",
+      description:
+        "We believe that caregiving is a sacred trust. We train our students to see the person behind the patient, lead with kindness, and treat every individual with the utmost dignity.",
     },
     {
-      icon: Heart,
-      title: "Student Success",
-      description: "Your success is our mission. We're committed to helping you achieve your goals.",
+      icon: ShieldCheck,
+      title: "E – Excellence (World-Class Standards)",
+      description:
+        "We do not settle for good enough. We are committed to the highest global benchmarks in healthcare training, utilizing the best curriculum and techniques available to ensure our caregivers are second to none.",
     },
     {
-      icon: Zap,
-      title: "Innovation",
-      description: "We continuously innovate to provide the best learning experience possible.",
+      icon: Anchor,
+      title: "A – Accountability (Integrity in Action)",
+      description:
+        "In the privacy of a home or the halls of a clinic, our caregivers act with honesty and responsibility. We take pride in being a sister company to a trusted brand, upholding the highest ethical standards in every interaction.",
+    },
+    {
+      icon: Sparkles,
+      title: "R – Resilience (The Strength to Care)",
+      description:
+        "Caregiving is demanding. We equip our students with the mental and emotional strength to remain professional and supportive, even in the most challenging health scenarios.",
+    },
+    {
+      icon: Stethoscope,
+      title: "T – Technical Mastery (The Skilled Hand)",
+      description:
+        "We believe empathy must be backed by competence. Our training ensures that every caregiver possesses the precise clinical skills needed to provide safe, effective, and high-quality medical support.",
     },
   ]
 
@@ -59,8 +74,9 @@ export default function AboutPage() {
             <Badge className="mb-2">About Promptcare Academy</Badge>
             <h1 className="text-4xl md:text-5xl font-bold text-balance">Training the hands and hearts that care</h1>
             <p className="text-xl text-muted-foreground text-pretty">
-              We're on a mission to democratize education and make high-quality learning accessible to everyone,
-              everywhere.
+              We're on a mission to redefine the standard of care in Nigeria by empowering caregivers with world-class clinical expertise and
+              a deep-rooted culture of empathy, ensuring every patient and family receives the excellence, dignity, and
+              professional support they deserve.
             </p>
           </motion.div>
 
@@ -89,10 +105,10 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* About Image Section */}
+      {/* Vision Section */}
       <section className="py-16">
         <div className="container">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -100,10 +116,11 @@ export default function AboutPage() {
               viewport={{ once: true }}
               className="space-y-4"
             >
-              <h2 className="text-3xl md:text-4xl font-bold">Prompt Care Academy</h2>
-              <p className="text-muted-foreground">
-                We equip learners with practical, industry-ready skills and a clear path to impact. Every course is
-                built to be accessible, actionable, and guided by experts who care about real outcomes.
+              <h2 className="text-3xl md:text-4xl font-bold">Our Vision</h2>
+              <p className="text-muted-foreground text-lg">
+                To be the foremost authority in caregiver education in Africa, recognized for producing healthcare
+                professionals who are sought after globally for their technical mastery, unwavering ethics, and
+                transformative compassion.
               </p>
             </motion.div>
             <motion.div
@@ -137,19 +154,55 @@ export default function AboutPage() {
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Our Story</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">The Heart of the Return: The Story of Prompt Care Academy</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Promptcare Academy was founded in 2020 with a simple yet powerful vision: to make quality education accessible
-                  to everyone, regardless of their location or background.
+                  For a decade, I walked the halls of American hospitals, first as a CNA and then as a Registered Nurse. I was
+                  immersed in a system of clinical precision and world-class standards, but my heart remained anchored in
+                  Nigeria. In 2009, that connection called me home. My father—my hero—had begun his battle with Alzheimer’s
+                  disease, and I knew there was only one place I belonged: by his side.
                 </p>
                 <p>
-                  What started as a small platform with just a handful of courses has grown into a thriving community of
-                  over 10,000 students and 50+ expert instructors from around the world.
+                  I didn’t just come home to visit; I came home to serve.
                 </p>
                 <p>
-                  Today, we offer over 200 courses across multiple disciplines, helping students achieve their career
-                  goals and transform their lives through education.
+                  Upon my return, I found a void where there should have been a safety net. Professional home care was almost
+                  non-existent, leaving families to struggle in silence. I chose not to return to the United States. Instead,
+                  I chose to stay and build. I established Prompt Home Health to bridge the gap, bringing the rigorous standards
+                  I had mastered abroad to the soil that raised me.
+                </p>
+                <p>
+                  For over sixteen years, I have steered that mission through the complexities of the Nigerian healthcare
+                  landscape. Since 2009, we have been at the bedsides of parents and grandparents, providing care where there
+                  was once only a silence.
+                </p>
+                <p>
+                  However, throughout this journey, I faced a recurring heartbreak: the search for caregivers who possessed
+                  both the technical skill of a professional nurse and the compassionate heart of a devoted child. I realized
+                  that while many had the will to care, they lacked the how.
+                </p>
+                <p>
+                  I didn’t wait for a global trend or a government solution. Long before the Japa syndrome began to dominate the
+                  national conversation, I was already in the room, personally training my staff for free. I was pouring my
+                  American clinical expertise into local hands, driven by the simple belief that our patients deserved better.
+                </p>
+                <p>
+                  Prompt Care Academy is the definitive realization of this lifelong odyssey. This Academy stands as a proven
+                  standard—a transition from being at the bedside to empowering thousands of others to stand there with
+                  confidence. We are scaling a legacy of excellence that has been practiced and refined on Nigerian soil since
+                  my return in 2009.
+                </p>
+                <p>
+                  Born from the hard-won lessons of a son who served as his father’s primary caregiver, Prompt Care Academy
+                  provides the world-class training that only decades of international and local experience can produce. We are
+                  here to train the hearts and hands of those who care.
+                </p>
+                <p className="pt-4 font-medium text-foreground">
+                  By Dr. Ike M. Okoye
+                  <br />
+                  Founder and CEO,
+                  <br />
+                  Prompt Care Academy
                 </p>
               </div>
               <Button asChild className="mt-6">
@@ -282,4 +335,3 @@ export default function AboutPage() {
     </div>
   )
 }
-

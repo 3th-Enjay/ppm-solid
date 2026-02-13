@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
-import { Search, Star, Clock, Users, Filter } from "lucide-react"
+import { Search, Star, Clock, Users, Filter, Map, Layers, Flag, Heart } from "lucide-react"
 import type { Course, Category } from "@/lib/types"
 import { formatCurrency, formatDuration } from "@/lib/utils/format"
 import { usePreferencesStore, useCartStore, useAuthStore } from "@/lib/store"
@@ -27,6 +27,68 @@ export default function CoursesPage() {
   const { addToCart, items } = useCartStore()
   const { user } = useAuthStore()
   const { toast } = useToast()
+
+  const pillars = [
+    {
+      title: "The Foundation Pillar",
+      icon: Map,
+      description: "Essential skills for new caregivers and family members.",
+    },
+    {
+      title: "The Clinical Pillar",
+      icon: Layers,
+      description: "Specialized medical support for complex conditions.",
+    },
+    {
+      title: "The Leadership Pillar",
+      icon: Flag,
+      description: "Professional ethics and management for elite caregivers.",
+    },
+    {
+      title: "The Family Pillar",
+      icon: Heart,
+      description: "Short, intensive modules for private individuals caring for loved ones.",
+    },
+  ]
+
+  const levelGuides = [
+    {
+      title: "Level 1: Beginner Courses (The Foundation)",
+      description:
+        "Target: Aspiring caregivers with no prior experience and family members.",
+      courses: [
+        "Principles of Compassionate Care",
+        "The Art of Personal Hygiene",
+        "Safety & Infection Control",
+        "Vitals & Observation",
+        "Family Caregiver Essentials",
+      ],
+    },
+    {
+      title: "Level 2: Intermediate Courses (The Skilled Hand)",
+      description:
+        "Target: Caregivers with 1+ years of experience or those who have completed Level 1.",
+      courses: [
+        "Dementia & Alzheimer’s Mastery",
+        "Mobility & Safe Transfers",
+        "Nutritional Support & Feeding",
+        "Geriatric Psychology",
+        "Diabetes & Hypertension Management",
+      ],
+    },
+    {
+      title: "Level 3: Pro Courses (The Elite Professional)",
+      description:
+        "Target: Seasoned caregivers, nurses looking to specialize, or International Standard aspirants.",
+      courses: [
+        "Advanced Stroke Rehabilitation Support",
+        "Palliative & End-of-Life Care",
+        "Medication Safety & Management",
+        "Care Team Leadership",
+        "The Global Professional Certification",
+      ],
+    },
+  ]
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -121,6 +183,74 @@ export default function CoursesPage() {
         <p className="text-xl text-muted-foreground">
           Discover {courses.length} courses to advance your career and achieve your goals
         </p>
+      </div>
+
+      {/* Navigation Guide */}
+      <div className="mb-10 grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-2xl font-semibold">Course Categories</h2>
+            <p className="text-sm text-muted-foreground">
+              To make the website easy to navigate, we group the curriculum into four main pillars.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              {pillars.map((pillar) => {
+                const Icon = pillar.icon
+                return (
+                  <div key={pillar.title} className="rounded-lg border p-4 space-y-2">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <Icon className="h-4 w-4 text-primary" />
+                      {pillar.title}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{pillar.description}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <h3 className="text-xl font-semibold">Where to Start</h3>
+            <p className="text-sm text-muted-foreground">
+              If you are new to caregiving, begin with the Beginner Courses. Experienced caregivers should start at
+              Intermediate, while professionals aiming for global standards should choose Pro Courses.
+            </p>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span>Beginner</span>
+                <span className="text-muted-foreground">Foundation skills</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Intermediate</span>
+                <span className="text-muted-foreground">Skilled hand</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Pro</span>
+                <span className="text-muted-foreground">Elite professional</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mb-10 space-y-4">
+        <h2 className="text-2xl font-semibold">Levels and What You Will Learn</h2>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {levelGuides.map((level) => (
+            <Card key={level.title}>
+              <CardContent className="p-6 space-y-3">
+                <div className="text-lg font-semibold">{level.title}</div>
+                <p className="text-sm text-muted-foreground">{level.description}</p>
+                <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                  {level.courses.map((course) => (
+                    <li key={course}>{course}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Filters */}
