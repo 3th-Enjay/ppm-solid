@@ -20,7 +20,7 @@ import { getSafeRedirectForRole } from "@/lib/role-routing"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { setAuth } = useAuthStore()
+  const { setAuth, lastLogin, clearLastLogin } = useAuthStore()
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -88,6 +88,29 @@ export default function LoginPage() {
           <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>
         <CardContent>
+          {lastLogin && !formData.email && (
+            <div className="mb-4 rounded-lg border p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">Continue as {lastLogin.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{lastLogin.email}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setFormData((prev) => ({ ...prev, email: lastLogin.email }))}
+                  >
+                    Use
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" className="bg-transparent" onClick={clearLastLogin}>
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">

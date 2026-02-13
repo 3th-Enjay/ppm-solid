@@ -20,9 +20,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // If authenticated user tries to access auth pages, redirect to default dashboard
-  if (authToken && (pathname === "/login" || pathname === "/login-admin" || pathname === "/register")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+  // Allow authenticated users to access login page (they may want to switch accounts)
+  // Only redirect from register page to prevent duplicate accounts
+  if (authToken && pathname === "/register") {
+    return NextResponse.redirect(new URL("/", request.url))
   }
 
   return NextResponse.next()

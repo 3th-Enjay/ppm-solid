@@ -32,6 +32,8 @@ import {
   UserPlus,
   History,
   LockKeyhole,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import type { Payment, User, Course, Enrollment, AdminLog } from "@/lib/types"
 import { formatDate } from "@/lib/utils/format"
@@ -52,6 +54,7 @@ export default function AdminDashboardPage() {
     role: "admin",
     password: "",
   })
+  const [showCreatePassword, setShowCreatePassword] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
   const [createError, setCreateError] = useState("")
   const [createSuccess, setCreateSuccess] = useState("")
@@ -287,13 +290,24 @@ export default function AdminDashboardPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="create-password">Temporary Password</Label>
-                  <Input
-                    id="create-password"
-                    type="password"
-                    value={createForm.password}
-                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="create-password"
+                      type={showCreatePassword ? "text" : "password"}
+                      value={createForm.password}
+                      onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showCreatePassword ? "Hide password" : "Show password"}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                      onClick={() => setShowCreatePassword((prev) => !prev)}
+                    >
+                      {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={createLoading}>

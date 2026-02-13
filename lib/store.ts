@@ -7,9 +7,11 @@ interface AuthState {
   user: User | null
   token: string | null
   hydrated: boolean
+  lastLogin: { email: string; name: string; role: User["role"] } | null
   setAuth: (user: User, token: string) => void
   clearAuth: () => void
   setHydrated: (value: boolean) => void
+  clearLastLogin: () => void
   isAuthenticated: () => boolean
 }
 
@@ -19,9 +21,23 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       hydrated: false,
-      setAuth: (user, token) => set({ user, token, hydrated: true }),
-      clearAuth: () => set({ user: null, token: null, hydrated: true }),
+      lastLogin: null,
+      setAuth: (user, token) =>
+        set({
+          user,
+          token,
+          hydrated: true,
+          lastLogin: { email: user.email, name: user.name, role: user.role },
+        }),
+      clearAuth: () =>
+        set((state) => ({
+          user: null,
+          token: null,
+          hydrated: true,
+          lastLogin: state.lastLogin,
+        })),
       setHydrated: (value) => set({ hydrated: value }),
+      clearLastLogin: () => set({ lastLogin: null }),
       isAuthenticated: () => !!get().token,
     }),
     {

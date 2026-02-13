@@ -25,7 +25,7 @@ export function Logo({ className, variant = "full" }: LogoProps) {
   return (
     <Link href="/" className={`flex items-center gap-3 font-bold text-xl ${className}`}>
       <Image
-        src="/Prompt Care Academy-logo.png"
+        src="/promptcare-logo.png"
         alt="Prompt Care Academy"
         width={120}
         height={40}

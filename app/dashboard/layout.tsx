@@ -2,34 +2,39 @@
 
 import type React from "react"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/lib/store"
 import { BookOpen, Home, GraduationCap, User, CreditCard, Award } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getRoleHomePath } from "@/lib/role-routing"
+import { clientLogout, makeLogoutGuard } from "@/lib/client-logout"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { user, clearAuth, hydrated } = useAuthStore()
+  const logoutGuard = useMemo(() => makeLogoutGuard(), [])
 
   useEffect(() => {
+    if (logoutGuard.isLoggingOut()) return
     if (!hydrated) return
     if (!user) {
       router.push("/login?redirect=/dashboard")
     } else if (user.role !== "student") {
       router.replace(getRoleHomePath(user.role))
     }
-  }, [user, hydrated, router])
+  }, [user, hydrated, router, logoutGuard])
 
   if (!hydrated || !user || user.role !== "student") {
     return null
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    logoutGuard.start()
+    await clientLogout()
+    router.replace("/")
     clearAuth()
-    router.push("/")
   }
 
   const navigation = [

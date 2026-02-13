@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useState } from "react"
+import { clientLogout } from "@/lib/client-logout"
 
 export function PublicHeader() {
   const { user, isAuthenticated, clearAuth } = useAuthStore()
@@ -18,9 +19,10 @@ export function PublicHeader() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     clearAuth()
-    router.push("/")
+    await clientLogout()
+    router.replace("/")
   }
 
   const navLinks = [
@@ -98,8 +100,14 @@ export function PublicHeader() {
             </DropdownMenu>
           ) : (
             <div className="hidden md:flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">Login</Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  router.push("/login")
+                }}
+              >
+                Login
               </Button>
               <Button size="sm" asChild>
                 <Link href="/register">Sign Up</Link>
@@ -147,10 +155,15 @@ export function PublicHeader() {
                 {/* Mobile Auth Section */}
                 {!isAuthenticated() && (
                   <div className="border-t p-4 space-y-3">
-                    <Button variant="outline" asChild className="w-full bg-transparent">
-                      <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                        Login
-                      </Link>
+                    <Button
+                      variant="outline"
+                      className="w-full bg-transparent"
+                      onClick={() => {
+                        setMobileMenuOpen(false)
+                        router.push("/login")
+                      }}
+                    >
+                      Login
                     </Button>
                     <Button asChild className="w-full">
                       <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
