@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import Image from "next/image"
 import { ArrowRight, BookOpen, Users, Award, Star, Clock, TrendingUp } from "lucide-react"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
@@ -107,10 +108,17 @@ export default function HomePage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative hidden lg:block"
+              className="relative"
             >
               <div className="relative aspect-square rounded-2xl overflow-hidden">
-                <img src="/students-learning-online-with-laptops-and-books.jpg" alt="Students learning" className="object-cover w-full h-full" />
+                <Image 
+                  src="/promptcare-hero.jpeg" 
+                  alt="Prompt Care Academy hero" 
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority
+                />
               </div>
               <div className="absolute -bottom-6 -left-6 bg-card p-4 rounded-xl shadow-lg border">
                 <div className="flex items-center gap-3">

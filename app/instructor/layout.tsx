@@ -9,6 +9,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getRoleHomePath } from "@/lib/role-routing"
 import { clientLogout, makeLogoutGuard } from "@/lib/client-logout"
+import Image from "next/image"
 
 export default function InstructorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -51,8 +52,13 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center border-b px-6">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <span className="ml-2 text-lg font-bold">Prompt Care Academy</span>
+            <Image
+              src="/promptcare-icon.png"
+              alt="Prompt Care Academy"
+              width={72}
+              height={72}
+              className="h-14 w-14"
+            />
           </div>
 
           {/* Navigation */}

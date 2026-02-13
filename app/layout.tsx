@@ -15,8 +15,16 @@ export const metadata: Metadata = {
     "Transform your career with Prompt Care Academy. Learn web development, UI/UX design, digital marketing, data analytics and more from industry experts. Join 10,000+ students today.",
   generator: "v0.app",
   icons: {
-    icon: "/icon.png",
-    apple: "/apple-icon.png",
+    icon: [
+      { url: "/promptcare-icon.png", sizes: "32x32", type: "image/png" },
+      { url: "/promptcare-icon.png", sizes: "48x48", type: "image/png" },
+      { url: "/promptcare-icon.png", sizes: "64x64", type: "image/png" },
+      { url: "/promptcare-icon.png", sizes: "96x96", type: "image/png" },
+      { url: "/promptcare-icon.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/promptcare-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   openGraph: {
     title: "Prompt Care Academy - Premium Online Learning",
