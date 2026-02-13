@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight, BookOpen, Users, Award, Star, Clock, TrendingUp } from "lucide-react"
+import { Testimonials } from "@/components/testimonials"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import type { Course } from "@/lib/types"
@@ -67,7 +68,7 @@ export default function HomePage() {
               transition={{ duration: 0.5 }}
               className="space-y-6"
             >
-              <Badge className="mb-2">Welcome to Prompt Care Academy</Badge>
+              <Badge className="mb-2">Welcome to Promptcare Academy</Badge>
               <h1 className="text-4xl md:text-6xl font-bold text-balance">
                 Master New Skills with Expert-Led Online Courses
               </h1>
@@ -83,7 +84,7 @@ export default function HomePage() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
-                  <Link href="/register">Start Free Trial</Link>
+                  <Link href="/register">Register Now!</Link>
                 </Button>
               </div>
 
@@ -110,10 +111,10 @@ export default function HomePage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="relative"
             >
-              <div className="relative aspect-square rounded-2xl overflow-hidden">
-                <Image 
-                  src="/promptcare-hero.jpeg" 
-                  alt="Prompt Care Academy hero" 
+              <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[520px] rounded-2xl overflow-hidden">
+                  <Image 
+                    src="/promptcare-hero.jpeg" 
+                    alt="Promptcare Academy hero"
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
@@ -140,7 +141,7 @@ export default function HomePage() {
       <section className="py-20 bg-muted/50">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Prompt Care Academy?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Promptcare Academy?</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               We provide the best learning experience with cutting-edge features
             </p>
@@ -233,6 +234,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <Testimonials />
+
       {/* CTA Section */}
       <section className="py-20 bg-primary text-primary-foreground">
         <div className="container">
@@ -243,7 +247,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" variant="secondary" asChild>
-                <Link href="/register">Get Started Free</Link>
+                <Link href="/register">Register Now!</Link>
               </Button>
               <Button
                 size="lg"
@@ -260,5 +264,3 @@ export default function HomePage() {
     </div>
   )
 }
-
-

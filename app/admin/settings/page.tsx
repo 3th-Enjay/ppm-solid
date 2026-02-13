@@ -24,7 +24,7 @@ type AdminSettings = {
 }
 
 const DEFAULT_SETTINGS: AdminSettings = {
-  siteName: "Prompt Care Academy",
+    siteName: "Promptcare Academy",
   siteDescription: "Professional online learning platform",
   contactEmail: "admin@promptcareacademy.com",
   supportEmail: "support@promptcareacademy.com",
@@ -118,7 +118,7 @@ export default function AdminSettingsPage() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-balance">Settings</h1>
-        <p className="text-muted-foreground mt-2">Configure your Prompt Care Academy platform settings</p>
+          <p className="text-muted-foreground mt-2">Configure your Promptcare Academy platform settings</p>
       </div>
 
       <div className="max-w-3xl space-y-6">

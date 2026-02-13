@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Mail, MapPin, Phone } from "lucide-react"
+import { Mail, MapPin, Phone, MessageCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -54,20 +54,20 @@ export default function ContactPage() {
     {
       icon: Mail,
       title: "Email Us",
-      details: "support@promptcareacademy.com",
-      link: "mailto:support@promptcareacademy.com",
+      details: "promptcareacademy.com@gmail.com",
+      link: "mailto:promptcareacademy.com@gmail.com",
     },
     {
-      icon: Phone,
-      title: "Call Us",
-      details: "+1 (555) 123-4567",
-      link: "tel:+15551234567",
+      icon: MessageCircle,
+      title: "Call or WhatsApp",
+      details: "09030910091",
+      link: "https://wa.me/2349030910091",
     },
     {
       icon: MapPin,
       title: "Visit Us",
-      details: "123 Learning St, Education City, ED 12345",
-      link: "#",
+      details: "Suite B16, Area 11 Shopping Complex, Ahmad Bello Way, Garki Abuja",
+      link: "https://maps.google.com/?q=Suite+B16,+Area+11+Shopping+Complex,+Ahmad+Bello+Way,+Garki+Abuja",
     },
   ]
 

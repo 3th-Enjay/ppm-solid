@@ -51,3 +51,41 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update user" }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params
+    const token = getTokenFromRequest(request)
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const session = authService.decodeToken(token)
+    if (!session || session.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const db = getDB()
+    const user = await db.findUserById(id)
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    if (user.emailVerified) {
+      return NextResponse.json({ error: "Only unverified users can be deleted" }, { status: 400 })
+    }
+
+    const deleted = await db.deleteUser(id)
+    if (!deleted) {
+      return NextResponse.json({ error: "Failed to delete user" }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Delete user error:", error)
+    return NextResponse.json({ error: "Failed to delete user" }, { status: 500 })
+  }
+}

@@ -85,7 +85,19 @@ export default function RegisterPage() {
         description: "We sent a verification code to your email.",
       })
 
-      router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`)
+      const nextUrl = `/verify-otp?email=${encodeURIComponent(formData.email)}`
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("pending-otp-email", formData.email)
+      }
+      router.replace(nextUrl)
+      router.refresh()
+      if (typeof window !== "undefined") {
+        window.setTimeout(() => {
+          if (window.location.pathname !== "/verify-otp") {
+            window.location.href = nextUrl
+          }
+        }, 100)
+      }
     } catch (error: unknown) {
       if (error instanceof Error && error.message === "User already exists") {
         setError("An account with this email already exists")
@@ -101,7 +113,7 @@ export default function RegisterPage() {
       <Card>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>Enter your information to get started with Prompt Care Academy</CardDescription>
+            <CardDescription>Enter your information to get started with Promptcare Academy</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -269,4 +281,3 @@ export default function RegisterPage() {
     </motion.div>
   )
 }
-

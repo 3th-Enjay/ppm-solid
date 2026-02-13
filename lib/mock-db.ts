@@ -410,6 +410,13 @@ class MockDatabase {
     return this.users[userIndex]
   }
 
+  async deleteUser(id: string): Promise<boolean> {
+    const userIndex = this.users.findIndex((u) => u.id === id)
+    if (userIndex === -1) return false
+    this.users.splice(userIndex, 1)
+    return true
+  }
+
   // Course methods
   async getAllCourses(): Promise<Course[]> {
     return this.courses.filter((c) => c.published)

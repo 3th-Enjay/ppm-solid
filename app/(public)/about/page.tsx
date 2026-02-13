@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Users, Award, BookOpen, TrendingUp, Target, Heart, Zap } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { Testimonials } from "@/components/testimonials"
 
 export default function AboutPage() {
   const stats = [
@@ -61,8 +62,8 @@ export default function AboutPage() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto text-center space-y-6"
           >
-            <Badge className="mb-2">About Prompt Care Academy</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-balance">Empowering Learners to Achieve Their Dreams</h1>
+            <Badge className="mb-2">About Promptcare Academy</Badge>
+            <h1 className="text-4xl md:text-5xl font-bold text-balance">TRAINING the hands and hearts that care</h1>
             <p className="text-xl text-muted-foreground text-pretty">
               We're on a mission to democratize education and make high-quality learning accessible to everyone,
               everywhere.
@@ -107,7 +108,7 @@ export default function AboutPage() {
               <h2 className="text-3xl md:text-4xl font-bold mb-6">Our Story</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  Prompt Care Academy was founded in 2020 with a simple yet powerful vision: to make quality education accessible
+                  Promptcare Academy was founded in 2020 with a simple yet powerful vision: to make quality education accessible
                   to everyone, regardless of their location or background.
                 </p>
                 <p>
@@ -178,7 +179,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Meet Our Team</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">The passionate people behind Prompt Care Academy</p>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">The passionate people behind Promptcare Academy</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -209,6 +210,9 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <Testimonials />
+
       {/* CTA Section */}
       <section className="py-20">
         <div className="container">
@@ -216,11 +220,11 @@ export default function AboutPage() {
             <CardContent className="p-12 text-center relative z-10">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Start Your Learning Journey?</h2>
               <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-                Join thousands of students already learning with Prompt Care Academy
+                Join thousands of students already learning with Promptcare Academy
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" variant="secondary" asChild>
-                  <Link href="/register">Get Started Free</Link>
+                  <Link href="/register">Register Now!</Link>
                 </Button>
                 <Button
                   size="lg"

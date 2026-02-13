@@ -113,6 +113,13 @@ export class MongoDBDatabase {
     return docs.map(toObject<User>)
   }
 
+  async deleteUser(id: string): Promise<boolean> {
+    const collection = await getCollection<User>('users')
+    const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id }
+    const result = await collection.deleteOne(query)
+    return result.deletedCount > 0
+  }
+
   // Admin log methods
   async createAdminLog(log: Omit<AdminLog, 'id' | 'createdAt'>): Promise<AdminLog> {
     const collection = await getCollection<AdminLog>('admin_logs')

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,7 @@ import { getRoleHomePath } from "@/lib/role-routing"
 export default function VerifyOtpClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const email = searchParams.get("email") || ""
+  const [email, setEmail] = useState(searchParams.get("email") || "")
   const { setAuth } = useAuthStore()
   const { toast } = useToast()
 
@@ -23,6 +23,13 @@ export default function VerifyOtpClient() {
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (email) return
+    if (typeof window === "undefined") return
+    const stored = sessionStorage.getItem("pending-otp-email") || ""
+    if (stored) setEmail(stored)
+  }, [email])
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,12 +46,16 @@ export default function VerifyOtpClient() {
         throw new Error(data.error || "Invalid OTP")
       }
       setAuth(data.user, data.token)
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("pending-otp-email")
+      }
       toast({
         title: "Email verified",
         description: "Your account is now active.",
       })
       const role = data.user?.role || "student"
-      router.push(getRoleHomePath(role))
+      router.replace(getRoleHomePath(role))
+      router.refresh()
     } catch (err: any) {
       setError(err.message || "Verification failed")
     } finally {

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Mail, Search, ShieldCheck, UserCog, UserRound, Users } from "lucide-react"
+import { ArrowLeft, Mail, Search, ShieldCheck, Trash2, UserCog, UserRound, Users } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -40,6 +40,7 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all")
+  const [showUnverifiedOnly, setShowUnverifiedOnly] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -87,6 +88,10 @@ export default function AdminUsersPage() {
       result = result.filter((u) => (u.status || "active") === statusFilter)
     }
 
+    if (showUnverifiedOnly) {
+      result = result.filter((u) => !u.emailVerified)
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()
       result = result.filter(
@@ -98,7 +103,7 @@ export default function AdminUsersPage() {
     }
 
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  }, [users, roleFilter, statusFilter, searchQuery])
+  }, [users, roleFilter, statusFilter, searchQuery, showUnverifiedOnly])
 
   const groupedUsers = useMemo(() => {
     const roles: UserRole[] =
@@ -145,6 +150,25 @@ export default function AdminUsersPage() {
     }
   }
 
+  const deleteUnverifiedUser = async (target: User) => {
+    if (target.emailVerified) return
+    if (!confirm(`Delete unverified user ${target.email}? This cannot be undone.`)) return
+    try {
+      const res = await fetch(`/api/users/${target.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token || ""}`,
+        },
+      })
+      if (!res.ok) {
+        throw new Error("Failed to delete user")
+      }
+      setUsers((prev) => prev.filter((u) => u.id !== target.id))
+    } catch (error) {
+      console.error("Failed to delete user:", error)
+    }
+  }
+
   return (
     <div className="p-8">
       <div className="mb-6">
@@ -177,7 +201,7 @@ export default function AdminUsersPage() {
           <CardDescription>Find users by name/email and filter by role or status.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -187,6 +211,13 @@ export default function AdminUsersPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            <Button
+              type="button"
+              variant={showUnverifiedOnly ? "default" : "outline"}
+              onClick={() => setShowUnverifiedOnly((prev) => !prev)}
+            >
+              {showUnverifiedOnly ? "Showing Unverified" : "Show Unverified"}
+            </Button>
             <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as "all" | UserRole)}>
               <SelectTrigger>
                 <SelectValue placeholder="Role" />
@@ -248,6 +279,7 @@ export default function AdminUsersPage() {
                                 <Badge variant={status === "active" ? "default" : "destructive"}>{status}</Badge>
                                 <Badge variant="secondary">Enrollments: {enrollmentByUserId[u.id] || 0}</Badge>
                                 <Badge variant="secondary">Joined: {formatDate(u.createdAt)}</Badge>
+                                {!u.emailVerified && <Badge variant="destructive">Unverified</Badge>}
                               </div>
                             </div>
                             <div className="flex gap-2">
@@ -257,6 +289,16 @@ export default function AdminUsersPage() {
                                   Email
                                 </a>
                               </Button>
+                              {!u.emailVerified && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => deleteUnverifiedUser(u)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
                                 variant={status === "active" ? "destructive" : "default"}
