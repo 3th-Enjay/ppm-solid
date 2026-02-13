@@ -7,6 +7,10 @@ import { Users, Award, BookOpen, TrendingUp, Target, Heart, Zap } from "lucide-r
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Testimonials } from "@/components/testimonials"
+import Image from "next/image"
+import aboutImage from "@/public/promptcare-about.jpeg"
+import storyImage from "@/public/promptcare-story.jpeg"
+import ceoImage from "@/public/ceo-promptcare.jpeg"
 
 export default function AboutPage() {
   const stats = [
@@ -36,19 +40,9 @@ export default function AboutPage() {
 
   const team = [
     {
-      name: "Sarah Johnson",
+      name: "Dr Ikechukwu Okoye",
       role: "Founder & CEO",
-      image: "/professional-woman-ceo.png",
-    },
-    {
-      name: "Michael Chen",
-      role: "Head of Product",
-      image: "/professional-product-manager.png",
-    },
-    {
-      name: "Emily Rodriguez",
-      role: "Lead Instructor",
-      image: "/professional-woman-instructor.jpg",
+      image: ceoImage,
     },
   ]
 
@@ -63,7 +57,7 @@ export default function AboutPage() {
             className="max-w-3xl mx-auto text-center space-y-6"
           >
             <Badge className="mb-2">About Promptcare Academy</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-balance">TRAINING the hands and hearts that care</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-balance">Training the hands and hearts that care</h1>
             <p className="text-xl text-muted-foreground text-pretty">
               We're on a mission to democratize education and make high-quality learning accessible to everyone,
               everywhere.
@@ -91,6 +85,44 @@ export default function AboutPage() {
                 </Card>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* About Image Section */}
+      <section className="py-16">
+        <div className="container">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+              className="space-y-4"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold">Prompt Care Academy</h2>
+              <p className="text-muted-foreground">
+                We equip learners with practical, industry-ready skills and a clear path to impact. Every course is
+                built to be accessible, actionable, and guided by experts who care about real outcomes.
+              </p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[520px] rounded-2xl overflow-hidden">
+                <Image
+                  src={aboutImage}
+                  alt="Prompt Care Academy"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -132,8 +164,14 @@ export default function AboutPage() {
               viewport={{ once: true }}
               className="relative"
             >
-              <div className="aspect-square rounded-2xl overflow-hidden">
-                <img src="/modern-office-team.png" alt="Our team" className="object-cover w-full h-full" />
+              <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[520px] rounded-2xl overflow-hidden">
+                <Image
+                  src={storyImage}
+                  alt="Our story"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
               </div>
             </motion.div>
           </div>
@@ -192,11 +230,13 @@ export default function AboutPage() {
                 viewport={{ once: true }}
               >
                 <Card className="overflow-hidden">
-                  <div className="aspect-square relative overflow-hidden bg-muted">
-                    <img
-                      src={member.image || "/placeholder.svg"}
+                  <div className="relative w-full h-[320px] rounded-2xl overflow-hidden bg-muted">
+                    <Image
+                      src={member.image}
                       alt={member.name}
-                      className="object-cover w-full h-full"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   </div>
                   <CardContent className="p-6 text-center">
@@ -242,5 +282,4 @@ export default function AboutPage() {
     </div>
   )
 }
-
 

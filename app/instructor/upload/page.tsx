@@ -3,9 +3,8 @@
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ArrowLeft, Upload } from "lucide-react"
+import { ArrowLeft, Upload, Link as LinkIcon } from "lucide-react"
 
 export default function InstructorUploadPage() {
   return (
@@ -20,34 +19,45 @@ export default function InstructorUploadPage() {
       </div>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Upload Course Assets</h1>
+        <h1 className="text-3xl font-bold">Add Course Videos</h1>
         <p className="text-muted-foreground mt-2">
-          Upload videos, PDFs, or supplemental files for your course.
+          This platform uses YouTube links for video lessons. Upload to YouTube, then paste the link in your course content.
         </p>
       </div>
 
       <Alert className="mb-6">
-        <AlertTitle>Note</AlertTitle>
+        <AlertTitle>How it works</AlertTitle>
         <AlertDescription>
-          This is a placeholder upload screen. Connect it to your storage provider when ready.
+          YouTube hosts the videos. Instructors add the YouTube link to each video lesson so students can stream it inside the course.
         </AlertDescription>
       </Alert>
 
       <Card>
         <CardHeader>
-          <CardTitle>Upload Files</CardTitle>
-          <CardDescription>Select files to attach to your course</CardDescription>
+          <CardTitle>Video Upload Steps</CardTitle>
+          <CardDescription>Follow these steps before adding lesson videos</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Input type="file" multiple />
-            <p className="text-xs text-muted-foreground">
-              Supported: MP4, MOV, PDF, ZIP. Max 2GB per file.
+          <ol className="list-decimal pl-5 text-sm space-y-2">
+            <li>Upload your video to YouTube.</li>
+            <li>Set visibility to Public or Unlisted (not Private).</li>
+            <li>Copy the share link from YouTube.</li>
+            <li>Open your course content editor and paste the link in the Video URL field.</li>
+          </ol>
+          <div className="rounded-lg border p-4 text-sm">
+            <div className="flex items-center gap-2 font-medium">
+              <LinkIcon className="h-4 w-4" />
+              Example links
+            </div>
+            <p className="text-muted-foreground mt-2">
+              https://youtu.be/VIDEOID or https://www.youtube.com/watch?v=VIDEOID
             </p>
           </div>
-          <Button>
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Files
+          <Button asChild>
+            <Link href="/instructor/courses">
+              <Upload className="h-4 w-4 mr-2" />
+              Go to My Courses
+            </Link>
           </Button>
         </CardContent>
       </Card>

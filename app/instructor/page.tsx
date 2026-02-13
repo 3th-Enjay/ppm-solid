@@ -10,7 +10,7 @@ import type { Course, Enrollment } from "@/lib/types"
 import Link from "next/link"
 
 export default function InstructorDashboard() {
-  const { user } = useAuthStore()
+  const { user, token } = useAuthStore()
   const [courses, setCourses] = useState<Course[]>([])
   const [stats, setStats] = useState({
     totalCourses: 0,
@@ -30,7 +30,11 @@ export default function InstructorDashboard() {
 
   const loadInstructorData = async () => {
     try {
-      const coursesRes = await fetch(`/api/courses?instructorId=${user?.id}&includeDrafts=true`)
+      const coursesRes = await fetch(`/api/courses?instructorId=${user?.id}&includeDrafts=true`, {
+        headers: {
+          Authorization: `Bearer ${token || ""}`,
+        },
+      })
       const coursesData = await coursesRes.json()
       const instructorCourses = coursesData.courses || []
       setCourses(instructorCourses)
@@ -39,8 +43,20 @@ export default function InstructorDashboard() {
       const courseIdQuery = courseIds.join(",")
 
       const [enrollmentsRes, paymentsRes] = await Promise.all([
-        courseIds.length > 0 ? fetch(`/api/enrollments?courseIds=${courseIdQuery}`) : Promise.resolve(null),
-        courseIds.length > 0 ? fetch(`/api/payments?courseIds=${courseIdQuery}`) : Promise.resolve(null),
+        courseIds.length > 0
+          ? fetch(`/api/enrollments?courseIds=${courseIdQuery}`, {
+              headers: {
+                Authorization: `Bearer ${token || ""}`,
+              },
+            })
+          : Promise.resolve(null),
+        courseIds.length > 0
+          ? fetch(`/api/payments?courseIds=${courseIdQuery}`, {
+              headers: {
+                Authorization: `Bearer ${token || ""}`,
+              },
+            })
+          : Promise.resolve(null),
       ])
 
       const enrollmentsData = enrollmentsRes ? await enrollmentsRes.json() : { enrollments: [] }
@@ -264,10 +280,16 @@ export default function InstructorDashboard() {
                         View
                       </Button>
                     </Link>
+                    <Link href={`/instructor/courses/${course.id}/content`} className="flex-1">
+                      <Button variant="outline" className="w-full" size="sm">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Content
+                      </Button>
+                    </Link>
                     <Link href={`/instructor/courses/${course.id}/edit`} className="flex-1">
                       <Button variant="outline" className="w-full" size="sm">
                         <Edit className="h-4 w-4 mr-2" />
-                        Edit
+                        Edit Details
                       </Button>
                     </Link>
                   </div>

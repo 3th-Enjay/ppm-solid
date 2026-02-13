@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Plus, Trash2, Save, FileVideo, Link as LinkIcon } from "lucide-react"
 import type { Course, CourseModule, Lesson, LessonType } from "@/lib/types"
+import { useAuthStore } from "@/lib/store"
 
 type ResourceItem = { title: string; url: string }
 
@@ -20,6 +21,7 @@ export default function InstructorCourseContentPage() {
   const params = useParams()
   const router = useRouter()
   const courseId = params.courseId as string
+  const { token } = useAuthStore()
 
   const [course, setCourse] = useState<Course | null>(null)
   const [modules, setModules] = useState<CourseModule[]>([])
@@ -32,7 +34,11 @@ export default function InstructorCourseContentPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`/api/courses/${courseId}`)
+        const res = await fetch(`/api/courses/${courseId}`, {
+          headers: {
+            Authorization: `Bearer ${token || ""}`,
+          },
+        })
         if (!res.ok) {
           router.push("/instructor/courses")
           return
@@ -49,7 +55,7 @@ export default function InstructorCourseContentPage() {
       }
     }
     load()
-  }, [courseId, router])
+  }, [courseId, router, token])
 
   const totalLessons = useMemo(
     () => modules.reduce((sum, module) => sum + module.lessons.length, 0),
@@ -204,7 +210,10 @@ export default function InstructorCourseContentPage() {
 
       const res = await fetch(`/api/courses/${course.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
         body: JSON.stringify({
           price: {
             NGN: Number(priceNGN) || 0,
@@ -407,6 +416,16 @@ export default function InstructorCourseContentPage() {
                             <FileVideo className="h-4 w-4" />
                             Video URL
                           </label>
+                          <p className="text-xs text-muted-foreground">
+                            Use a YouTube link (public or unlisted). Examples: https://youtu.be/VIDEOID or
+                            https://www.youtube.com/watch?v=VIDEOID.
+                          </p>
+                          <ul className="list-disc pl-5 text-xs text-muted-foreground space-y-1">
+                            <li>Upload your video to YouTube.</li>
+                            <li>Set visibility to Public or Unlisted (not Private).</li>
+                            <li>Copy the share link and paste it here.</li>
+                            <li>Click Save Content to publish updates.</li>
+                          </ul>
                           <div className="flex gap-2 items-center">
                             <Input
                               value={lesson.content.videoUrl || ""}

@@ -5,10 +5,20 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Course } from "@/lib/types"
 import { useAuthStore } from "@/lib/store"
+import { Input } from "@/components/ui/input"
+import { CardDescription } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import type { Category } from "@/lib/types"
+import Link from "next/link"
 
 export default function AdminCoursesPage() {
   const { token } = useAuthStore()
   const [courses, setCourses] = useState<Course[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [newCategory, setNewCategory] = useState("")
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+  const [editingCategoryName, setEditingCategoryName] = useState("")
+  const [categoryMessage, setCategoryMessage] = useState("")
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -18,13 +28,66 @@ export default function AdminCoursesPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/courses?includeDrafts=true")
-      const data = await res.json()
+      const [coursesRes, categoriesRes] = await Promise.all([
+        fetch("/api/courses?includeDrafts=true"),
+        fetch("/api/categories"),
+      ])
+      const data = await coursesRes.json()
+      const categoriesData = await categoriesRes.json()
       setCourses(data.courses || [])
+      setCategories(categoriesData.categories || [])
     } catch (error) {
       console.error(error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAddCategory = async () => {
+    const name = newCategory.trim()
+    if (!name) return
+    setCategoryMessage("")
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: JSON.stringify({ name }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to create category")
+      setCategories((prev) => [...prev, data.category])
+      setNewCategory("")
+      setCategoryMessage("Category created.")
+    } catch (err: any) {
+      setCategoryMessage(err?.message || "Failed to create category.")
+    }
+  }
+
+  const handleEditCategory = async () => {
+    if (!editingCategoryId) return
+    const name = editingCategoryName.trim()
+    if (!name) return
+    setCategoryMessage("")
+    try {
+      const res = await fetch(`/api/categories/${editingCategoryId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: JSON.stringify({ name }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to update category")
+      setCategories((prev) => prev.map((c) => (c.id === editingCategoryId ? data.category : c)))
+      setEditingCategoryId(null)
+      setEditingCategoryName("")
+      setCategoryMessage("Category updated.")
+    } catch (err: any) {
+      setCategoryMessage(err?.message || "Failed to update category.")
     }
   }
 
@@ -51,6 +114,76 @@ export default function AdminCoursesPage() {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-4">Course Review</h1>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Manage Categories</CardTitle>
+          <CardDescription>Create or rename course categories.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {categoryMessage && (
+            <Alert>
+              <AlertTitle>Info</AlertTitle>
+              <AlertDescription>{categoryMessage}</AlertDescription>
+            </Alert>
+          )}
+          <div className="flex gap-2">
+            <Input
+              placeholder="New category name"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+            />
+            <Button variant="outline" onClick={handleAddCategory}>
+              Add
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {categories.map((cat) => (
+              <div key={cat.id} className="flex items-center gap-2">
+                {editingCategoryId === cat.id ? (
+                  <>
+                    <Input
+                      value={editingCategoryName}
+                      onChange={(e) => setEditingCategoryName(e.target.value)}
+                    />
+                    <Button size="sm" onClick={handleEditCategory}>
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingCategoryId(null)
+                        setEditingCategoryName("")
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm flex-1">{cat.name}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingCategoryId(cat.id)
+                        setEditingCategoryName(cat.name)
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </>
+                )}
+              </div>
+            ))}
+            {categories.length === 0 && (
+              <p className="text-sm text-muted-foreground">No categories yet.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {loading ? (
         <p>Loading...</p>
       ) : pendingLessons.length === 0 ? (
@@ -81,6 +214,9 @@ export default function AdminCoursesPage() {
                   <div className="flex gap-2">
                     <Button onClick={() => handleApprove(item.course.id, item.lesson.id)}>
                       Approve
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link href={`/admin/courses/${item.course.id}/edit`}>Edit Details</Link>
                     </Button>
                     <Button
                       variant="outline"

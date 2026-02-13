@@ -1,5 +1,5 @@
 // Mock database with seeded data
-import type { User, Course, Enrollment, Payment, Certificate, Quiz, Assignment, AdminLog } from "./types"
+import type { User, Course, Enrollment, Payment, Certificate, Quiz, Assignment, AdminLog, Category } from "./types"
 
 // Seeded Users
 export const mockUsers: User[] = [
@@ -57,6 +57,15 @@ export const mockUsers: User[] = [
   },
 ]
 
+export const mockCategories: Category[] = [
+  { id: "cat-1", name: "Development", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+  { id: "cat-2", name: "Design", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+  { id: "cat-3", name: "Business", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+  { id: "cat-4", name: "Marketing", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+  { id: "cat-5", name: "Photography", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+  { id: "cat-6", name: "Music", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+]
+
 // Seeded Courses
 export const mockCourses: Course[] = [
   {
@@ -65,8 +74,8 @@ export const mockCourses: Course[] = [
     slug: "complete-web-development-bootcamp",
     description:
       "Master modern web development with HTML, CSS, JavaScript, React, Node.js, and more. Build real-world projects and launch your career as a full-stack developer.",
-    category: "development",
-    level: "beginner",
+    category: "Development",
+    level: "Beginner Courses",
     instructorId: "user-3",
     price: {
       NGN: 45000,
@@ -159,8 +168,8 @@ export const mockCourses: Course[] = [
     slug: "ui-ux-design-masterclass",
     description:
       "Learn the principles of great design. Master Figma, create stunning interfaces, and build a professional design portfolio.",
-    category: "design",
-    level: "intermediate",
+    category: "Design",
+    level: "Intermediate Courses",
     instructorId: "user-3",
     price: {
       NGN: 38000,
@@ -203,8 +212,8 @@ export const mockCourses: Course[] = [
     slug: "digital-marketing-strategy",
     description:
       "Master SEO, social media marketing, content marketing, and analytics. Grow any business online with proven strategies.",
-    category: "marketing",
-    level: "beginner",
+    category: "Marketing",
+    level: "Beginner Courses",
     instructorId: "user-3",
     price: {
       NGN: 32000,
@@ -228,8 +237,8 @@ export const mockCourses: Course[] = [
     slug: "business-analytics-python",
     description:
       "Learn data analysis, visualization, and business intelligence using Python, Pandas, and industry-standard tools.",
-    category: "business",
-    level: "intermediate",
+    category: "Business",
+    level: "Intermediate Courses",
     instructorId: "user-3",
     price: {
       NGN: 42000,
@@ -352,6 +361,7 @@ export const mockAssignments: Assignment[] = [
 // Mock Database Class
 class MockDatabase {
   users: User[] = [...mockUsers]
+  categories: Category[] = [...mockCategories]
   courses: Course[] = [...mockCourses]
   enrollments: Enrollment[] = [...mockEnrollments]
   payments: Payment[] = [...mockPayments]
@@ -371,6 +381,28 @@ class MockDatabase {
 
   async getAllUsers(): Promise<User[]> {
     return this.users
+  }
+
+  async getCategories(): Promise<Category[]> {
+    return this.categories
+  }
+
+  async createCategory(name: string): Promise<Category> {
+    const newCategory: Category = {
+      id: `cat-${Date.now()}`,
+      name,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    this.categories.push(newCategory)
+    return newCategory
+  }
+
+  async updateCategory(id: string, name: string): Promise<Category | undefined> {
+    const idx = this.categories.findIndex((c) => c.id === id)
+    if (idx === -1) return undefined
+    this.categories[idx] = { ...this.categories[idx], name, updatedAt: new Date() }
+    return this.categories[idx]
   }
 
   async createAdminLog(log: Omit<AdminLog, "id" | "createdAt">): Promise<AdminLog> {

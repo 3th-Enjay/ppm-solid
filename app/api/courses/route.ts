@@ -24,11 +24,9 @@ export async function GET(request: NextRequest) {
       courses = await db.getAllCourses()
     }
 
-    // Filter by published and approved status
-    courses = courses.filter((c: any) => c.published && (c.approved !== false))
-
     if (!includeDrafts) {
-      courses = courses.filter((c: any) => c.published)
+      // Only expose published + approved courses to public queries
+      courses = courses.filter((c: any) => c.published && (c.approved !== false))
     }
 
     if (category && category !== "all") {

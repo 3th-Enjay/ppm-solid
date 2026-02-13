@@ -36,8 +36,8 @@ export const coursePriceSchema = z.object({
 export const courseCreateSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
   description: z.string().min(20, "Description must be at least 20 characters"),
-  category: z.enum(["development", "design", "business", "marketing", "photography", "music"]),
-  level: z.enum(["beginner", "intermediate", "advanced"]),
+  category: z.string().min(2, "Category is required"),
+  level: z.enum(["Beginner Courses", "Intermediate Courses", "Pro Courses"]),
   price: coursePriceSchema,
   thumbnail: z.string().optional(),
   instructorId: z.string().min(1, "Instructor is required"),
@@ -87,6 +87,14 @@ export const adminCreateUserSchema = z.object({
   name: z.string().min(2),
   role: z.enum(["admin", "finance"]),
   password: z.string().min(6),
+})
+
+export const categoryCreateSchema = z.object({
+  name: z.string().min(2, "Category name is required"),
+})
+
+export const categoryUpdateSchema = z.object({
+  name: z.string().min(2, "Category name is required"),
 })
 
 export const passwordChangeSchema = z.object({

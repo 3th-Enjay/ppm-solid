@@ -19,9 +19,16 @@ export interface User {
   updatedAt: Date
 }
 
-export type CourseCategory = "development" | "design" | "business" | "marketing" | "photography" | "music"
+export type CourseCategory = string
 
-export type CourseLevel = "beginner" | "intermediate" | "advanced"
+export type CourseLevel = "Beginner Courses" | "Intermediate Courses" | "Pro Courses"
+
+export interface Category {
+  id: string
+  name: string
+  createdAt: Date
+  updatedAt: Date
+}
 
 export interface Course {
   id: string

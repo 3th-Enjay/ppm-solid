@@ -5,19 +5,23 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, BookOpen } from "lucide-react"
+import { Plus, Pencil, BookOpen, Settings } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
 import type { Course } from "@/lib/types"
 
 export default function InstructorCoursesPage() {
-  const { user } = useAuthStore()
+  const { user, token } = useAuthStore()
   const [courses, setCourses] = useState<Course[]>([])
 
   useEffect(() => {
     if (!user) return
     const load = async () => {
       try {
-        const res = await fetch(`/api/courses?instructorId=${user.id}&includeDrafts=true`)
+        const res = await fetch(`/api/courses?instructorId=${user.id}&includeDrafts=true`, {
+          headers: {
+            Authorization: `Bearer ${token || ""}`,
+          },
+        })
         const data = await res.json()
         setCourses(data.courses || [])
       } catch (error) {
@@ -68,6 +72,12 @@ export default function InstructorCoursesPage() {
                     <Link href={`/instructor/courses/${course.id}/content`}>
                       <Pencil className="h-4 w-4 mr-2" />
                       Edit Content
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild className="flex-1">
+                    <Link href={`/instructor/courses/${course.id}/edit`}>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Edit Details
                     </Link>
                   </Button>
                 </div>

@@ -11,6 +11,7 @@ import type {
   Quiz,
   Assignment,
   AdminLog,
+  Category,
 } from './types'
 import { ObjectId } from 'mongodb'
 
@@ -111,6 +112,34 @@ export class MongoDBDatabase {
     const collection = await getCollection<User>('users')
     const docs = await collection.find({}).toArray()
     return docs.map(toObject<User>)
+  }
+
+  async getCategories(): Promise<Category[]> {
+    const collection = await getCollection<Category>('categories')
+    const docs = await collection.find({}).sort({ name: 1 }).toArray()
+    return docs.map(toObject<Category>)
+  }
+
+  async createCategory(name: string): Promise<Category> {
+    const collection = await getCollection<Category>('categories')
+    const newCategory: Omit<Category, 'id'> = {
+      name,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    const result = await collection.insertOne(toDocument(newCategory as Category))
+    return { ...newCategory, id: result.insertedId.toString() } as Category
+  }
+
+  async updateCategory(id: string, name: string): Promise<Category | undefined> {
+    const collection = await getCollection<Category>('categories')
+    const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id }
+    const result = await collection.findOneAndUpdate(
+      query,
+      { $set: { name, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    )
+    return result ? toObject<Category>(result) : undefined
   }
 
   async deleteUser(id: string): Promise<boolean> {

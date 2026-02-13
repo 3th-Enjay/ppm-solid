@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
 import { Search, Star, Clock, Users, Filter } from "lucide-react"
-import type { Course } from "@/lib/types"
+import type { Course, Category } from "@/lib/types"
 import { formatCurrency, formatDuration } from "@/lib/utils/format"
 import { usePreferencesStore, useCartStore, useAuthStore } from "@/lib/store"
 import { motion } from "framer-motion"
@@ -21,6 +21,7 @@ export default function CoursesPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [levelFilter, setLevelFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("popular")
+  const [categories, setCategories] = useState<Category[]>([])
 
   const { currency } = usePreferencesStore()
   const { addToCart, items } = useCartStore()
@@ -30,11 +31,16 @@ export default function CoursesPage() {
   useEffect(() => {
     const loadCourses = async () => {
       try {
-        const res = await fetch("/api/courses")
-        const data = await res.json()
+        const [coursesRes, categoriesRes] = await Promise.all([
+          fetch("/api/courses"),
+          fetch("/api/categories"),
+        ])
+        const data = await coursesRes.json()
+        const categoriesData = await categoriesRes.json()
         const allCourses = data.courses || []
         setCourses(allCourses)
         setFilteredCourses(allCourses)
+        setCategories(categoriesData.categories || [])
       } catch (error) {
         console.error("Failed to load courses:", error)
         setCourses([])
@@ -136,29 +142,28 @@ export default function CoursesPage() {
             <SelectTrigger>
               <SelectValue placeholder="Category" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="development">Development</SelectItem>
-              <SelectItem value="design">Design</SelectItem>
-              <SelectItem value="business">Business</SelectItem>
-              <SelectItem value="marketing">Marketing</SelectItem>
-              <SelectItem value="photography">Photography</SelectItem>
-              <SelectItem value="music">Music</SelectItem>
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
           {/* Level */}
           <Select value={levelFilter} onValueChange={setLevelFilter}>
             <SelectTrigger>
               <SelectValue placeholder="Level" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
-              <SelectItem value="beginner">Beginner</SelectItem>
-              <SelectItem value="intermediate">Intermediate</SelectItem>
-              <SelectItem value="advanced">Advanced</SelectItem>
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                <SelectItem value="Beginner Courses">Beginner Courses</SelectItem>
+                <SelectItem value="Intermediate Courses">Intermediate Courses</SelectItem>
+                <SelectItem value="Pro Courses">Pro Courses</SelectItem>
+              </SelectContent>
+            </Select>
 
           {/* Sort */}
           <Select value={sortBy} onValueChange={setSortBy}>
