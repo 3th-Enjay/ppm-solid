@@ -1,4 +1,4 @@
-# PromptCare Academy - Complete Learning Management System
+﻿# PromptCare Academy - Complete Learning Management System
 
 A fully functional, production-ready Learning Management System (LMS) built with Next.js, TypeScript, and modern web technologies. This platform supports course management, student enrollment, payment processing, and comprehensive admin tools.
 
@@ -90,33 +90,33 @@ Use these credentials to test different user roles:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Student | student@academy.com | password123 |
-| Admin | admin@academy.com | admin123 |
-| Instructor | instructor@academy.com | instructor123 |
-| Finance | finance@academy.com | finance123 |
+| Student | user@example.com | REDACTED_PASSWORD |
+| Admin | admin@yourdomain.com | REDACTED_PASSWORD |
+| Instructor | instructor@yourdomain.com | REDACTED_PASSWORD |
+| Finance | finance@yourdomain.com | REDACTED_PASSWORD |
 
 ## Project Structure
 
 \`\`\`
-├── app/                    # Next.js app directory
-│   ├── (auth)/            # Authentication pages
-│   ├── (public)/          # Public marketing pages
-│   ├── dashboard/         # Student dashboard
-│   ├── admin/             # Admin dashboard
-│   ├── api/               # API routes
-│   └── layout.tsx         # Root layout
-├── components/            # React components
-│   ├── layout/           # Layout components
-│   ├── ui/               # shadcn/ui components
-│   └── ...               # Feature components
-├── lib/                   # Utilities and helpers
-│   ├── mock-db.ts        # Mock database
-│   ├── auth.ts           # Authentication logic
-│   ├── store.ts          # Zustand stores
-│   ├── types.ts          # TypeScript definitions
-│   ├── validation.ts     # Zod schemas
-│   └── paystack.ts       # Payment gateway mock
-└── public/               # Static assets
+â”œâ”€â”€ app/                    # Next.js app directory
+â”‚   â”œâ”€â”€ (auth)/            # Authentication pages
+â”‚   â”œâ”€â”€ (public)/          # Public marketing pages
+â”‚   â”œâ”€â”€ dashboard/         # Student dashboard
+â”‚   â”œâ”€â”€ admin/             # Admin dashboard
+â”‚   â”œâ”€â”€ api/               # API routes
+â”‚   â””â”€â”€ layout.tsx         # Root layout
+â”œâ”€â”€ components/            # React components
+â”‚   â”œâ”€â”€ layout/           # Layout components
+â”‚   â”œâ”€â”€ ui/               # shadcn/ui components
+â”‚   â””â”€â”€ ...               # Feature components
+â”œâ”€â”€ lib/                   # Utilities and helpers
+â”‚   â”œâ”€â”€ mock-db.ts        # Mock database
+â”‚   â”œâ”€â”€ auth.ts           # Authentication logic
+â”‚   â”œâ”€â”€ store.ts          # Zustand stores
+â”‚   â”œâ”€â”€ types.ts          # TypeScript definitions
+â”‚   â”œâ”€â”€ validation.ts     # Zod schemas
+â”‚   â””â”€â”€ paystack.ts       # Payment gateway mock
+â””â”€â”€ public/               # Static assets
 \`\`\`
 
 ## API Endpoints
@@ -305,6 +305,7 @@ Configure environment variables in Vercel dashboard.
 
 ---
 
-Built with ❤️ using Next.js and modern web technologies.
+Built with â¤ï¸ using Next.js and modern web technologies.
 \`\`\`
+
 

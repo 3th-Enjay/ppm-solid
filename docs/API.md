@@ -1,4 +1,4 @@
-# API Documentation
+﻿# API Documentation
 
 Complete API reference for the LMS Academy platform.
 
@@ -24,7 +24,7 @@ Create a new user account.
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "password": "password123"
+  "password": "REDACTED_PASSWORD"
 }
 \`\`\`
 
@@ -58,7 +58,7 @@ Authenticate a user and create a session.
 \`\`\`json
 {
   "email": "john@example.com",
-  "password": "password123"
+  "password": "REDACTED_PASSWORD"
 }
 \`\`\`
 
@@ -564,8 +564,8 @@ For real Paystack integration, implement these webhooks:
 
 Use the mock accounts to test the API:
 
-**Student**: student@test.com / password123
-**Admin**: admin@test.com / admin123
+**Student**: user@example.com / REDACTED_PASSWORD
+**Admin**: admin@yourdomain.com / REDACTED_PASSWORD
 
 Example with `curl`:
 
@@ -573,7 +573,7 @@ Example with `curl`:
 # Login
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"student@test.com","password":"password123"}' \
+  -d '{"email":"user@example.com","password":"REDACTED_PASSWORD"}' \
   -c cookies.txt
 
 # Get courses
@@ -593,3 +593,4 @@ For API questions or issues:
 \`\`\`
 
 \`\`\`env file="" isHidden
+

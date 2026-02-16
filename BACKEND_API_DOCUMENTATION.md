@@ -1,4 +1,4 @@
-# PromptCare Academy - Backend API Documentation
+﻿# PromptCare Academy - Backend API Documentation
 
 This document outlines all API endpoints required to connect PromptCare Academy to a MongoDB/PostgreSQL backend.
 
@@ -30,7 +30,7 @@ Creates a new user account.
 ```json
 {
   "email": "user@example.com",
-  "password": "SecurePassword123!",
+  "password": "SecureREDACTED_PASSWORD!",
   "name": "John Doe",
   "role": "student"
 }
@@ -66,7 +66,7 @@ Authenticates user and returns auth token.
 ```json
 {
   "email": "user@example.com",
-  "password": "SecurePassword123!"
+  "password": "SecureREDACTED_PASSWORD!"
 }
 ```
 
@@ -724,7 +724,7 @@ Sends password reset email.
   "users": [
     {
       "id": "user-1",
-      "email": "student@example.com",
+      "email": "user@example.com",
       "name": "John Doe",
       "role": "student",
       "status": "active",
@@ -892,3 +892,4 @@ Response includes:
 8. Implement caching (Redis)
 9. Add logging and monitoring
 10. Set up automated testing
+

@@ -27,19 +27,20 @@ export const contactSchema = z.object({
 })
 
 export const coursePriceSchema = z.object({
-  NGN: z.number().min(0, "NGN price must be positive"),
+  NGN: z.number().min(1, "NGN price must be at least 1"),
   USD: z.number().min(0, "USD price must be positive"),
   EUR: z.number().min(0, "EUR price must be positive"),
   GBP: z.number().min(0, "GBP price must be positive"),
 })
 
-export const courseCreateSchema = z.object({
+const courseBaseSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
   description: z.string().min(20, "Description must be at least 20 characters"),
   category: z.string().min(2, "Category is required"),
   level: z.enum(["Beginner Courses", "Intermediate Courses", "Pro Courses"]),
   price: coursePriceSchema,
   thumbnail: z.string().optional(),
+  overview: z.array(z.string().min(2)).optional(),
   instructorId: z.string().min(1, "Instructor is required"),
   published: z.boolean().optional(),
   approved: z.boolean().optional(),
@@ -49,7 +50,25 @@ export const courseCreateSchema = z.object({
   rating: z.number().optional(),
 })
 
-export const courseUpdateSchema = courseCreateSchema.partial()
+export const courseCreateSchema = courseBaseSchema.superRefine((data, ctx) => {
+  if (!Object.values(data.price).some((value) => value > 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "At least one price must be greater than 0",
+      path: ["price"],
+    })
+  }
+})
+
+export const courseUpdateSchema = courseBaseSchema.partial().superRefine((data, ctx) => {
+  if (data.price && !Object.values(data.price).some((value) => value > 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "At least one price must be greater than 0",
+      path: ["price"],
+    })
+  }
+})
 
 export const enrollmentCreateSchema = z.object({
   userId: z.string().min(1, "User ID is required"),

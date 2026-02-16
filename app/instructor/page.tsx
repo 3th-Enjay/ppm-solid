@@ -30,7 +30,7 @@ export default function InstructorDashboard() {
 
   const loadInstructorData = async () => {
     try {
-      const coursesRes = await fetch(`/api/courses?instructorId=${user?.id}&includeDrafts=true`, {
+      const coursesRes = await fetch(`/api/courses?instructorName=${encodeURIComponent(user?.name || "")}&includeDrafts=true`, {
         headers: {
           Authorization: `Bearer ${token || ""}`,
         },
@@ -273,20 +273,20 @@ export default function InstructorDashboard() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Link href={`/courses/${course.slug}`} className="flex-1">
+                  <div className="flex flex-wrap gap-2">
+                    <Link href={`/courses/${course.slug}`} className="w-full sm:flex-1">
                       <Button variant="outline" className="w-full" size="sm">
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
                     </Link>
-                    <Link href={`/instructor/courses/${course.id}/content`} className="flex-1">
+                    <Link href={`/instructor/courses/${course.id}/content`} className="w-full sm:flex-1">
                       <Button variant="outline" className="w-full" size="sm">
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Content
                       </Button>
                     </Link>
-                    <Link href={`/instructor/courses/${course.id}/edit`} className="flex-1">
+                    <Link href={`/instructor/courses/${course.id}/edit`} className="w-full sm:flex-1">
                       <Button variant="outline" className="w-full" size="sm">
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Details

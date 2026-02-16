@@ -1,4 +1,4 @@
-# PromptCare Academy - Brand Implementation Guide
+﻿# PromptCare Academy - Brand Implementation Guide
 
 ## Overview
 This document outlines the complete brand implementation for PromptCare Academy including the visual identity, color system, typography, multi-currency payment system, and branding applied throughout the LMS.
@@ -73,8 +73,8 @@ Labels: 13px, weight 500, uppercase
 The platform now supports payments in **three currencies** with real-time formatting:
 
 #### 1. **Nigerian Naira (NGN)**
-- **Symbol**: ₦
-- **Locale Format**: ₦ 25,000 (no decimals)
+- **Symbol**: â‚¦
+- **Locale Format**: â‚¦ 25,000 (no decimals)
 - **Configuration**: `currencyConfig.NGN`
 - **Use Case**: Primary currency for Nigerian users
 
@@ -85,8 +85,8 @@ The platform now supports payments in **three currencies** with real-time format
 - **Use Case**: International standard
 
 #### 3. **British Pound (GBP)**
-- **Symbol**: £
-- **Locale Format**: £ 75.99 (2 decimals)
+- **Symbol**: Â£
+- **Locale Format**: Â£ 75.99 (2 decimals)
 - **Configuration**: `currencyConfig.GBP`
 - **Use Case**: UK market support
 
@@ -128,7 +128,7 @@ import { paystackService } from '@/lib/paystack'
 
 // Format amount for display
 const displayPrice = paystackService.formatAmount(25000, 'NGN')
-// Returns: "₦ 25,000"
+// Returns: "â‚¦ 25,000"
 
 const displayPrice = paystackService.formatAmount(99.99, 'USD')
 // Returns: "$ 99.99"
@@ -166,9 +166,9 @@ interface Course {
 ### Sample Course Prices
 | Course | NGN | USD | GBP |
 |--------|-----|-----|-----|
-| Web Development | ₦ 25,000 | $ 99.99 | £ 75.99 |
-| UI/UX Design | ₦ 22,500 | $ 89.99 | £ 68.99 |
-| Digital Marketing | ₦ 20,000 | $ 79.99 | £ 61.99 |
+| Web Development | â‚¦ 25,000 | $ 99.99 | Â£ 75.99 |
+| UI/UX Design | â‚¦ 22,500 | $ 89.99 | Â£ 68.99 |
+| Digital Marketing | â‚¦ 20,000 | $ 79.99 | Â£ 61.99 |
 
 ---
 
@@ -177,23 +177,23 @@ interface Course {
 ### Test Accounts (Updated with PromptCare branding)
 
 #### Student Account
-- **Email**: `student@promptcare.com`
-- **Password**: `Student@123`
+- **Email**: `user@example.com`
+- **Password**: `REDACTED_PASSWORD`
 - **Role**: Student (can enroll in courses)
 
 #### Admin Account
-- **Email**: `admin@promptcare.com`
-- **Password**: `Admin@123`
+- **Email**: `admin@yourdomain.com`
+- **Password**: `REDACTED_PASSWORD`
 - **Role**: Admin (full platform management)
 
 #### Instructor Account
-- **Email**: `instructor@promptcare.com`
-- **Password**: `Instructor@123`
+- **Email**: `instructor@yourdomain.com`
+- **Password**: `REDACTED_PASSWORD`
 - **Role**: Instructor (course creation & management)
 
 #### Finance Account
-- **Email**: `finance@promptcare.com`
-- **Password**: `Finance@123`
+- **Email**: `finance@yourdomain.com`
+- **Password**: `REDACTED_PASSWORD`
 - **Role**: Finance (payment & revenue management)
 
 ---
@@ -243,26 +243,26 @@ interface Course {
 ## Payment Flow with Multi-Currency
 
 ### Checkout Process
-1. **Currency Selection** → User selects currency from dropdown
-2. **Add to Cart** → Items added with selected currency pricing
-3. **Review Cart** → Prices display in chosen currency
-4. **Checkout Page** → Currency converted and displayed
-5. **Payment Initialization** → Payment processed in selected currency
-6. **Payment Verification** → Transaction verified with currency confirmation
-7. **Success Page** → Enrollment created, receipt shows currency
+1. **Currency Selection** â†’ User selects currency from dropdown
+2. **Add to Cart** â†’ Items added with selected currency pricing
+3. **Review Cart** â†’ Prices display in chosen currency
+4. **Checkout Page** â†’ Currency converted and displayed
+5. **Payment Initialization** â†’ Payment processed in selected currency
+6. **Payment Verification** â†’ Transaction verified with currency confirmation
+7. **Success Page** â†’ Enrollment created, receipt shows currency
 
 ### Example Flow (NGN)
 \`\`\`
 User selects: NGN (Nigerian Naira)
-Web Development Course: ₦ 25,000
-Cart Total: ₦ 25,000
-↓
+Web Development Course: â‚¦ 25,000
+Cart Total: â‚¦ 25,000
+â†“
 Proceeds to checkout
-↓
+â†“
 Paystack initializes with NGN amount
-↓
-Payment confirmed: ₦ 25,000 paid
-↓
+â†“
+Payment confirmed: â‚¦ 25,000 paid
+â†“
 Enrollment created, receipt in NGN
 \`\`\`
 
@@ -271,13 +271,13 @@ Enrollment created, receipt in NGN
 User selects: USD (US Dollar)
 Web Development Course: $ 99.99
 Cart Total: $ 99.99
-↓
+â†“
 Proceeds to checkout
-↓
+â†“
 Paystack initializes with USD amount
-↓
+â†“
 Payment confirmed: $ 99.99 paid
-↓
+â†“
 Enrollment created, receipt in USD
 \`\`\`
 
@@ -306,21 +306,21 @@ Enrollment created, receipt in USD
 
 ## Implementation Checklist
 
-### ✅ Design System
+### âœ… Design System
 - [x] Brand color palette defined and applied
 - [x] Typography hierarchy established
 - [x] CSS variables updated (globals.css)
 - [x] Logo assets created and optimized
 - [x] Dark mode support with brand colors
 
-### ✅ Branding Applied
+### âœ… Branding Applied
 - [x] Logo component updated
 - [x] Public header includes new branding
 - [x] Dashboard uses brand colors
 - [x] Forms styled with teal accents
 - [x] Buttons use primary color consistently
 
-### ✅ Multi-Currency System
+### âœ… Multi-Currency System
 - [x] NGN, USD, GBP currency support
 - [x] Currency selector component created
 - [x] Paystack service enhanced
@@ -328,7 +328,7 @@ Enrollment created, receipt in USD
 - [x] Currency conversion logic
 - [x] Persistent user currency preference
 
-### ✅ Testing & Documentation
+### âœ… Testing & Documentation
 - [x] Updated test accounts with new credentials
 - [x] Brand guidelines document created
 - [x] Currency system documented
@@ -438,31 +438,31 @@ export async function checkout() {
 ## Brand Assets Location
 \`\`\`
 /public/
-├── logo-promptcare.png        (Primary logo)
-├── logo-icon.png              (Favicon & icon)
-├── student-avatar.png
-├── admin-avatar.png
-├── instructor-avatar.png
-└── finance-avatar.jpg
+â”œâ”€â”€ logo-promptcare.png        (Primary logo)
+â”œâ”€â”€ logo-icon.png              (Favicon & icon)
+â”œâ”€â”€ student-avatar.png
+â”œâ”€â”€ admin-avatar.png
+â”œâ”€â”€ instructor-avatar.png
+â””â”€â”€ finance-avatar.jpg
 
 /docs/
-├── BRAND_GUIDELINES.md        (Full brand guide)
-└── BRAND_IMPLEMENTATION.md    (This file)
+â”œâ”€â”€ BRAND_GUIDELINES.md        (Full brand guide)
+â””â”€â”€ BRAND_IMPLEMENTATION.md    (This file)
 
 /components/
-├── ui/
-│   ├── logo.tsx               (Logo component)
-│   └── currency-selector.tsx  (Currency selector)
-└── layout/
-    └── public-header.tsx      (Header with branding)
+â”œâ”€â”€ ui/
+â”‚   â”œâ”€â”€ logo.tsx               (Logo component)
+â”‚   â””â”€â”€ currency-selector.tsx  (Currency selector)
+â””â”€â”€ layout/
+    â””â”€â”€ public-header.tsx      (Header with branding)
 
 /lib/
-├── paystack.ts                (Multi-currency payments)
-├── store.ts                   (Currency preferences)
-└── types.ts                   (Type definitions)
+â”œâ”€â”€ paystack.ts                (Multi-currency payments)
+â”œâ”€â”€ store.ts                   (Currency preferences)
+â””â”€â”€ types.ts                   (Type definitions)
 
 /app/
-└── globals.css                (Brand colors & typography)
+â””â”€â”€ globals.css                (Brand colors & typography)
 \`\`\`
 
 ---
@@ -475,3 +475,4 @@ export async function checkout() {
   - Color scheme applied throughout
   - Payment system enhanced
   - Test credentials updated
+

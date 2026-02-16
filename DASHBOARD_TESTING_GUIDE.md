@@ -1,4 +1,4 @@
-# PromptCare Academy - Dashboard Testing Guide
+﻿# PromptCare Academy - Dashboard Testing Guide
 
 ## Overview
 All role-based dashboards are now fully functional and connected. Each user role redirects to their respective dashboard with real data from the mock database.
@@ -9,8 +9,8 @@ All role-based dashboards are now fully functional and connected. Each user role
 
 ### 1. **Student Dashboard** - `/dashboard`
 **Login Credentials:**
-- Email: `student@promptcare.com`
-- Password: `Student@123`
+- Email: `user@example.com`
+- Password: `REDACTED_PASSWORD`
 
 **What You'll See:**
 - Welcome message with total courses
@@ -22,19 +22,19 @@ All role-based dashboards are now fully functional and connected. Each user role
 - Profile management
 
 **Features:**
-✅ Course enrollment (via cart/checkout)  
-✅ Study time tracking  
-✅ Progress tracking  
-✅ Certificate management  
-✅ Payment history  
-✅ Profile settings  
+âœ… Course enrollment (via cart/checkout)  
+âœ… Study time tracking  
+âœ… Progress tracking  
+âœ… Certificate management  
+âœ… Payment history  
+âœ… Profile settings  
 
 ---
 
 ### 2. **Admin Dashboard** - `/admin`
 **Login Credentials:**
-- Email: `admin@promptcare.com`
-- Password: `Admin@123`
+- Email: `admin@yourdomain.com`
+- Password: `REDACTED_PASSWORD`
 
 **What You'll See:**
 - Revenue analytics charts
@@ -45,19 +45,19 @@ All role-based dashboards are now fully functional and connected. Each user role
 - Platform settings
 
 **Features:**
-✅ Real-time analytics  
-✅ Revenue tracking (NGN & USD)  
-✅ Student management  
-✅ Course publishing/unpublishing  
-✅ Payment monitoring  
-✅ Platform settings  
+âœ… Real-time analytics  
+âœ… Revenue tracking (NGN & USD)  
+âœ… Student management  
+âœ… Course publishing/unpublishing  
+âœ… Payment monitoring  
+âœ… Platform settings  
 
 ---
 
 ### 3. **Instructor Dashboard** - `/instructor`
 **Login Credentials:**
-- Email: `instructor@promptcare.com`
-- Password: `Instructor@123`
+- Email: `instructor@yourdomain.com`
+- Password: `REDACTED_PASSWORD`
 
 **What You'll See:**
 - Instructor-specific stats
@@ -69,18 +69,18 @@ All role-based dashboards are now fully functional and connected. Each user role
 - Upload new course button
 
 **Features:**
-✅ Course creation  
-✅ Student enrollment tracking  
-✅ Course analytics  
-✅ Student progress monitoring  
-✅ Course performance metrics  
+âœ… Course creation  
+âœ… Student enrollment tracking  
+âœ… Course analytics  
+âœ… Student progress monitoring  
+âœ… Course performance metrics  
 
 ---
 
 ### 4. **Finance Dashboard** - `/finance`
 **Login Credentials:**
-- Email: `finance@promptcare.com`
-- Password: `Finance@123`
+- Email: `finance@yourdomain.com`
+- Password: `REDACTED_PASSWORD`
 
 **What You'll See:**
 - Total revenue in NGN
@@ -96,18 +96,18 @@ All role-based dashboards are now fully functional and connected. Each user role
   - Date
 
 **Features:**
-✅ Revenue tracking (multi-currency)  
-✅ Transaction history  
-✅ Payment status monitoring  
-✅ Student payment tracking  
-✅ Financial reports  
+âœ… Revenue tracking (multi-currency)  
+âœ… Transaction history  
+âœ… Payment status monitoring  
+âœ… Student payment tracking  
+âœ… Financial reports  
 
 ---
 
 ## Testing the Payment Flow
 
 ### Step 1: Student Purchases a Course
-1. Log in as student: `student@promptcare.com`
+1. Log in as student: `user@example.com`
 2. Browse courses at `/courses`
 3. Click "Add to Cart" on any course
 4. Go to cart page
@@ -118,7 +118,7 @@ All role-based dashboards are now fully functional and connected. Each user role
 
 ### Step 2: Verify Payment in Finance Dashboard
 1. Log out (click Logout in sidebar)
-2. Log in as finance: `finance@promptcare.com`
+2. Log in as finance: `finance@yourdomain.com`
 3. Go to Finance Dashboard
 4. Verify the transaction appears in "Recent Transactions"
 5. Check that amounts are correct in NGN/USD
@@ -139,19 +139,19 @@ All role-based dashboards are now fully functional and connected. Each user role
 - Dynamically changes all prices to selected currency
 
 ### Supported Currencies
-- **NGN** (Nigerian Naira) - ₦
+- **NGN** (Nigerian Naira) - â‚¦
 - **USD** (US Dollar) - $
-- **GBP** (British Pound) - £
+- **GBP** (British Pound) - Â£
 
 ---
 
 ## Role-Based Access Control
 
 Each role has protection:
-- **Student** → `/dashboard` (protected)
-- **Admin** → `/admin` (protected, admin only)
-- **Instructor** → `/instructor` (protected, instructor only)
-- **Finance** → `/finance` (protected, finance only)
+- **Student** â†’ `/dashboard` (protected)
+- **Admin** â†’ `/admin` (protected, admin only)
+- **Instructor** â†’ `/instructor` (protected, instructor only)
+- **Finance** â†’ `/finance` (protected, finance only)
 
 Attempting to access a protected page with wrong role redirects to appropriate dashboard.
 
@@ -160,40 +160,40 @@ Attempting to access a protected page with wrong role redirects to appropriate d
 ## Key Features Implemented
 
 ### Authentication
-✅ Login with role-based redirect  
-✅ Register as student  
-✅ Forgot password page  
-✅ Protected routes  
-✅ Token-based session management  
+âœ… Login with role-based redirect  
+âœ… Register as student  
+âœ… Forgot password page  
+âœ… Protected routes  
+âœ… Token-based session management  
 
 ### Student Features
-✅ Course browsing  
-✅ Add to cart  
-✅ Checkout process  
-✅ Payment simulation  
-✅ Course enrollment  
-✅ Progress tracking  
-✅ Certificate generation  
+âœ… Course browsing  
+âœ… Add to cart  
+âœ… Checkout process  
+âœ… Payment simulation  
+âœ… Course enrollment  
+âœ… Progress tracking  
+âœ… Certificate generation  
 
 ### Admin Features
-✅ Dashboard analytics  
-✅ Course management  
-✅ Student management  
-✅ Payment monitoring  
-✅ Settings configuration  
+âœ… Dashboard analytics  
+âœ… Course management  
+âœ… Student management  
+âœ… Payment monitoring  
+âœ… Settings configuration  
 
 ### Instructor Features
-✅ Course creation/management  
-✅ Student tracking  
-✅ Performance analytics  
-✅ Course publishing  
+âœ… Course creation/management  
+âœ… Student tracking  
+âœ… Performance analytics  
+âœ… Course publishing  
 
 ### Finance Features
-✅ Revenue tracking  
-✅ Transaction monitoring  
-✅ Multi-currency support  
-✅ Payment status tracking  
-✅ Student payment history  
+âœ… Revenue tracking  
+âœ… Transaction monitoring  
+âœ… Multi-currency support  
+âœ… Payment status tracking  
+âœ… Student payment history  
 
 ---
 
@@ -241,8 +241,8 @@ For production, implement:
 ## Troubleshooting
 
 ### Login Not Working
-- Verify email matches exactly: `student@promptcare.com`, `admin@promptcare.com`, etc.
-- Check password: `Student@123`, `Admin@123`, `Instructor@123`, `Finance@123`
+- Verify email matches exactly: `user@example.com`, `admin@yourdomain.com`, etc.
+- Check password: `REDACTED_PASSWORD`, `REDACTED_PASSWORD`, `REDACTED_PASSWORD`, `REDACTED_PASSWORD`
 - Clear browser cache and try again
 
 ### Dashboard Not Loading
@@ -292,3 +292,4 @@ For production, implement:
 ## Support
 
 For issues or questions, refer to the comprehensive documentation in `/docs` folder.
+

@@ -19,6 +19,10 @@ export async function GET(
     const authHeader = request.headers.get("authorization")
     const token = authHeader?.replace("Bearer ", "")
     const user = token ? await authService.getCurrentUser(token) : null
+
+    if (course.approved !== true && (!user || user.role === "student")) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 })
+    }
     const safeCourse = maskCourseForUser(course, user)
 
     const instructor = await db.findUserById(course.instructorId)

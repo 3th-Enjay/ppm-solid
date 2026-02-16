@@ -19,7 +19,7 @@ export default function InstructorAnalyticsPage() {
     const load = async () => {
       if (!user) return
       try {
-        const coursesRes = await fetch(`/api/courses?instructorId=${user.id}&includeDrafts=true`, {
+        const coursesRes = await fetch(`/api/courses?instructorName=${encodeURIComponent(user.name)}&includeDrafts=true`, {
           headers: {
             Authorization: `Bearer ${token || ""}`,
           },

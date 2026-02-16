@@ -60,6 +60,7 @@ export default function AdminCourseEditPage() {
   const [priceGBP, setPriceGBP] = useState("0")
   const [thumbnail, setThumbnail] = useState("")
   const [duration, setDuration] = useState("0")
+  const [overview, setOverview] = useState("")
   const [publishNow, setPublishNow] = useState(false)
   const [approved, setApproved] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -96,6 +97,7 @@ export default function AdminCourseEditPage() {
         setPriceGBP(String(fetchedCourse.price?.GBP ?? 0))
         setThumbnail(fetchedCourse.thumbnail || "")
         setDuration(String(fetchedCourse.totalDuration ?? 0))
+        setOverview((fetchedCourse.overview || []).join("\n"))
         setPublishNow(Boolean(fetchedCourse.published))
         setApproved(Boolean(fetchedCourse.approved))
         setCategories(categoriesData.categories || [])
@@ -112,6 +114,17 @@ export default function AdminCourseEditPage() {
     setSuccessMessage("")
     setErrorMessage("")
     try {
+      const prices = [Number(priceNGN) || 0, Number(priceUSD) || 0, Number(priceEUR) || 0, Number(priceGBP) || 0]
+      if (!prices.some((value) => value > 0)) {
+        setErrorMessage("At least one price must be greater than 0.")
+        return
+      }
+
+      const overviewItems = overview
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean)
+
       const res = await fetch(`/api/courses/${course.id}`, {
         method: "PUT",
         headers: {
@@ -129,6 +142,7 @@ export default function AdminCourseEditPage() {
             EUR: Number(priceEUR) || 0,
             GBP: Number(priceGBP) || 0,
           },
+          overview: overviewItems.length ? overviewItems : undefined,
           thumbnail: thumbnail.trim() || "/placeholder.jpg",
           totalDuration: Number(duration) || 0,
           published: publishNow,
@@ -220,6 +234,10 @@ export default function AdminCourseEditPage() {
             <div className="grid gap-2">
               <Label htmlFor="description">Description *</Label>
               <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="overview">Overview (one item per line)</Label>
+              <Textarea id="overview" value={overview} onChange={(e) => setOverview(e.target.value)} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">

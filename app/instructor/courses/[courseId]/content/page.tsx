@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
@@ -30,6 +31,7 @@ export default function InstructorCourseContentPage() {
   const [priceEUR, setPriceEUR] = useState("0")
   const [priceGBP, setPriceGBP] = useState("0")
   const [saving, setSaving] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
   useEffect(() => {
     const load = async () => {
@@ -200,7 +202,14 @@ export default function InstructorCourseContentPage() {
   const handleSave = async () => {
     if (!course) return
     setSaving(true)
+    setErrorMessage("")
     try {
+      const prices = [Number(priceNGN) || 0, Number(priceUSD) || 0, Number(priceEUR) || 0, Number(priceGBP) || 0]
+      if (!prices.some((value) => value > 0)) {
+        setErrorMessage("At least one price must be greater than 0.")
+        return
+      }
+
       const totalDuration = modules.reduce((sum, module) => {
         return (
           sum +
@@ -253,6 +262,12 @@ export default function InstructorCourseContentPage() {
 
   return (
     <div className="p-8 space-y-6">
+      {errorMessage && (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <Link href="/instructor/courses">

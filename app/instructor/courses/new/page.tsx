@@ -54,6 +54,7 @@ export default function NewCoursePage() {
   const [thumbnail, setThumbnail] = useState("")
   const [thumbnailPreview, setThumbnailPreview] = useState("")
   const [duration, setDuration] = useState("")
+  const [overview, setOverview] = useState("")
   const [lessons, setLessons] = useState([
     { title: "Lesson 1", videoUrl: "", duration: 10 },
   ])
@@ -94,12 +95,24 @@ export default function NewCoursePage() {
       return
     }
 
-    if (!title.trim() || !description.trim() || !category || !level) {
+    const trimmedTitle = title.trim()
+    const trimmedDescription = description.trim()
+
+    if (!trimmedTitle || !trimmedDescription || !category || !level) {
       setErrorMessage("Please fill out the required fields.")
+      return
+    }
+    if (trimmedTitle.length < 5) {
+      setErrorMessage("Title must be at least 5 characters.")
       return
     }
     if (!duration || Number(duration) <= 0) {
       setErrorMessage("Course duration is required.")
+      return
+    }
+    const prices = [Number(priceNGN) || 0, Number(priceUSD) || 0, Number(priceEUR) || 0, Number(priceGBP) || 0]
+    if (!prices.some((value) => value > 0)) {
+      setErrorMessage("At least one price must be greater than 0.")
       return
     }
     if (!lessons[0]?.videoUrl?.trim()) {
@@ -107,14 +120,19 @@ export default function NewCoursePage() {
       return
     }
 
+    const overviewItems = overview
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean)
+
     setIsSubmitting(true)
     try {
       const res = await fetch("/api/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim(),
+          title: trimmedTitle,
+          description: trimmedDescription,
           category,
           level,
           instructorId: user.id,
@@ -124,6 +142,7 @@ export default function NewCoursePage() {
             EUR: Number(priceEUR) || 0,
             GBP: Number(priceGBP) || 0,
           },
+          overview: overviewItems.length ? overviewItems : undefined,
           thumbnail: thumbnail.trim() || "/placeholder.jpg",
           published: publishNow,
           modules: [
@@ -166,10 +185,26 @@ export default function NewCoursePage() {
       setThumbnail("")
       setThumbnailPreview("")
       setDuration("")
+      setOverview("")
       setLessons([{ title: "Lesson 1", videoUrl: "", duration: 10 }])
       setPublishNow(false)
     } catch (error) {
       console.error("Failed to create course:", error)
+      if (error instanceof Error) {
+        const message = error.message?.trim()
+        if (message?.startsWith("[")) {
+          try {
+            const parsed = JSON.parse(message)
+            const firstError = parsed?.[0]?.message
+            if (firstError) {
+              setErrorMessage(firstError)
+              return
+            }
+          } catch {
+            // fall through to generic message
+          }
+        }
+      }
       setErrorMessage("Failed to create course. Please try again.")
     } finally {
       setIsSubmitting(false)
@@ -349,6 +384,15 @@ export default function NewCoursePage() {
                 placeholder="Write a concise course summary..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="overview">Overview (one item per line)</Label>
+              <Textarea
+                id="overview"
+                placeholder="What learners will gain or cover..."
+                value={overview}
+                onChange={(e) => setOverview(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

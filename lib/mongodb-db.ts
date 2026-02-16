@@ -169,7 +169,7 @@ export class MongoDBDatabase {
   // Course methods
   async getAllCourses(): Promise<Course[]> {
     const collection = await getCollection<Course>('courses')
-    const docs = await collection.find({ published: true }).toArray()
+    const docs = await collection.find({ approved: true }).toArray()
     return docs.map(toObject<Course>)
   }
 

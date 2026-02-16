@@ -17,7 +17,7 @@ export default function InstructorCoursesPage() {
     if (!user) return
     const load = async () => {
       try {
-        const res = await fetch(`/api/courses?instructorId=${user.id}&includeDrafts=true`, {
+        const res = await fetch(`/api/courses?instructorName=${encodeURIComponent(user.name)}&includeDrafts=true`, {
           headers: {
             Authorization: `Bearer ${token || ""}`,
           },
@@ -61,20 +61,20 @@ export default function InstructorCoursesPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" asChild className="flex-1">
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" asChild className="w-full sm:flex-1">
                     <Link href={`/courses/${course.slug}`}>
                       <BookOpen className="h-4 w-4 mr-2" />
                       View
                     </Link>
                   </Button>
-                  <Button size="sm" asChild className="flex-1">
+                  <Button size="sm" asChild className="w-full sm:flex-1">
                     <Link href={`/instructor/courses/${course.id}/content`}>
                       <Pencil className="h-4 w-4 mr-2" />
                       Edit Content
                     </Link>
                   </Button>
-                  <Button variant="outline" size="sm" asChild className="flex-1">
+                  <Button variant="outline" size="sm" asChild className="w-full sm:flex-1">
                     <Link href={`/instructor/courses/${course.id}/edit`}>
                       <Settings className="h-4 w-4 mr-2" />
                       Edit Details

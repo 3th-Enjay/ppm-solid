@@ -12,11 +12,18 @@ export async function GET(request: NextRequest) {
     const level = searchParams.get("level")
     const search = searchParams.get("search")
     const instructorId = searchParams.get("instructorId")
+    const instructorName = searchParams.get("instructorName")
     const includeDrafts = searchParams.get("includeDrafts") === "true"
 
     const db = getDB()
     let courses: any[] = []
-    if (instructorId) {
+    if (instructorName) {
+      const users = await db.getAllUsers()
+      const match = users.find(
+        (u: any) => u.role === "instructor" && u.name?.toLowerCase() === instructorName.toLowerCase(),
+      )
+      courses = match ? await db.getCoursesByInstructor(match.id) : []
+    } else if (instructorId) {
       courses = await db.getCoursesByInstructor(instructorId)
     } else if (includeDrafts && typeof db.getAllCoursesIncludingDrafts === "function") {
       courses = await db.getAllCoursesIncludingDrafts()
@@ -25,8 +32,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (!includeDrafts) {
-      // Only expose published + approved courses to public queries
-      courses = courses.filter((c: any) => c.published && (c.approved !== false))
+      // Only expose approved courses to public queries
+      courses = courses.filter((c: any) => c.approved === true)
     }
 
     if (category && category !== "all") {

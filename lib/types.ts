@@ -35,6 +35,7 @@ export interface Course {
   title: string
   slug: string
   description: string
+  overview?: string[]
   category: CourseCategory
   level: CourseLevel
   instructorId: string

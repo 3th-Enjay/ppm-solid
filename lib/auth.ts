@@ -110,8 +110,17 @@ export const authService = {
       return null
     }
 
-    if (user.emailVerified === false) {
-      return null
+    // Only block login if there's an active OTP verification pending
+    // This allows:
+    // - Users created directly (no OTP) to log in regardless of emailVerified status
+    // - Users with expired OTPs to log in (they can request new OTP if needed)
+    // - Users who registered via OTP must verify first (they have active OTP)
+    if (user.otpHash && user.otpExpiresAt) {
+      const otpExpired = new Date(user.otpExpiresAt).getTime() < Date.now()
+      // If OTP is still valid and email not verified, block login
+      if (!otpExpired && user.emailVerified === false) {
+        return null
+      }
     }
 
     // Generate JWT token

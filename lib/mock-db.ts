@@ -1,68 +1,8 @@
-// Mock database with seeded data
+﻿// Mock database with seeded data
 import type { User, Course, Enrollment, Payment, Certificate, Quiz, Assignment, AdminLog, Category } from "./types"
 
 // Seeded Users
-export const mockUsers: User[] = [
-  {
-    id: "user-1",
-    email: "student@promptcareacademy.com",
-    password: "Student@123",
-    name: "John Student",
-    role: "student",
-    avatar: "/student-avatar.png",
-    bio: "Passionate learner eager to expand my skills",
-    emailVerified: true,
-    enrolledCourses: ["course-1", "course-2"],
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-15"),
-  },
-  {
-    id: "user-2",
-    email: "admin@promptcareacademy.com",
-    password: "Admin@123",
-    name: "Sarah Admin",
-    role: "admin",
-    avatar: "/admin-avatar.png",
-    bio: "Platform administrator",
-    emailVerified: true,
-    enrolledCourses: [],
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-  },
-  {
-    id: "user-3",
-    email: "instructor@promptcareacademy.com",
-    password: "Instructor@123",
-    name: "Michael Instructor",
-    role: "instructor",
-    avatar: "/instructor-avatar.png",
-    bio: "Senior developer with 10+ years of experience",
-    emailVerified: true,
-    enrolledCourses: [],
-    createdAt: new Date("2024-01-05"),
-    updatedAt: new Date("2024-01-05"),
-  },
-  {
-    id: "user-4",
-    email: "finance@promptcareacademy.com",
-    password: "Finance@123",
-    name: "Emma Finance",
-    role: "finance",
-    avatar: "/finance-avatar.jpg",
-    bio: "Financial operations manager",
-    emailVerified: true,
-    enrolledCourses: [],
-    createdAt: new Date("2024-01-03"),
-    updatedAt: new Date("2024-01-03"),
-  },
-]
-
-export const mockCategories: Category[] = [
-  { id: "cat-1", name: "The Foundation Pillar", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
-  { id: "cat-2", name: "The Clinical Pillar", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
-  { id: "cat-3", name: "The Leadership Pillar", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
-  { id: "cat-4", name: "The Family Pillar", createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
-]
+export const mockUsers: User[] = []
 
 // Seeded Courses
 export const mockCourses: Course[] = [
@@ -449,7 +389,7 @@ class MockDatabase {
 
   // Course methods
   async getAllCourses(): Promise<Course[]> {
-    return this.courses.filter((c) => c.published)
+    return this.courses.filter((c) => c.approved === true)
   }
 
   async getAllCoursesIncludingDrafts(): Promise<Course[]> {
@@ -630,4 +570,6 @@ export function getDB() {
 
 export const db = getDB()
 export const mockDB = db
+
+
 

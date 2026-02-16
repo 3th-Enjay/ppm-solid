@@ -134,6 +134,17 @@ export default function CourseDetailPage() {
     (sum, module) => sum + module.lessons.filter((l) => l.type === "assignment").length,
     0,
   )
+  const overviewItems =
+    course.overview && course.overview.length > 0
+      ? course.overview
+      : [
+          "Master the fundamentals and advanced concepts",
+          "Build real-world projects from scratch",
+          "Learn industry best practices",
+          "Get hands-on coding experience",
+          "Understand key concepts and patterns",
+          "Prepare for professional opportunities",
+        ]
 
   return (
     <div className="container py-12">
@@ -260,14 +271,7 @@ export default function CourseDetailPage() {
               <div>
                 <h3 className="text-2xl font-semibold mb-4">What You'll Learn</h3>
                 <div className="grid md:grid-cols-2 gap-3">
-                  {[
-                    "Master the fundamentals and advanced concepts",
-                    "Build real-world projects from scratch",
-                    "Learn industry best practices",
-                    "Get hands-on coding experience",
-                    "Understand key concepts and patterns",
-                    "Prepare for professional opportunities",
-                  ].map((item, i) => (
+                  {overviewItems.map((item, i) => (
                     <div key={i} className="flex items-start gap-2">
                       <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm">{item}</span>
