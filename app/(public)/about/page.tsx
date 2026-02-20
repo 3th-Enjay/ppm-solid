@@ -12,6 +12,7 @@ import Image from "next/image"
 import aboutImage from "@/public/promptcare-about.jpeg"
 import storyImage from "@/public/promptcare-story.jpeg"
 import ceoImage from "@/public/ceo-promptcare.jpeg"
+import euniceImage from "@/public/eunice-tutor-promptcare.jpeg"
 
 export default function AboutPage() {
   const [storyExpanded, setStoryExpanded] = useState(false)
@@ -75,6 +76,11 @@ export default function AboutPage() {
       name: "Dr Ikechukwu Okoye",
       role: "Founder & CEO",
       image: ceoImage,
+    },
+    {
+      name: "Eunice",
+      role: "Tutor",
+      image: euniceImage,
     },
   ]
 

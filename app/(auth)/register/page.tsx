@@ -101,6 +101,8 @@ export default function RegisterPage() {
     } catch (error: unknown) {
       if (error instanceof Error && error.message === "User already exists") {
         setError("An account with this email already exists")
+      } else if (error instanceof Error && error.message) {
+        setError(error.message)
       } else {
         setError("Please check your information and try again")
       }

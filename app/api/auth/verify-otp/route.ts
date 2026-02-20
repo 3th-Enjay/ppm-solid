@@ -28,9 +28,13 @@ export async function POST(request: Request) {
       token: result.token,
     })
   } catch (error) {
+    console.error("Verify OTP error:", error)
     if (error instanceof ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+    return NextResponse.json({ error: "Failed to verify OTP" }, { status: 500 })
   }
 }

@@ -32,12 +32,16 @@ export async function POST(request: Request) {
       message: "OTP sent to email",
     })
   } catch (error) {
+    console.error("Register error:", error)
     if (error instanceof Error && error.message === "User already exists") {
       return NextResponse.json({ error: "User already exists" }, { status: 409 })
     }
     if (error instanceof ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+    return NextResponse.json({ error: "Registration failed" }, { status: 500 })
   }
 }

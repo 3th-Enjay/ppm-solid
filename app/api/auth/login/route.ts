@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     if (!result) {
       // Check if user exists and needs verification
       const db = (await import("@/lib/db")).getDB()
-      const user = await db.findUserByEmail(validated.email)
+      const user = await db.findUserByEmail(validated.email.trim().toLowerCase())
       
       if (user && user.emailVerified === false) {
         return NextResponse.json({ 
@@ -62,4 +62,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
 }
-

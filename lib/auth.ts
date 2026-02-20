@@ -75,12 +75,12 @@ export const authService = {
     // Check if this is the env admin account first
     if (normalizedAdminAccountEmail && ADMIN_ACCOUNTS_PASSWORD && normalizedEmail === normalizedAdminAccountEmail && password === ADMIN_ACCOUNTS_PASSWORD) {
       // Try to find existing user first
-      let user = await db.findUserByEmail(email)
+      let user = await db.findUserByEmail(normalizedEmail)
       
       if (!user) {
         // Create admin user if it doesn't exist
         user = await db.createUser({
-          email,
+          email: normalizedEmail,
           password: await hashPassword(password),
           name: "Admin Account",
           role: "admin",
@@ -103,7 +103,7 @@ export const authService = {
     }
 
     // Regular user login
-    const user = await db.findUserByEmail(email)
+    const user = await db.findUserByEmail(normalizedEmail)
     if (!user) {
       return null
     }
@@ -118,32 +118,10 @@ export const authService = {
       return null
     }
 
-    // Require email verification for users who registered via OTP
-    // Users created directly (no OTP) can log in
-    // Users who registered via OTP must verify email first
+    // Require email verification for users who registered via OTP.
+    // OTP is only sent during signup and explicit resend actions.
     if (user.emailVerified === false) {
-      // If user has an active OTP, they need to verify first
-      if (user.otpHash && user.otpExpiresAt) {
-        const otpExpired = new Date(user.otpExpiresAt).getTime() < Date.now()
-        if (!otpExpired) {
-          // Active OTP exists, user must verify
-          return null
-        }
-        // OTP expired, resend it
-        try {
-          const otp = generateOtpCode()
-          const otpHash = await hashPassword(otp)
-          const otpExpiresAt = new Date(Date.now() + OTP_EXPIRES_MINUTES * 60 * 1000)
-          await db.updateUser(user.id, { otpHash, otpExpiresAt })
-          await sendOtpEmail({ to: user.email, name: user.name, otp })
-        } catch (error) {
-          console.error("Failed to resend OTP:", error)
-          // Continue to block login even if email fails
-        }
-        return null
-      }
-      // No OTP but email not verified - this shouldn't happen for registered users
-      // But allow login for users created directly
+      return null
     }
 
     // Generate JWT token
@@ -162,7 +140,8 @@ export const authService = {
     role: "student" | "instructor" | "admin" | "finance" = "student"
   ): Promise<{ user: User; token: string }> {
     const db = getDB()
-    const existingUser = await db.findUserByEmail(email)
+    const normalizedEmail = email.trim().toLowerCase()
+    const existingUser = await db.findUserByEmail(normalizedEmail)
 
     if (existingUser) {
       throw new Error("User already exists")
@@ -172,7 +151,7 @@ export const authService = {
     const hashedPassword = await hashPassword(password)
 
     const user = await db.createUser({
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       name,
       role,
@@ -197,7 +176,8 @@ export const authService = {
     role: "student" | "instructor" | "admin" | "finance" = "student"
   ): Promise<{ user: User }> {
     const db = getDB()
-    const existingUser = await db.findUserByEmail(email)
+    const normalizedEmail = email.trim().toLowerCase()
+    const existingUser = await db.findUserByEmail(normalizedEmail)
 
     if (existingUser) {
       throw new Error("User already exists")
@@ -209,7 +189,7 @@ export const authService = {
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRES_MINUTES * 60 * 1000)
 
     const user = await db.createUser({
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       name,
       role,
@@ -221,7 +201,7 @@ export const authService = {
 
     // Send OTP email - if it fails, log but don't fail registration
     try {
-      await sendOtpEmail({ to: email, name, otp })
+      await sendOtpEmail({ to: normalizedEmail, name, otp })
     } catch (error) {
       console.error("Failed to send OTP email:", error)
       // In development, log the OTP to console
@@ -241,7 +221,8 @@ export const authService = {
 
   async verifyOtp(email: string, otp: string): Promise<{ user: User; token: string } | null> {
     const db = getDB()
-    const user = await db.findUserByEmail(email)
+    const normalizedEmail = email.trim().toLowerCase()
+    const user = await db.findUserByEmail(normalizedEmail)
 
     if (!user || !user.otpHash || !user.otpExpiresAt) {
       return null
@@ -271,7 +252,8 @@ export const authService = {
 
   async resendOtp(email: string): Promise<boolean> {
     const db = getDB()
-    const user = await db.findUserByEmail(email)
+    const normalizedEmail = email.trim().toLowerCase()
+    const user = await db.findUserByEmail(normalizedEmail)
 
     if (!user || user.emailVerified) {
       return false
@@ -282,9 +264,13 @@ export const authService = {
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRES_MINUTES * 60 * 1000)
 
     await db.updateUser(user.id, { otpHash, otpExpiresAt })
-    await sendOtpEmail({ to: email, name: user.name, otp })
-
-    return true
+    try {
+      await sendOtpEmail({ to: normalizedEmail, name: user.name, otp })
+      return true
+    } catch (error) {
+      console.error("Failed to resend OTP email:", error)
+      return false
+    }
   },
 
   async updatePassword(
@@ -306,7 +292,8 @@ export const authService = {
 
   async requestPasswordReset(email: string): Promise<boolean> {
     const db = getDB()
-    const user = await db.findUserByEmail(email)
+    const normalizedEmail = email.trim().toLowerCase()
+    const user = await db.findUserByEmail(normalizedEmail)
     
     if (!user) {
       // Don't reveal if user exists or not for security
@@ -326,10 +313,10 @@ export const authService = {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}` 
       : 'http://localhost:3000'
-    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`
+    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(normalizedEmail)}`
     
     try {
-      await sendPasswordResetEmail({ to: email, name: user.name, resetUrl, token: resetToken })
+      await sendPasswordResetEmail({ to: normalizedEmail, name: user.name, resetUrl, token: resetToken })
     } catch (error) {
       console.error("Failed to send password reset email:", error)
       // In development, log the reset info
@@ -349,7 +336,8 @@ export const authService = {
 
   async resetPassword(email: string, token: string, newPassword: string): Promise<boolean> {
     const db = getDB()
-    const user = await db.findUserByEmail(email)
+    const normalizedEmail = email.trim().toLowerCase()
+    const user = await db.findUserByEmail(normalizedEmail)
     
     if (!user || !user.otpHash || !user.otpExpiresAt) {
       return false
@@ -404,4 +392,3 @@ export const authService = {
     return verifyToken(token)
   },
 }
-

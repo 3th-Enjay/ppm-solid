@@ -58,7 +58,7 @@ export default function LoginPage() {
           router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`)
           toast({
             title: "Email verification required",
-            description: "Please verify your email to continue. We've sent you a new verification code.",
+            description: "Please verify your email to continue. Use the code from signup, or tap Resend on the verify page.",
           })
           setLoading(false)
           return
