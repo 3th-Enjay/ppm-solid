@@ -85,7 +85,7 @@ export const paymentInitializeSchema = z.object({
   courseIds: z.array(z.string()).min(1),
   amount: z.number().min(1),
   email: z.string().email(),
-  currency: z.enum(["NGN", "USD", "GBP"]).optional(),
+  currency: z.enum(["NGN", "USD", "EUR", "GBP"]).optional(),
 })
 
 export const paymentRefundSchema = z.object({

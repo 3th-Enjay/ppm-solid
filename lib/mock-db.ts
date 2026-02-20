@@ -196,6 +196,34 @@ export const mockCourses: Course[] = [
   },
 ]
 
+// Seeded Categories
+export const mockCategories: Category[] = [
+  {
+    id: "cat-1",
+    name: "The Foundation Pillar",
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+  {
+    id: "cat-2",
+    name: "The Clinical Pillar",
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+  {
+    id: "cat-3",
+    name: "The Leadership Pillar",
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+  {
+    id: "cat-4",
+    name: "The Family Pillar",
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+]
+
 // Seeded Enrollments
 export const mockEnrollments: Enrollment[] = [
   {

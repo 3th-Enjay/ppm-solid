@@ -51,16 +51,19 @@ export const useAuthStore = create<AuthState>()(
 
 interface CartState {
   items: CartItem[]
+  hydrated: boolean
   addToCart: (item: CartItem) => void
   removeFromCart: (courseId: string) => void
   clearCart: () => void
   getTotal: (currency: Currency) => number
+  setHydrated: (value: boolean) => void
 }
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      hydrated: false,
       addToCart: (item) => {
         const items = get().items
         const exists = items.find((i) => i.courseId === item.courseId)
@@ -75,9 +78,13 @@ export const useCartStore = create<CartState>()(
       getTotal: (currency) => {
         return get().items.reduce((total, item) => total + item.course.price[currency], 0)
       },
+      setHydrated: (value) => set({ hydrated: value }),
     }),
     {
       name: "cart-storage",
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true)
+      },
     },
   ),
 )
@@ -85,8 +92,10 @@ export const useCartStore = create<CartState>()(
 interface PreferencesState {
   currency: Currency
   currencySelected: boolean
+  hydrated: boolean
   setCurrency: (currency: Currency) => void
   setCurrencySelected: (selected: boolean) => void
+  setHydrated: (value: boolean) => void
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -94,11 +103,16 @@ export const usePreferencesStore = create<PreferencesState>()(
     (set) => ({
       currency: "USD",
       currencySelected: false,
+      hydrated: false,
       setCurrency: (currency) => set({ currency }),
       setCurrencySelected: (selected) => set({ currencySelected: selected }),
+      setHydrated: (value) => set({ hydrated: value }),
     }),
     {
       name: "preferences-storage",
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true)
+      },
     },
   ),
 )

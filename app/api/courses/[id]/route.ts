@@ -116,11 +116,25 @@ export async function DELETE(
 
     // Verify token and get user
     const user = await authService.getCurrentUser(token)
-    if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden - only admin can delete courses" }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized - invalid token" }, { status: 401 })
     }
 
     const db = getDB()
+    const course = await db.getCourseById(id)
+    if (!course) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 })
+    }
+
+    const canDelete =
+      user.role === "admin" || (user.role === "instructor" && course.instructorId === user.id)
+    if (!canDelete) {
+      return NextResponse.json(
+        { error: "Forbidden - only admin or the course instructor can delete this course" },
+        { status: 403 },
+      )
+    }
+
     const success = await db.deleteCourse(id)
 
     if (!success) {

@@ -16,7 +16,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ArrowLeft, Save } from "lucide-react"
+import {
+  DialogClose,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { ArrowLeft, Link as LinkIcon, Save, Trash2, Upload } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
 import type { Course, CourseCategory, CourseLevel, Category } from "@/lib/types"
 
@@ -42,6 +52,7 @@ export default function InstructorCourseEditPage() {
 
   const [course, setCourse] = useState<Course | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
+  const [newCategory, setNewCategory] = useState("")
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState<CourseCategory | "">("")
@@ -153,6 +164,51 @@ export default function InstructorCourseEditPage() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!course) return
+    setSuccessMessage("")
+    setErrorMessage("")
+    try {
+      const res = await fetch(`/api/courses/${course.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token || ""}`,
+        },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete course")
+      }
+      router.push("/instructor/courses")
+    } catch (error: any) {
+      setErrorMessage(error?.message || "Failed to delete course.")
+    }
+  }
+
+  const handleAddCategory = async () => {
+    const name = newCategory.trim()
+    if (!name) return
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: JSON.stringify({ name }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create category")
+      }
+      setCategories((prev) => [...prev, data.category])
+      setCategory(data.category.name)
+      setNewCategory("")
+    } catch (error: any) {
+      setErrorMessage(error?.message || "Failed to create category.")
+    }
+  }
+
   if (!course) {
     return (
       <div className="p-8">
@@ -176,6 +232,36 @@ export default function InstructorCourseEditPage() {
         <h1 className="text-3xl font-bold">Edit Course Details</h1>
         <p className="text-muted-foreground mt-2">Update course info, pricing, and visibility.</p>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>How to Update This Course</CardTitle>
+          <CardDescription>Use this workflow to keep edits clean and publish-ready.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <ol className="list-decimal pl-5 space-y-2">
+            <li>Update title, description, level, and category.</li>
+            <li>Adjust prices and duration.</li>
+            <li>Click Save Changes.</li>
+            <li>Open Edit Content to manage modules, lessons, and video URLs.</li>
+            <li>Publish only after content and pricing are final.</li>
+          </ol>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button asChild variant="outline">
+              <Link href={`/instructor/courses/${course.id}/content`}>
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Edit Course Content
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/instructor/upload">
+                <Upload className="h-4 w-4 mr-2" />
+                YouTube Upload Guide
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {successMessage && (
         <Alert className="mb-6">
@@ -225,6 +311,16 @@ export default function InstructorCourseEditPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Create category"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                  />
+                  <Button type="button" variant="outline" onClick={handleAddCategory}>
+                    Add
+                  </Button>
+                </div>
               </div>
               <div className="grid gap-2">
                 <Label>Level *</Label>
@@ -313,6 +409,30 @@ export default function InstructorCourseEditPage() {
           <Button type="button" variant="outline" asChild>
             <Link href={`/instructor/courses/${course.id}/content`}>Edit Content</Link>
           </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button type="button" variant="destructive">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Course
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete course</DialogTitle>
+                <DialogDescription>
+                  This will permanently delete this course and its content. This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button variant="destructive" onClick={handleDelete}>
+                  Delete Course
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

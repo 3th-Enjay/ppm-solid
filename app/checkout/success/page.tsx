@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Download, ArrowRight } from "lucide-react"
+import { CheckCircle, Download, ArrowRight, Loader2 } from "lucide-react"
 import { formatCurrency, formatDate } from "@/lib/utils/format"
 import Link from "next/link"
 import type { Payment } from "@/lib/types"
@@ -15,6 +15,7 @@ export default function CheckoutSuccessPage() {
   const reference = searchParams.get("reference")
   const [payment, setPayment] = useState<Payment | null>(null)
   const [courses, setCourses] = useState<{ id: string; title: string; thumbnail?: string }[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!reference) {
@@ -68,14 +69,44 @@ export default function CheckoutSuccessPage() {
         }
       } catch (error) {
         console.error("Failed to load payment:", error)
+      } finally {
+        setLoading(false)
       }
     }
 
     loadPayment()
   }, [reference, router])
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full">
+          <CardContent className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <h2 className="text-xl font-semibold">Loading payment details</h2>
+            <p className="text-sm text-muted-foreground">Please wait while we confirm your transaction.</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   if (!payment) {
-    return null
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full">
+          <CardContent className="p-10 text-center space-y-4">
+            <h2 className="text-xl font-semibold">Payment details unavailable</h2>
+            <p className="text-sm text-muted-foreground">
+              We could not load your payment details yet. You can check your payment history.
+            </p>
+            <Button asChild>
+              <Link href="/dashboard/payments">Go to Payments</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   const downloadInvoice = () => {

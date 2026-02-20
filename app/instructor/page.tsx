@@ -10,7 +10,7 @@ import type { Course, Enrollment } from "@/lib/types"
 import Link from "next/link"
 
 export default function InstructorDashboard() {
-  const { user, token } = useAuthStore()
+  const { user, token, hydrated } = useAuthStore()
   const [courses, setCourses] = useState<Course[]>([])
   const [stats, setStats] = useState({
     totalCourses: 0,
@@ -23,14 +23,13 @@ export default function InstructorDashboard() {
   })
 
   useEffect(() => {
-    if (user) {
-      loadInstructorData()
-    }
-  }, [user])
+    if (!hydrated || !user) return
+    loadInstructorData()
+  }, [hydrated, user, token])
 
   const loadInstructorData = async () => {
     try {
-      const coursesRes = await fetch(`/api/courses?instructorName=${encodeURIComponent(user?.name || "")}&includeDrafts=true`, {
+      const coursesRes = await fetch(`/api/courses?instructorId=${encodeURIComponent(user?.id || "")}&includeDrafts=true`, {
         headers: {
           Authorization: `Bearer ${token || ""}`,
         },

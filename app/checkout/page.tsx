@@ -8,28 +8,31 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuthStore, useCartStore, usePreferencesStore } from "@/lib/store"
 import { formatCurrency } from "@/lib/utils/format"
-import { CreditCard, Lock } from "lucide-react"
+import { CreditCard, Loader2, Lock } from "lucide-react"
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
-  const { items, clearCart } = useCartStore()
-  const { currency } = usePreferencesStore()
+  const { user, hydrated: authHydrated } = useAuthStore()
+  const { items, clearCart, hydrated: cartHydrated } = useCartStore()
+  const { currency, hydrated: preferencesHydrated } = usePreferencesStore()
   const [loading, setLoading] = useState(false)
   const [billingInfo, setBillingInfo] = useState({
     name: user?.name || "",
     email: user?.email || "",
     phone: "",
   })
+  const storesHydrated = authHydrated && cartHydrated && preferencesHydrated
 
   useEffect(() => {
+    if (!storesHydrated) return
+
     if (!user) {
       router.push("/login?redirect=/checkout")
     }
     if (items.length === 0) {
       router.push("/courses")
     }
-  }, [user, items, router])
+  }, [storesHydrated, user, items.length, router])
 
   const courses = items.map((item) => item.course).filter(Boolean)
   const subtotal = courses.reduce((sum, course) => sum + course.price[currency], 0)
@@ -37,7 +40,7 @@ export default function CheckoutPage() {
   const total = subtotal - discount
 
   const handlePayment = async () => {
-    if (!user) return
+    if (!user || loading) return
 
     setLoading(true)
 
@@ -81,12 +84,35 @@ export default function CheckoutPage() {
     }
   }
 
+  if (!storesHydrated) {
+    return (
+      <div className="min-h-screen bg-background py-12">
+        <div className="container max-w-5xl">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center gap-3 py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading checkout details...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   if (!user || items.length === 0) {
     return null
   }
 
   return (
     <div className="min-h-screen bg-background py-12">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-lg border bg-card px-6 py-5">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Fetching payment details...</p>
+          </div>
+        </div>
+      )}
       <div className="container max-w-5xl">
         <h1 className="text-3xl font-bold mb-8 text-balance">Checkout</h1>
 

@@ -3,6 +3,7 @@ import { ZodError } from "zod"
 import { paystackService } from "@/lib/paystack"
 import { getDB } from "@/lib/db"
 import { paymentInitializeSchema } from "@/lib/validation"
+import type { Currency } from "@/lib/types"
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     const paymentInit = await paystackService.initializePayment({
       email,
       amount,
-      currency: currency as "NGN" | "USD" | "GBP",
+      currency: currency as Currency,
       metadata: { userId, courseIds },
       callbackUrl,
     })
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       courseId: Array.isArray(courseIds) ? courseIds[0] : courseIds,
       courseIds: Array.isArray(courseIds) ? courseIds : [courseIds],
       amount,
-      currency: currency as "NGN" | "USD" | "GBP",
+      currency: currency as Currency,
       status: "pending",
       reference: paymentInit.reference,
       paymentMethod: "paystack",

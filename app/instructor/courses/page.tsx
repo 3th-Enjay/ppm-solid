@@ -10,14 +10,14 @@ import { useAuthStore } from "@/lib/store"
 import type { Course } from "@/lib/types"
 
 export default function InstructorCoursesPage() {
-  const { user, token } = useAuthStore()
+  const { user, token, hydrated } = useAuthStore()
   const [courses, setCourses] = useState<Course[]>([])
 
   useEffect(() => {
-    if (!user) return
+    if (!hydrated || !user) return
     const load = async () => {
       try {
-        const res = await fetch(`/api/courses?instructorName=${encodeURIComponent(user.name)}&includeDrafts=true`, {
+        const res = await fetch(`/api/courses?instructorId=${encodeURIComponent(user.id)}&includeDrafts=true`, {
           headers: {
             Authorization: `Bearer ${token || ""}`,
           },
@@ -30,7 +30,7 @@ export default function InstructorCoursesPage() {
       }
     }
     load()
-  }, [user])
+  }, [hydrated, user, token])
 
   return (
     <div className="p-8">

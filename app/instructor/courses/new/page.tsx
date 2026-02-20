@@ -129,7 +129,10 @@ export default function NewCoursePage() {
     try {
       const res = await fetch("/api/courses", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
         body: JSON.stringify({
           title: trimmedTitle,
           description: trimmedDescription,
