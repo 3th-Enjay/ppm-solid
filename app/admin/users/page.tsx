@@ -150,9 +150,21 @@ export default function AdminUsersPage() {
     }
   }
 
-  const deleteUnverifiedUser = async (target: User) => {
-    if (target.emailVerified) return
-    if (!confirm(`Delete unverified user ${target.email}? This cannot be undone.`)) return
+  const deleteUser = async (target: User) => {
+    const canDelete = 
+      target.role === "instructor" || 
+      target.role === "finance" || 
+      target.role === "admin" || 
+      !target.emailVerified
+
+    if (!canDelete) {
+      alert("Only instructors, finance users, admins, and unverified users can be deleted")
+      return
+    }
+
+    const roleLabel = target.role === "admin" ? "admin" : target.role === "instructor" ? "instructor" : target.role === "finance" ? "finance user" : "unverified user"
+    if (!confirm(`Delete ${roleLabel} ${target.email}? This cannot be undone.`)) return
+    
     try {
       const res = await fetch(`/api/users/${target.id}`, {
         method: "DELETE",
@@ -160,12 +172,16 @@ export default function AdminUsersPage() {
           Authorization: `Bearer ${token || ""}`,
         },
       })
+      
       if (!res.ok) {
-        throw new Error("Failed to delete user")
+        const error = await res.json()
+        throw new Error(error.error || "Failed to delete user")
       }
+      
       setUsers((prev) => prev.filter((u) => u.id !== target.id))
     } catch (error) {
       console.error("Failed to delete user:", error)
+      alert(error instanceof Error ? error.message : "Failed to delete user")
     }
   }
 
@@ -269,6 +285,11 @@ export default function AdminUsersPage() {
                         const status = u.status || "active"
                         const isSelfAdmin = u.role === "admin" && u.id === currentUser?.id
                         const canToggle = !(u.role === "admin" && isSelfAdmin)
+                        const canDelete = 
+                          u.role === "instructor" || 
+                          u.role === "finance" || 
+                          u.role === "admin" || 
+                          !u.emailVerified
                         return (
                           <div key={u.id} className="rounded-lg border p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                             <div className="min-w-0">
@@ -289,11 +310,11 @@ export default function AdminUsersPage() {
                                   Email
                                 </a>
                               </Button>
-                              {!u.emailVerified && (
+                              {canDelete && (
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => deleteUnverifiedUser(u)}
+                                  onClick={() => deleteUser(u)}
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Delete

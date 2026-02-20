@@ -23,22 +23,39 @@ export default function ForgotPasswordPage() {
     e.preventDefault()
     setLoading(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
 
-    setSuccess(true)
-    setLoading(false)
+      const result = await res.json()
 
-    toast({
-      title: "Reset link sent!",
-      description: "Check your email for password reset instructions.",
-    })
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to send reset link")
+      }
+
+      setSuccess(true)
+      toast({
+        title: "Reset link sent!",
+        description: "If an account exists with this email, a password reset link has been sent.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send reset link. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-      <Card>
-        <CardHeader className="space-y-1">
+      <Card className="shadow-lg">
+        <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">Forgot password?</CardTitle>
           <CardDescription>
             {success

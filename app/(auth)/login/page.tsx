@@ -53,6 +53,16 @@ export default function LoginPage() {
       const result = await res.json()
 
       if (!res.ok || !result?.user) {
+        if (result?.requiresVerification) {
+          // Redirect to verify OTP page
+          router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`)
+          toast({
+            title: "Email verification required",
+            description: "Please verify your email to continue. We've sent you a new verification code.",
+          })
+          setLoading(false)
+          return
+        }
         setError(result?.error || "Invalid email or password")
         setLoading(false)
         return

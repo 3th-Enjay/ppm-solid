@@ -68,14 +68,40 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
+    // Check if the current user is the env admin account
+    const ADMIN_ACCOUNTS_EMAIL = (process.env.ADMIN_ACCOUNTS_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL)?.trim().toLowerCase()
+    const currentUserEmail = session.email?.toLowerCase()
+    
+    if (!ADMIN_ACCOUNTS_EMAIL || currentUserEmail !== ADMIN_ACCOUNTS_EMAIL) {
+      return NextResponse.json({ 
+        error: "Only the primary admin account can delete users" 
+      }, { status: 403 })
+    }
+
     const db = getDB()
     const user = await db.findUserById(id)
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    if (user.emailVerified) {
-      return NextResponse.json({ error: "Only unverified users can be deleted" }, { status: 400 })
+    // Prevent deleting the env admin account itself
+    if (user.email.toLowerCase() === ADMIN_ACCOUNTS_EMAIL) {
+      return NextResponse.json({ 
+        error: "Cannot delete the primary admin account" 
+      }, { status: 400 })
+    }
+
+    // Allow deleting: instructors, finance, other admins, and unverified users
+    const canDelete = 
+      user.role === "instructor" || 
+      user.role === "finance" || 
+      user.role === "admin" || 
+      !user.emailVerified
+
+    if (!canDelete) {
+      return NextResponse.json({ 
+        error: "Only instructors, finance users, admins, and unverified users can be deleted" 
+      }, { status: 400 })
     }
 
     const deleted = await db.deleteUser(id)

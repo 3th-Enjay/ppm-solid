@@ -14,6 +14,7 @@ const PUBLIC_PREFIXES = [
   "/register",
   "/verify-otp",
   "/forgot-password",
+  "/reset-password",
   "/api/auth",
 ]
 

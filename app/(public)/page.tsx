@@ -70,11 +70,10 @@ export default function HomePage() {
             >
               <Badge className="mb-2">Welcome to Prompt Care Academy</Badge>
               <h1 className="text-4xl md:text-6xl font-bold text-balance">
-                Master New Skills with Expert-Led Online Courses
+                Join thousands of students today to learn and be a caregiver with a difference
               </h1>
               <p className="text-xl text-muted-foreground text-pretty">
-                Join thousands of students learning web development, design, business, and more. Start your journey
-                today.
+                Promptcare Academy offers comprehensive caregivers training through a top-quality curriculum and expert instructors. We are dedicated to equipping the heart and hands of caregivers and anyone who desires to become one, to deliver compassionate, high-quality care, both locally and internationally.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" asChild>

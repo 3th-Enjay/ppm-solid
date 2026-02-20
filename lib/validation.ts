@@ -121,6 +121,16 @@ export const passwordChangeSchema = z.object({
   newPassword: z.string().min(6),
 })
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+})
+
+export const resetPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  token: z.string().min(6, "Token is required"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+})
+
 export const profileUpdateSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   bio: z.string().optional(),
