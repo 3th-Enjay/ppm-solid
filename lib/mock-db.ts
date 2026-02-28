@@ -1,5 +1,16 @@
 ﻿// Mock database with seeded data
-import type { User, Course, Enrollment, Payment, Certificate, Quiz, Assignment, AdminLog, Category } from "./types"
+import type {
+  User,
+  Course,
+  Enrollment,
+  Payment,
+  Certificate,
+  Quiz,
+  Assignment,
+  AdminLog,
+  Category,
+  LearningNote,
+} from "./types"
 
 // Seeded Users
 export const mockUsers: User[] = []
@@ -335,6 +346,7 @@ class MockDatabase {
   quizzes: Quiz[] = [...mockQuizzes]
   assignments: Assignment[] = [...mockAssignments]
   adminLogs: AdminLog[] = []
+  notes: LearningNote[] = []
 
   // User methods
   async findUserByEmail(email: string): Promise<User | undefined> {
@@ -568,6 +580,31 @@ class MockDatabase {
   // Assignment methods
   async getAssignmentById(id: string): Promise<Assignment | undefined> {
     return this.assignments.find((a) => a.id === id)
+  }
+
+  // Learning note methods
+  async getNotesByUserId(userId: string): Promise<LearningNote[]> {
+    return this.notes
+      .filter((n) => n.userId === userId)
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+  }
+
+  async createNote(note: Omit<LearningNote, "id" | "createdAt" | "updatedAt">): Promise<LearningNote> {
+    const newNote: LearningNote = {
+      ...note,
+      id: `note-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    this.notes.unshift(newNote)
+    return newNote
+  }
+
+  async deleteNote(noteId: string, userId: string): Promise<boolean> {
+    const idx = this.notes.findIndex((n) => n.id === noteId && n.userId === userId)
+    if (idx === -1) return false
+    this.notes.splice(idx, 1)
+    return true
   }
 }
 

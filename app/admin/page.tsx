@@ -38,6 +38,9 @@ import {
 import type { Payment, User, Course, Enrollment, AdminLog } from "@/lib/types"
 import { formatDate } from "@/lib/utils/format"
 import { useAuthStore } from "@/lib/store"
+import { RoleAnalyticsCard } from "@/components/skillup/role-analytics-card"
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Line, LineChart } from "recharts"
+import { buildAdminRevenueTrend, buildRoleDistribution } from "@/lib/analytics/adapters"
 
 export default function AdminDashboardPage() {
   const { token } = useAuthStore()
@@ -216,6 +219,9 @@ export default function AdminDashboardPage() {
   const recentUsers = [...users]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5)
+
+  const revenueTrend = buildAdminRevenueTrend(payments)
+  const roleDistribution = buildRoleDistribution(users)
 
   return (
     <div className="p-8">
@@ -598,6 +604,39 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
         </Link>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
+        <RoleAnalyticsCard title="Revenue Trend" subtitle="Monthly revenue (NGN normalized)">
+          {revenueTrend.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={revenueTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="month" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} />
+                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Line type="monotone" dataKey="revenue" stroke="var(--primary)" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No revenue data.</div>
+          )}
+        </RoleAnalyticsCard>
+        <RoleAnalyticsCard title="Role Distribution" subtitle="Current user mix">
+          {roleDistribution.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={roleDistribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="role" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} />
+                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Bar dataKey="total" fill="var(--accent)" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No user data.</div>
+          )}
+        </RoleAnalyticsCard>
       </div>
     </div>
   )

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
+import { 
   Select,
   SelectContent,
   SelectItem,
@@ -33,6 +33,9 @@ import {
 import type { Payment } from "@/lib/types"
 import Link from "next/link"
 import { useAuthStore } from "@/lib/store"
+import { RoleAnalyticsCard } from "@/components/skillup/role-analytics-card"
+import { Bar, BarChart, CartesianGrid, Pie, PieChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { buildFinanceCurrencyRevenue, buildFinanceStatusMix } from "@/lib/analytics/adapters"
 
 export default function FinanceDashboard() {
   const { token } = useAuthStore()
@@ -295,6 +298,10 @@ export default function FinanceDashboard() {
     },
   ]
 
+  const currencyRevenue = buildFinanceCurrencyRevenue(payments)
+  const statusMix = buildFinanceStatusMix(payments)
+  const pieColors = ["#4f46e5", "#22c7a8", "#f59e0b", "#ef4444", "#64748b"]
+
   return (
     <div className="p-8">
       <div className="mb-8 flex justify-between items-center">
@@ -351,6 +358,40 @@ export default function FinanceDashboard() {
             </Card>
           )
         })}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
+        <RoleAnalyticsCard title="Revenue by Currency" subtitle="Completed transactions only">
+          {currencyRevenue.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={currencyRevenue}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="currency" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} />
+                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Bar dataKey="total" fill="var(--primary)" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No revenue data.</div>
+          )}
+        </RoleAnalyticsCard>
+        <RoleAnalyticsCard title="Transaction Status Mix" subtitle="All transaction statuses">
+          {statusMix.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={statusMix} dataKey="total" nameKey="status" outerRadius={90} label>
+                  {statusMix.map((entry, index) => (
+                    <Cell key={`cell-${entry.status}`} fill={pieColors[index % pieColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No status data.</div>
+          )}
+        </RoleAnalyticsCard>
       </div>
 
       {/* Filters and Search */}

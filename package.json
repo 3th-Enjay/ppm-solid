@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
-    "start": "next start"
+    "start": "next start",
+    "docs:optimize-ui": "node scripts/optimize-ui-doc.mjs"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",

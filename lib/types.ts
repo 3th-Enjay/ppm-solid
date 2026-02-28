@@ -166,3 +166,12 @@ export interface AdminLog {
   createdAt: Date
 }
 
+export interface LearningNote {
+  id: string
+  userId: string
+  content: string
+  courseId?: string
+  createdAt: Date
+  updatedAt: Date
+}
+

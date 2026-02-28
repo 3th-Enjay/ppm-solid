@@ -12,6 +12,7 @@ import type {
   Assignment,
   AdminLog,
   Category,
+  LearningNote,
 } from './types'
 import { ObjectId } from 'mongodb'
 
@@ -389,6 +390,31 @@ export class MongoDBDatabase {
       doc = await collection.findOne({ id })
     }
     return doc ? toObject<Assignment>(doc) : undefined
+  }
+
+  // Learning note methods
+  async getNotesByUserId(userId: string): Promise<LearningNote[]> {
+    const collection = await getCollection<LearningNote>('notes')
+    const docs = await collection.find({ userId }).sort({ updatedAt: -1 }).toArray()
+    return docs.map(toObject<LearningNote>)
+  }
+
+  async createNote(note: Omit<LearningNote, 'id' | 'createdAt' | 'updatedAt'>): Promise<LearningNote> {
+    const collection = await getCollection<LearningNote>('notes')
+    const newNote: Omit<LearningNote, 'id'> = {
+      ...note,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    const result = await collection.insertOne(toDocument(newNote as LearningNote))
+    return { ...newNote, id: result.insertedId.toString() } as LearningNote
+  }
+
+  async deleteNote(noteId: string, userId: string): Promise<boolean> {
+    const collection = await getCollection<LearningNote>('notes')
+    const query = ObjectId.isValid(noteId) ? { _id: new ObjectId(noteId), userId } : { id: noteId, userId }
+    const result = await collection.deleteOne(query)
+    return result.deletedCount > 0
   }
 }
 

@@ -1,15 +1,40 @@
 import * as React from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
 
-function Card({ className, ...props }: React.ComponentProps<'div'>) {
+const cardVariants = cva(
+  'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
+  {
+    variants: {
+      variant: {
+        default: '',
+        elevated: 'shadow-[var(--shadow-soft)] border-border/80',
+        gradient:
+          'border-transparent bg-[linear-gradient(var(--card),var(--card))_padding-box,linear-gradient(135deg,var(--primary),var(--accent))_border-box]',
+      },
+      interactive: {
+        true: 'transition-transform duration-200 hover:-translate-y-1 hover:shadow-[var(--shadow-lifted)]',
+        false: '',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      interactive: false,
+    },
+  },
+)
+
+function Card({
+  className,
+  variant,
+  interactive,
+  ...props
+}: React.ComponentProps<'div'> & VariantProps<typeof cardVariants>) {
   return (
     <div
       data-slot="card"
-      className={cn(
-        'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
-        className,
-      )}
+      className={cn(cardVariants({ variant, interactive }), className)}
       {...props}
     />
   )
@@ -83,6 +108,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
 
 export {
   Card,
+  cardVariants,
   CardHeader,
   CardFooter,
   CardTitle,

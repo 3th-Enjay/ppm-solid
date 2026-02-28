@@ -1,13 +1,15 @@
-"use client"
+﻿"use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import Image from "next/image"
-import { ArrowRight, BookOpen, Users, Award, Star, Clock, TrendingUp } from "lucide-react"
-import { Testimonials } from "@/components/testimonials"
 import { motion } from "framer-motion"
+import { ArrowRight, Award, BookOpen, Clock, Star } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Testimonials } from "@/components/testimonials"
+import { SectionShell } from "@/components/skillup/section-shell"
+import { SkillupHero } from "@/components/skillup/hero"
+import { fadeUp, sectionStagger } from "@/components/skillup/motion-presets"
 import { useEffect, useState } from "react"
 import type { Course } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils/format"
@@ -31,235 +33,143 @@ export default function HomePage() {
     loadCourses()
   }, [])
 
-  const stats = [
-    { label: "Active Students", value: "10,000+", icon: Users },
-    { label: "Expert Instructors", value: "50+", icon: Award },
-    { label: "Course Hours", value: "5,000+", icon: Clock },
-    { label: "Success Rate", value: "94%", icon: TrendingUp },
-  ]
-
   const features = [
     {
       title: "Expert-Led Courses",
-      description: "Learn from industry professionals with real-world experience",
+      description: "Learn from industry professionals with real-world experience.",
       icon: Award,
     },
     {
       title: "Flexible Learning",
-      description: "Study at your own pace, anywhere, anytime",
+      description: "Study at your own pace, anywhere, anytime.",
       icon: Clock,
     },
     {
       title: "Certificates",
-      description: "Earn recognized certificates upon course completion",
+      description: "Earn recognized certificates upon course completion.",
       icon: BookOpen,
     },
   ]
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section */}
-      <section className="relative py-20 md:py-32">
-        <div className="container">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-6"
-            >
-              <Badge className="mb-2">Welcome to Prompt Care Academy</Badge>
-              <h1 className="text-4xl md:text-6xl font-bold text-balance">
-                Join thousands of students today to learn and be a caregiver with a difference
-              </h1>
-              <p className="text-xl text-muted-foreground text-pretty">
-                Promptcare Academy offers comprehensive caregivers training through a top-quality curriculum and expert instructors. We are dedicated to equipping the heart and hands of caregivers and anyone who desires to become one, to deliver compassionate, high-quality care, both locally and internationally.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" asChild>
-                  <Link href="/courses">
-                    Browse Courses
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="/register">Register Now!</Link>
-                </Button>
-              </div>
+      <SkillupHero featuredCourses={featuredCourses} currency={currency} />
 
-              {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
-                {stats.map((stat, index) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: 0.1 * index }}
-                    className="text-center"
-                  >
-                    <div className="text-2xl md:text-3xl font-bold text-primary">{stat.value}</div>
-                    <div className="text-sm text-muted-foreground">{stat.label}</div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative"
-            >
-              <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[520px] rounded-2xl overflow-hidden">
-                  <Image 
-                    src="/promptcare-hero.jpeg" 
-                    alt="Prompt Care Academy hero"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
-                />
-              </div>
-              <div className="absolute -bottom-6 -left-6 bg-card p-4 rounded-xl shadow-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-3 rounded-lg">
-                    <Users className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">10,000+</div>
-                    <div className="text-sm text-muted-foreground">Happy Students</div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+      <SectionShell className="py-10 md:py-14">
+        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-border/80 bg-card/70 p-5 md:grid-cols-4 md:p-6">
+          {["Trusted by learners", "Career-focused tracks", "Instructor support", "Practical outcomes"].map((item) => (
+            <div key={item} className="text-center text-sm font-medium text-muted-foreground">
+              {item}
+            </div>
+          ))}
         </div>
-      </section>
+      </SectionShell>
 
-      {/* Features Section */}
-      <section className="py-20 bg-muted/50">
-        <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Prompt Care Academy?</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              We provide the best learning experience with cutting-edge features
+      <SectionShell className="bg-muted/40">
+        <motion.div
+          variants={sectionStagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="space-y-10"
+        >
+          <motion.div variants={fadeUp()} className="max-w-2xl space-y-3">
+            <Badge variant="secondary" className="rounded-full px-3 py-1">
+              Why Choose Prompt Care Academy?
+            </Badge>
+            <h2 className="text-3xl font-bold md:text-4xl">A learning environment designed for real progress</h2>
+            <p className="text-muted-foreground">
+              Every lesson is structured to move you from theory to practical confidence with clear guidance.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid gap-6 md:grid-cols-3">
             {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 * index }}
-                viewport={{ once: true }}
-              >
-                <Card className="h-full hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="bg-primary/10 w-12 h-12 rounded-lg flex items-center justify-center">
-                      <feature.icon className="w-6 h-6 text-primary" />
+              <motion.div key={feature.title} variants={fadeUp(0.06 * index)}>
+                <Card variant="elevated" interactive className="h-full">
+                  <CardContent className="space-y-4 p-6">
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                      <feature.icon className="h-5 w-5 text-primary" />
                     </div>
                     <h3 className="text-xl font-semibold">{feature.title}</h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+        </motion.div>
+      </SectionShell>
 
-      {/* Featured Courses Section */}
-      <section className="py-20">
-        <div className="container">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Courses</h2>
-              <p className="text-xl text-muted-foreground">Start learning with our most popular courses</p>
-            </div>
-            <Button variant="outline" asChild>
-              <Link href="/courses">
-                View All
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Link>
-            </Button>
+      <SectionShell>
+        <div className="mb-10 flex items-end justify-between gap-4">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold md:text-4xl">Featured Courses</h2>
+            <p className="text-muted-foreground">Start learning with our most popular courses</p>
           </div>
+          <Button variant="outline" asChild>
+            <Link href="/courses">
+              View All
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {featuredCourses.map((course, index) => (
-              <motion.div
-                key={course.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 * index }}
-                viewport={{ once: true }}
-              >
-                <Link href={`/courses/${course.slug}`}>
-                  <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full">
-                    <div className="aspect-video relative overflow-hidden bg-muted">
-                      <img
-                        src={course.thumbnail || "/placeholder.svg"}
-                        alt={course.title}
-                        className="object-cover w-full h-full"
-                      />
-                      <Badge className="absolute top-4 left-4">{course.level}</Badge>
+        <div className="grid gap-6 md:grid-cols-3">
+          {featuredCourses.map((course, index) => (
+            <motion.div
+              key={course.id}
+              variants={fadeUp(0.05 * index)}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
+              <Link href={`/courses/${course.slug}`}>
+                <Card variant="elevated" interactive className="h-full overflow-hidden">
+                  <div className="relative aspect-video overflow-hidden bg-muted">
+                    <img src={course.thumbnail || "/placeholder.svg"} alt={course.title} className="h-full w-full object-cover" />
+                    <Badge className="absolute left-4 top-4">{course.level}</Badge>
+                  </div>
+                  <CardContent className="space-y-4 p-6">
+                    <Badge variant="outline">{course.category}</Badge>
+                    <h3 className="line-clamp-2 text-lg font-semibold">{course.title}</h3>
+                    <p className="line-clamp-2 text-sm text-muted-foreground">{course.description}</p>
+
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <div className="flex items-center gap-1 text-sm">
+                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                        <span className="font-medium">{course.rating}</span>
+                        <span className="text-muted-foreground">({course.enrollmentCount})</span>
+                      </div>
+                      <div className="text-lg font-bold text-primary">{formatCurrency(course.price[currency], currency)}</div>
                     </div>
-                    <CardContent className="p-6 space-y-4">
-                      <div>
-                        <Badge variant="outline" className="mb-2">
-                          {course.category}
-                        </Badge>
-                        <h3 className="text-xl font-semibold mb-2 line-clamp-2">{course.title}</h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-medium">{course.rating}</span>
-                          <span className="text-sm text-muted-foreground">({course.enrollmentCount})</span>
-                        </div>
-                        <div className="text-xl font-bold text-primary">
-                          {formatCurrency(course.price[currency], currency)}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
         </div>
-      </section>
+      </SectionShell>
 
-      {/* Testimonials Section */}
       <Testimonials />
 
-      {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold">Ready to Start Learning?</h2>
-            <p className="text-xl opacity-90">
-              Join thousands of students and transform your career with our expert-led courses
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" asChild>
-                <Link href="/register">Register Now!</Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                asChild
-                className="bg-transparent text-primary-foreground border-primary-foreground hover:bg-primary-foreground/10"
-              >
-                <Link href="/courses">Explore Courses</Link>
-              </Button>
-            </div>
+      <SectionShell className="bg-primary text-primary-foreground">
+        <div className="mx-auto max-w-3xl space-y-5 text-center">
+          <h2 className="text-3xl font-bold md:text-4xl">Ready to Start Learning?</h2>
+          <p className="text-primary-foreground/90">
+            Join thousands of students and transform your career with our expert-led courses.
+          </p>
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
+            <Button size="lg" variant="secondary" asChild>
+              <Link href="/register">Register Now!</Link>
+            </Button>
+            <Button size="lg" variant="glass" asChild>
+              <Link href="/courses">Explore Courses</Link>
+            </Button>
           </div>
         </div>
-      </section>
+      </SectionShell>
     </div>
   )
 }
+

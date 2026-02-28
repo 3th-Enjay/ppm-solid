@@ -32,10 +32,11 @@ export function Logo({ className, variant = "full" }: LogoProps) {
         priority
         className="h-14 w-14"
       />
-      <span className="hidden sm:inline bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent font-bold text-lg">
-        Prompt Care Academy
+      <span className="hidden sm:inline text-lg uppercase tracking-wide text-foreground">
+        <span className="font-bold">PROMPT</span>{" "}
+        <span className="font-normal">CARE</span>{" "}
+        <span className="font-normal">ACADEMY</span>
       </span>
     </Link>
   )
 }
-

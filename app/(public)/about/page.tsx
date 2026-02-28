@@ -134,7 +134,7 @@ export default function AboutPage() {
       </section>
 
       {/* Vision Section */}
-      <section className="py-16">
+      <section className="pt-0 pb-16">
         <div className="container" ref={visionRef}>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -170,7 +170,7 @@ export default function AboutPage() {
                   src={aboutImage}
                   alt="Prompt Care Academy"
                   fill
-                  className="object-cover"
+                  className="object-contain object-top"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               </div>
@@ -282,7 +282,7 @@ export default function AboutPage() {
                   src={storyImage}
                   alt="Our story"
                   fill
-                  className="object-cover"
+                  className="object-contain object-top"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               </div>
@@ -348,7 +348,7 @@ export default function AboutPage() {
                       src={member.image}
                       alt={member.name}
                       fill
-                      className="object-cover"
+                      className="object-contain object-top"
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   </div>

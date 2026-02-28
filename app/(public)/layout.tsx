@@ -13,11 +13,7 @@ export default function PublicLayout({
       <AnimatedBackground />
       <div className="flex min-h-screen flex-col bg-background">
         <PublicHeader />
-        <main className="flex-1">
-          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
-        </main>
+        <main className="flex-1">{children}</main>
         <PublicFooter />
       </div>
     </>

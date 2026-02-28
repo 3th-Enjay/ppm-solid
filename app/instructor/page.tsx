@@ -8,10 +8,14 @@ import { BookOpen, Users, TrendingUp, Award, Plus, Eye, Edit, BarChart3 } from "
 import { useAuthStore } from "@/lib/store"
 import type { Course, Enrollment } from "@/lib/types"
 import Link from "next/link"
+import { RoleAnalyticsCard } from "@/components/skillup/role-analytics-card"
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { buildInstructorCourseQuality, buildInstructorEnrollmentByCourse } from "@/lib/analytics/adapters"
 
 export default function InstructorDashboard() {
   const { user, token, hydrated } = useAuthStore()
   const [courses, setCourses] = useState<Course[]>([])
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [stats, setStats] = useState({
     totalCourses: 0,
     totalStudents: 0,
@@ -62,6 +66,7 @@ export default function InstructorDashboard() {
       const paymentsData = paymentsRes ? await paymentsRes.json() : { payments: [] }
 
       const courseEnrollments = enrollmentsData.enrollments || []
+      setEnrollments(courseEnrollments)
       const enrolledStudents = new Set(courseEnrollments.map((e: Enrollment) => e.userId)).size
 
       const coursesWithRatings = instructorCourses.filter((c: Course) => c.rating > 0)
@@ -141,6 +146,9 @@ export default function InstructorDashboard() {
     },
   ]
 
+  const enrollmentByCourse = buildInstructorEnrollmentByCourse(courses, enrollments)
+  const qualityByCourse = buildInstructorCourseQuality(courses)
+
   return (
     <div className="p-8">
       <div className="mb-8 flex justify-between items-center">
@@ -178,6 +186,39 @@ export default function InstructorDashboard() {
             </Card>
           )
         })}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
+        <RoleAnalyticsCard title="Enrollments by Course" subtitle="Learner distribution">
+          {enrollmentByCourse.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={enrollmentByCourse}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="course" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} />
+                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Bar dataKey="enrollments" fill="var(--accent)" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No enrollment data.</div>
+          )}
+        </RoleAnalyticsCard>
+        <RoleAnalyticsCard title="Course Quality Trend" subtitle="Ratings by course">
+          {qualityByCourse.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={qualityByCourse}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="course" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} />
+                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Line type="monotone" dataKey="rating" stroke="var(--primary)" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No quality data.</div>
+          )}
+        </RoleAnalyticsCard>
       </div>
 
       {/* Quick Actions */}
