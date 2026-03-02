@@ -11,6 +11,7 @@ import Link from "next/link"
 import { RoleAnalyticsCard } from "@/components/skillup/role-analytics-card"
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { buildInstructorCourseQuality, buildInstructorEnrollmentByCourse } from "@/lib/analytics/adapters"
+import { roleAnalyticsRegistry } from "@/lib/analytics/registry"
 
 export default function InstructorDashboard() {
   const { user, token, hydrated } = useAuthStore()
@@ -148,6 +149,7 @@ export default function InstructorDashboard() {
 
   const enrollmentByCourse = buildInstructorEnrollmentByCourse(courses, enrollments)
   const qualityByCourse = buildInstructorCourseQuality(courses)
+  const [enrollmentMeta, qualityMeta] = roleAnalyticsRegistry.instructor
 
   return (
     <div className="p-8">
@@ -189,7 +191,7 @@ export default function InstructorDashboard() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
-        <RoleAnalyticsCard title="Enrollments by Course" subtitle="Learner distribution">
+        <RoleAnalyticsCard title={enrollmentMeta.title} subtitle={enrollmentMeta.subtitle}>
           {enrollmentByCourse.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={enrollmentByCourse}>
@@ -204,7 +206,7 @@ export default function InstructorDashboard() {
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No enrollment data.</div>
           )}
         </RoleAnalyticsCard>
-        <RoleAnalyticsCard title="Course Quality Trend" subtitle="Ratings by course">
+        <RoleAnalyticsCard title={qualityMeta.title} subtitle={qualityMeta.subtitle}>
           {qualityByCourse.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={qualityByCourse}>

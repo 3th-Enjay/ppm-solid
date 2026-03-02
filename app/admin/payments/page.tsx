@@ -22,9 +22,11 @@ import {
   RotateCcw,
   Search,
   XCircle,
+  Loader2,
 } from "lucide-react"
 import type { Payment } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils/format"
+import { AdminActionDialog } from "@/components/admin/AdminActionDialog"
 
 export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([])
@@ -32,6 +34,8 @@ export default function AdminPaymentsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currencyFilter, setCurrencyFilter] = useState<string>("all")
+  const [refundTarget, setRefundTarget] = useState<Payment | null>(null)
+  const [pendingRefundId, setPendingRefundId] = useState<string | null>(null)
 
   useEffect(() => {
     loadPayments()
@@ -133,18 +137,24 @@ export default function AdminPaymentsPage() {
   }
 
   const handleRefund = async (payment: Payment) => {
-    if (!confirm("Refund this payment?")) return
+    setPendingRefundId(payment.id)
     try {
       const res = await fetch(`/api/payments/${payment.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "refunded" }),
       })
-      if (!res.ok) return
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Refund failed")
+      }
       const data = await res.json()
       setPayments((prev) => prev.map((p) => (p.id === payment.id ? data.payment : p)))
     } catch (error) {
       console.error("Refund failed:", error)
+      throw error
+    } finally {
+      setPendingRefundId(null)
     }
   }
 
@@ -309,8 +319,20 @@ export default function AdminPaymentsPage() {
                       <td className="p-3">
                         <div className="flex gap-2">
                           {(payment.status === "completed" || payment.status === "success") && (
-                            <Button variant="outline" size="sm" onClick={() => handleRefund(payment)}>
-                              Refund
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setRefundTarget(payment)}
+                              disabled={pendingRefundId === payment.id}
+                            >
+                              {pendingRefundId === payment.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Refunding...
+                                </>
+                              ) : (
+                                "Refund"
+                              )}
                             </Button>
                           )}
                         </div>
@@ -323,6 +345,31 @@ export default function AdminPaymentsPage() {
           )}
         </CardContent>
       </Card>
+
+      <AdminActionDialog
+        open={Boolean(refundTarget)}
+        onOpenChange={(open) => {
+          if (!open) setRefundTarget(null)
+        }}
+        title="Refund payment"
+        description={
+          refundTarget
+            ? `Refund ${formatCurrency(refundTarget.amount, refundTarget.currency)} for reference ${refundTarget.reference}.`
+            : "Refund selected payment."
+        }
+        warningBadge="Destructive Action"
+        secondaryDescription="Refund operations should include an internal reason for audit."
+        noteLabel="Refund reason"
+        notePlaceholder="Write a short reason for this refund..."
+        noteRequired
+        confirmLabel="Confirm Refund"
+        successToast="Payment refunded successfully."
+        errorToast="Refund failed."
+        executeAction={async () => {
+          if (!refundTarget) return
+          await handleRefund(refundTarget)
+        }}
+      />
     </div>
   )
 }

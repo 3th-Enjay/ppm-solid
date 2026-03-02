@@ -6,9 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Loader2 } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
 import type { Category, Course } from "@/lib/types"
+import { AdminActionDialog } from "@/components/admin/AdminActionDialog"
+
+type AdminCourseActionDialogState =
+  | { type: "toggle-approval"; course: Course }
+  | { type: "toggle-publish"; course: Course }
+  | { type: "delete-course"; course: Course }
+  | { type: "approve-lesson"; courseId: string; lessonId: string; courseTitle: string; lessonTitle: string }
+  | { type: "reject-lesson"; courseId: string; lessonId: string; courseTitle: string; lessonTitle: string }
 
 export default function AdminCoursesPage() {
   const { token } = useAuthStore()
@@ -21,7 +29,8 @@ export default function AdminCoursesPage() {
   const [actionMessage, setActionMessage] = useState("")
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState("")
-  const [deleteTarget, setDeleteTarget] = useState<Course | null>(null)
+  const [dialogState, setDialogState] = useState<AdminCourseActionDialogState | null>(null)
+  const [pendingActionKey, setPendingActionKey] = useState<string | null>(null)
 
   useEffect(() => {
     load()
@@ -97,6 +106,8 @@ export default function AdminCoursesPage() {
 
   const updateCourse = async (courseId: string, payload: Partial<Course>) => {
     setActionMessage("")
+    const actionKey = `course-update-${courseId}`
+    setPendingActionKey(actionKey)
     try {
       const res = await fetch(`/api/courses/${courseId}`, {
         method: "PUT",
@@ -111,15 +122,20 @@ export default function AdminCoursesPage() {
       setCourses((prev) => prev.map((c) => (c.id === courseId ? data.course : c)))
       setActionMessage("Course updated.")
     } catch (err: any) {
-      setActionMessage(err?.message || "Failed to update course.")
+      const message = err?.message || "Failed to update course."
+      setActionMessage(message)
+      throw new Error(message)
+    } finally {
+      setPendingActionKey(null)
     }
   }
 
-  const deleteCourse = async () => {
-    if (!deleteTarget) return
+  const deleteCourse = async (target: Course) => {
     setActionMessage("")
+    const actionKey = `course-delete-${target.id}`
+    setPendingActionKey(actionKey)
     try {
-      const res = await fetch(`/api/courses/${deleteTarget.id}`, {
+      const res = await fetch(`/api/courses/${target.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token || ""}`,
@@ -127,15 +143,20 @@ export default function AdminCoursesPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to delete course")
-      setCourses((prev) => prev.filter((c) => c.id !== deleteTarget.id))
-      setDeleteTarget(null)
+      setCourses((prev) => prev.filter((c) => c.id !== target.id))
       setActionMessage("Course deleted.")
     } catch (err: any) {
-      setActionMessage(err?.message || "Failed to delete course.")
+      const message = err?.message || "Failed to delete course."
+      setActionMessage(message)
+      throw new Error(message)
+    } finally {
+      setPendingActionKey(null)
     }
   }
 
   const handleApproveLesson = async (courseId: string, lessonId: string) => {
+    const actionKey = `lesson-approve-${lessonId}`
+    setPendingActionKey(actionKey)
     try {
       const res = await fetch(`/api/courses/${courseId}/lessons/${lessonId}/approve`, {
         method: "POST",
@@ -148,6 +169,34 @@ export default function AdminCoursesPage() {
       await load()
     } catch (err) {
       console.error(err)
+      throw err
+    } finally {
+      setPendingActionKey(null)
+    }
+  }
+
+  const handleRejectLesson = async (courseId: string, lessonId: string, note: string) => {
+    const actionKey = `lesson-reject-${lessonId}`
+    setPendingActionKey(actionKey)
+    try {
+      const res = await fetch(`/api/courses/${courseId}/lessons/${lessonId}/reject`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: JSON.stringify({ note }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Reject failed")
+      }
+      await load()
+    } catch (err) {
+      console.error(err)
+      throw err
+    } finally {
+      setPendingActionKey(null)
     }
   }
 
@@ -280,26 +329,37 @@ export default function AdminCoursesPage() {
                       <Button
                         size="sm"
                         className="w-full sm:w-auto"
-                        onClick={() =>
-                          updateCourse(course.id, {
-                            approved: !course.approved,
-                            published: course.approved ? false : course.published,
-                          })
-                        }
+                        onClick={() => setDialogState({ type: "toggle-approval", course })}
+                        disabled={pendingActionKey === `course-update-${course.id}`}
                       >
-                        {course.approved ? "Revoke Approval" : "Approve Course"}
+                        {pendingActionKey === `course-update-${course.id}` ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Updating...
+                          </>
+                        ) : course.approved ? (
+                          "Revoke Approval"
+                        ) : (
+                          "Approve Course"
+                        )}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         className="w-full sm:w-auto"
-                        onClick={() =>
-                          updateCourse(course.id, {
-                            published: !course.published,
-                          })
-                        }
+                        onClick={() => setDialogState({ type: "toggle-publish", course })}
+                        disabled={pendingActionKey === `course-update-${course.id}`}
                       >
-                        {course.published ? "Unpublish" : "Publish"}
+                        {pendingActionKey === `course-update-${course.id}` ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Updating...
+                          </>
+                        ) : course.published ? (
+                          "Unpublish"
+                        ) : (
+                          "Publish"
+                        )}
                       </Button>
                       <Button size="sm" variant="outline" asChild className="w-full sm:w-auto">
                         <Link href={`/admin/courses/${course.id}/edit`}>Edit Details</Link>
@@ -311,9 +371,17 @@ export default function AdminCoursesPage() {
                         size="sm"
                         variant="destructive"
                         className="w-full sm:w-auto"
-                        onClick={() => setDeleteTarget(course)}
+                        onClick={() => setDialogState({ type: "delete-course", course })}
+                        disabled={pendingActionKey === `course-delete-${course.id}`}
                       >
-                        Delete
+                        {pendingActionKey === `course-delete-${course.id}` ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          "Delete"
+                        )}
                       </Button>
                     </div>
                   </CardContent>
@@ -357,36 +425,51 @@ export default function AdminCoursesPage() {
                     <p>No preview available.</p>
                   )}
                   <div className="flex gap-2">
-                    <Button onClick={() => handleApproveLesson(item.course.id, item.lesson.id)}>Approve</Button>
+                    <Button
+                      onClick={() =>
+                        setDialogState({
+                          type: "approve-lesson",
+                          courseId: item.course.id,
+                          lessonId: item.lesson.id,
+                          lessonTitle: item.lesson.title,
+                          courseTitle: item.course.title,
+                        })
+                      }
+                      disabled={pendingActionKey === `lesson-approve-${item.lesson.id}`}
+                    >
+                      {pendingActionKey === `lesson-approve-${item.lesson.id}` ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Approving...
+                        </>
+                      ) : (
+                        "Approve"
+                      )}
+                    </Button>
                     <Button variant="outline" asChild>
                       <Link href={`/admin/courses/${item.course.id}/edit`}>Edit Details</Link>
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={async () => {
-                        const note = window.prompt("Enter rejection note for instructor:") || ""
-                        if (!note) return
-                        try {
-                          const res = await fetch(
-                            `/api/courses/${item.course.id}/lessons/${item.lesson.id}/reject`,
-                            {
-                              method: "POST",
-                              headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${localStorage.getItem("auth-storage") ? JSON.parse(localStorage.getItem("auth-storage") || "null")?.token : ""}`,
-                              },
-                              body: JSON.stringify({ note }),
-                            },
-                          )
-                          if (!res.ok) throw new Error("Reject failed")
-                          await load()
-                        } catch (err) {
-                          console.error(err)
-                          alert("Failed to send rejection note")
-                        }
-                      }}
+                      onClick={() =>
+                        setDialogState({
+                          type: "reject-lesson",
+                          courseId: item.course.id,
+                          lessonId: item.lesson.id,
+                          lessonTitle: item.lesson.title,
+                          courseTitle: item.course.title,
+                        })
+                      }
+                      disabled={pendingActionKey === `lesson-reject-${item.lesson.id}`}
                     >
-                      Reject
+                      {pendingActionKey === `lesson-reject-${item.lesson.id}` ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Rejecting...
+                        </>
+                      ) : (
+                        "Reject"
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -396,29 +479,96 @@ export default function AdminCoursesPage() {
         </div>
       )}
 
-      <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => (!open ? setDeleteTarget(null) : null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete course</DialogTitle>
-            <DialogDescription>This will permanently remove the course. This action cannot be undone.</DialogDescription>
-          </DialogHeader>
-          <div className="text-sm">
-            {deleteTarget ? (
-              <span>
-                You are deleting <strong>{deleteTarget.title}</strong>.
-              </span>
-            ) : null}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={deleteCourse}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AdminActionDialog
+        open={Boolean(dialogState)}
+        onOpenChange={(open) => {
+          if (!open) setDialogState(null)
+        }}
+        title={
+          dialogState?.type === "toggle-approval"
+            ? dialogState.course.approved
+              ? "Revoke course approval"
+              : "Approve course"
+            : dialogState?.type === "toggle-publish"
+              ? dialogState.course.published
+                ? "Unpublish course"
+                : "Publish course"
+              : dialogState?.type === "delete-course"
+                ? "Delete course"
+                : dialogState?.type === "approve-lesson"
+                  ? "Approve lesson"
+                  : dialogState?.type === "reject-lesson"
+                    ? "Reject lesson"
+                    : "Confirm action"
+        }
+        description={
+          dialogState?.type === "toggle-approval"
+            ? `This will ${dialogState.course.approved ? "revoke approval for" : "approve"} "${dialogState.course.title}".`
+            : dialogState?.type === "toggle-publish"
+              ? `This will ${dialogState.course.published ? "unpublish" : "publish"} "${dialogState.course.title}".`
+              : dialogState?.type === "delete-course"
+                ? `This permanently deletes "${dialogState.course.title}" and all related content.`
+                : dialogState?.type === "approve-lesson"
+                  ? `Approve "${dialogState.lessonTitle}" in ${dialogState.courseTitle}.`
+                  : dialogState?.type === "reject-lesson"
+                    ? `Reject "${dialogState.lessonTitle}" in ${dialogState.courseTitle}.`
+                    : "Confirm this action."
+        }
+        warningBadge={
+          dialogState?.type === "delete-course" || dialogState?.type === "reject-lesson"
+            ? "Destructive Action"
+            : "Operational Action"
+        }
+        secondaryDescription={
+          dialogState?.type === "reject-lesson"
+            ? "A rejection note is required for instructor visibility."
+            : undefined
+        }
+        noteLabel={dialogState?.type === "reject-lesson" ? "Rejection note" : undefined}
+        notePlaceholder="Provide clear feedback for the instructor..."
+        noteRequired={dialogState?.type === "reject-lesson"}
+        confirmLabel={
+          dialogState?.type === "delete-course"
+            ? "Delete Course"
+            : dialogState?.type === "reject-lesson"
+              ? "Reject Lesson"
+              : "Confirm"
+        }
+        successToast="Action completed."
+        errorToast="Action failed."
+        executeAction={async (note) => {
+          if (!dialogState) return
+
+          if (dialogState.type === "toggle-approval") {
+            await updateCourse(dialogState.course.id, {
+              approved: !dialogState.course.approved,
+              published: dialogState.course.approved ? false : dialogState.course.published,
+            })
+            return
+          }
+
+          if (dialogState.type === "toggle-publish") {
+            await updateCourse(dialogState.course.id, {
+              published: !dialogState.course.published,
+            })
+            return
+          }
+
+          if (dialogState.type === "delete-course") {
+            await deleteCourse(dialogState.course)
+            return
+          }
+
+          if (dialogState.type === "approve-lesson") {
+            await handleApproveLesson(dialogState.courseId, dialogState.lessonId)
+            return
+          }
+
+          if (dialogState.type === "reject-lesson") {
+            await handleRejectLesson(dialogState.courseId, dialogState.lessonId, note || "")
+          }
+        }}
+      />
     </div>
   )
 }

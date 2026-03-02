@@ -1,397 +1,388 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
+import { useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
+import Image, { type StaticImageData } from "next/image"
+import { motion, useInView, useScroll, useTransform } from "framer-motion"
+import { HeartHandshake, ShieldCheck, Anchor, Sparkles, Stethoscope } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Users, Award, BookOpen, TrendingUp, HeartHandshake, ShieldCheck, Anchor, Sparkles, Stethoscope } from "lucide-react"
-import Link from "next/link"
-import { motion, useScroll, useTransform } from "framer-motion"
-import { useEffect, useRef, useState } from "react"
-import { Testimonials } from "@/components/testimonials"
-import Image from "next/image"
-import aboutImage from "@/public/promptcare-about.jpeg"
-import storyImage from "@/public/promptcare-story.jpeg"
+import { Card, CardContent } from "@/components/ui/card"
+import { SectionShell } from "@/components/skillup/section-shell"
+import {
+  fadeUp,
+  floating,
+  hoverLift,
+  maskReveal,
+  sectionStagger,
+  slowZoom,
+  useReducedMotionSafe,
+} from "@/lib/motion"
 import ceoImage from "@/public/ceo-promptcare.jpeg"
+import directorImage from "@/public/dr-amara-okoye-director.jpeg"
 import euniceImage from "@/public/eunice-tutor-promptcare.jpeg"
+import chineduImage from "@/public/Chinedu-Amadi-tutor.jpeg"
 
-export default function AboutPage() {
-  const [storyExpanded, setStoryExpanded] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const visionRef = useRef<HTMLDivElement | null>(null)
-  const { scrollYProgress: visionScroll } = useScroll({
-    target: visionRef,
-    offset: ["start end", "center start"],
-  })
-  const visionTextY = useTransform(visionScroll, [0, 1], [60, 0])
-  const visionImageY = useTransform(visionScroll, [0, 1], [-60, 0])
+type TeamMember = {
+  name: string
+  role: string
+  image: StaticImageData
+}
+
+type ImpactStat = {
+  label: string
+  value: number
+  suffix?: string
+}
+
+function CountUpStat({ stat, delayMs = 0 }: { stat: ImpactStat; delayMs?: number }) {
+  const shouldReduceMotion = useReducedMotionSafe()
+  const ref = useRef<HTMLDivElement | null>(null)
+  const inView = useInView(ref, { once: true, margin: "-20% 0px -20% 0px" })
+  const [count, setCount] = useState(0)
 
   useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 768)
-    update()
-    window.addEventListener("resize", update)
-    return () => window.removeEventListener("resize", update)
-  }, [])
-  const stats = [
-    { label: "Active Students", value: "10,000+", icon: Users },
-    { label: "Expert Instructors", value: "50+", icon: Award },
-    { label: "Courses Available", value: "200+", icon: BookOpen },
-    { label: "Success Rate", value: "94%", icon: TrendingUp },
+    if (!inView) return
+    if (shouldReduceMotion) {
+      setCount(stat.value)
+      return
+    }
+
+    const timeout = setTimeout(() => {
+      let frame = 0
+      const totalFrames = 42
+      const increment = stat.value / totalFrames
+      const interval = setInterval(() => {
+        frame += 1
+        if (frame >= totalFrames) {
+          setCount(stat.value)
+          clearInterval(interval)
+          return
+        }
+        setCount(Math.round(increment * frame))
+      }, 26)
+    }, delayMs)
+
+    return () => clearTimeout(timeout)
+  }, [inView, shouldReduceMotion, stat.value, delayMs])
+
+  return (
+    <div ref={ref} className="rounded-2xl border border-border/80 bg-card/80 p-5 shadow-soft">
+      <div className="text-4xl font-bold text-accent">
+        {count.toLocaleString()}
+        {stat.suffix || ""}
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
+    </div>
+  )
+}
+
+export default function AboutPage() {
+  const shouldReduceMotion = useReducedMotionSafe()
+  const storyRef = useRef<HTMLDivElement | null>(null)
+  const teamRef = useRef<HTMLDivElement | null>(null)
+  const { scrollYProgress: storyScroll } = useScroll({
+    target: storyRef,
+    offset: ["start end", "end start"],
+  })
+  const { scrollYProgress: teamScroll } = useScroll({
+    target: teamRef,
+    offset: ["start end", "end start"],
+  })
+
+  const storyImageY = useTransform(storyScroll, [0, 1], [14, -14])
+  const teamAccentY = useTransform(teamScroll, [0, 1], [10, -10])
+
+  const team: TeamMember[] = [
+    { name: "Dr Amara Okoye", role: "Director", image: directorImage },
+    { name: "Dr Ikechukwu Okoye", role: "Founder & CEO", image: ceoImage },
+    { name: "Eunice", role: "Tutor", image: euniceImage },
+    { name: "Chinedu Amadi", role: "Tutor", image: chineduImage },
   ]
 
-  const values = [
-    {
-      icon: HeartHandshake,
-      title: "H – Humanity (Compassion First)",
-      description:
-        "We believe that caregiving is a sacred trust. We train our students to see the person behind the patient, lead with kindness, and treat every individual with the utmost dignity.",
-    },
-    {
-      icon: ShieldCheck,
-      title: "E – Excellence (World-Class Standards)",
-      description:
-        "We do not settle for good enough. We are committed to the highest global benchmarks in healthcare training, utilizing the best curriculum and techniques available to ensure our caregivers are second to none.",
-    },
-    {
-      icon: Anchor,
-      title: "A – Accountability (Integrity in Action)",
-      description:
-        "In the privacy of a home or the halls of a clinic, our caregivers act with honesty and responsibility. We take pride in being a sister company to a trusted brand, upholding the highest ethical standards in every interaction.",
-    },
-    {
-      icon: Sparkles,
-      title: "R – Resilience (The Strength to Care)",
-      description:
-        "Caregiving is demanding. We equip our students with the mental and emotional strength to remain professional and supportive, even in the most challenging health scenarios.",
-    },
-    {
-      icon: Stethoscope,
-      title: "T – Technical Mastery (The Skilled Hand)",
-      description:
-        "We believe empathy must be backed by competence. Our training ensures that every caregiver possesses the precise clinical skills needed to provide safe, effective, and high-quality medical support.",
-    },
-  ]
+  const values = useMemo(
+    () => [
+      {
+        icon: HeartHandshake,
+        title: "Humanity",
+        description: "We train caregivers to honor dignity, empathy, and compassionate service in every interaction.",
+      },
+      {
+        icon: ShieldCheck,
+        title: "Excellence",
+        description: "Our standards reflect global healthcare benchmarks adapted for practical local impact.",
+      },
+      {
+        icon: Anchor,
+        title: "Accountability",
+        description: "We uphold integrity and professional responsibility in classroom, clinical, and home care contexts.",
+      },
+      {
+        icon: Sparkles,
+        title: "Resilience",
+        description: "Learners build emotional and professional strength for high-pressure caregiving scenarios.",
+      },
+      {
+        icon: Stethoscope,
+        title: "Technical Mastery",
+        description: "Empathy is reinforced with rigorous practical competencies and safety-first execution.",
+      },
+    ],
+    [],
+  )
 
-  const team = [
-    {
-      name: "Dr Ikechukwu Okoye",
-      role: "Founder & CEO",
-      image: ceoImage,
-    },
-    {
-      name: "Eunice",
-      role: "Tutor",
-      image: euniceImage,
-    },
+  const impactStats: ImpactStat[] = [
+    { label: "Active Students", value: 10000, suffix: "+" },
+    { label: "Expert Instructors", value: 50, suffix: "+" },
+    { label: "Courses Delivered", value: 200, suffix: "+" },
+    { label: "Learner Success Rate", value: 94, suffix: "%" },
   ]
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section */}
-      <section className="py-20 md:py-32">
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto text-center space-y-6"
-          >
-            <Badge className="mb-2 inline-flex animate-bounce">About Prompt Care Academy</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-balance text-foreground relative overflow-hidden">
-              <span className="relative z-0">Training the hands and hearts that care</span>
-              <span className="pointer-events-none absolute inset-0 z-10 mix-blend-screen bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.5),transparent)] bg-[length:200%_200%] animate-[sheen_4s_linear_infinite]" />
-            </h1>
-            <p className="text-xl text-pretty text-foreground">
-              <span className="relative z-0">
-                We're on a mission to redefine the standard of care in Nigeria by empowering caregivers with world-class clinical expertise and
-                a deep-rooted culture of empathy, ensuring every patient and family receives the excellence, dignity, and
-                professional support they deserve.
-              </span>
-            </p>
+      <SectionShell
+        variant="immersive"
+        hasParallax
+        hasFloatingAccent
+        backgroundType="image"
+        backgroundImageUrl="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1800&q=80"
+        backgroundImageAlt="Clinical learning environment with instructor-led training"
+        className="text-white"
+      >
+        {/* Placeholder media intent: real classroom/clinical instruction with warm natural light. */}
+        <motion.div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          variants={slowZoom}
+          initial="initial"
+          animate={shouldReduceMotion ? "initial" : "animate"}
+        />
+        <motion.div variants={sectionStagger} initial="initial" animate="animate" className="mx-auto max-w-4xl space-y-6 text-center">
+          <Badge className="border-white/30 bg-white/10 text-white">About Prompt Care Academy</Badge>
+          <div className="space-y-2">
+            <div className="overflow-hidden">
+              <motion.h1 variants={maskReveal} className="text-4xl font-bold md:text-6xl">
+                Training the hands and hearts of{" "}
+                <span className="bg-[linear-gradient(110deg,#22c7a8_10%,#6ee7d8_60%,#22c7a8_95%)] bg-clip-text text-transparent">
+                  modern caregivers
+                </span>
+              </motion.h1>
+            </div>
+          </div>
+          <motion.p variants={fadeUp} className="mx-auto max-w-3xl text-lg text-white/90 md:text-xl">
+            We are building a new standard for caregiver education in Nigeria by combining technical mastery, ethical
+            discipline, and compassion-led care.
+          </motion.p>
+          <motion.p variants={fadeUp} className="text-sm font-medium text-white/80">
+            Trusted learning pathways shaped by international nursing experience and local healthcare realities.
+          </motion.p>
+          <motion.div variants={fadeUp}>
+            <Link
+              href="#our-story"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors duration-200 hover:text-accent"
+            >
+              Read our story
+              <span className="block h-[2px] w-10 bg-accent transition-all duration-200 hover:w-14" />
+            </Link>
+          </motion.div>
+        </motion.div>
+      </SectionShell>
+
+      <SectionShell id="our-story" variant="split" hasParallax className="bg-muted/25">
+        <div ref={storyRef} className="grid gap-8 lg:grid-cols-[1.05fr_minmax(0,0.95fr)] lg:items-start">
+          <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="space-y-5">
+            <motion.p variants={fadeUp} className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+              Our Story
+            </motion.p>
+            <motion.h2 variants={fadeUp} className="max-w-xl text-3xl font-bold md:text-4xl">
+              Built from lived caregiving realities, not theory alone.
+            </motion.h2>
+            <motion.p variants={fadeUp} className="max-w-xl text-muted-foreground">
+              For a decade in American hospitals, our founder, Dr Ike M. Okoye, trained in clinical systems where
+              precision and compassion were inseparable.
+            </motion.p>
+            <motion.p variants={fadeUp} className="max-w-xl text-muted-foreground">
+              In 2009, he returned to Nigeria to care for his father through Alzheimer’s and discovered a major gap:
+              families needed skilled caregivers, but access to practical training was limited.
+            </motion.p>
+            <motion.p variants={fadeUp} className="max-w-xl text-muted-foreground">
+              Prompt Care Academy was created to close that gap at scale and produce professionals prepared for real
+              patient needs.
+            </motion.p>
           </motion.div>
 
-          {/* Stats */}
-          <div className="grid md:grid-cols-4 gap-6 mt-16">
-            {stats.map((stat, index) => (
+          <div className="relative grid gap-4 sm:grid-cols-2">
+            {/* Placeholder media intent: early stage training, small group learning, and hands-on care practice. */}
+            {[
+              "https://images.unsplash.com/photo-1580281657527-47f249e8f4df?auto=format&fit=crop&w=1200&q=80",
+              "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80",
+              "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80",
+            ].map((img, index) => (
               <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 * index }}
+                key={img}
+                variants={fadeUp}
+                initial="initial"
+                whileInView="animate"
                 viewport={{ once: true }}
+                style={shouldReduceMotion ? undefined : { y: storyImageY }}
+                className={index === 2 ? "sm:col-span-2" : ""}
               >
-                <Card>
-                  <CardContent className="p-6 text-center space-y-2">
-                    <div className="bg-primary/10 w-12 h-12 rounded-lg flex items-center justify-center mx-auto">
-                      <stat.icon className="w-6 h-6 text-primary" />
-                    </div>
-                    <div className="text-3xl font-bold text-primary">{stat.value}</div>
-                    <div className="text-sm text-muted-foreground">{stat.label}</div>
-                  </CardContent>
-                </Card>
+                <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft transition-all duration-200 hover:shadow-lifted">
+                  <img
+                    src={img}
+                    alt={`Training session scene ${index + 1}`}
+                    className="h-52 w-full object-cover transition-transform duration-200 hover:scale-[1.03]"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </SectionShell>
 
-      {/* Vision Section */}
-      <section className="pt-0 pb-16">
-        <div className="container" ref={visionRef}>
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="space-y-4 min-h-[306px] sm:min-h-[357px] lg:min-h-[442px] flex flex-col justify-center"
-              style={{ y: isMobile ? 0 : visionTextY }}
-            >
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground relative overflow-hidden">
-                <span className="relative z-0">Our Vision</span>
-                <span className="pointer-events-none absolute inset-0 z-10 mix-blend-screen bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.5),transparent)] bg-[length:200%_200%] animate-[sheen_4s_linear_infinite]" />
-              </h2>
-              <p className="text-xl md:text-2xl text-foreground">
-                <span className="relative z-0">
-                  To be the foremost authority in caregiver education in Africa, recognized for producing healthcare
-                  professionals who are sought after globally for their technical mastery, unwavering ethics, and
-                  transformative compassion.
-                </span>
-              </p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: -40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="relative"
-              style={{ y: isMobile ? 0 : visionImageY }}
-            >
-              <div className="relative w-full h-[320px] sm:h-[380px] lg:h-[460px] rounded-2xl overflow-hidden">
-                <Image
-                  src={aboutImage}
-                  alt="Prompt Care Academy"
-                  fill
-                  className="object-contain object-top"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Enroll CTA */}
-      <section className="py-12">
-        <div className="container">
-          <Card className="bg-muted/50">
-            <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-              <h3 className="text-2xl font-semibold">Ready to enroll and start studying?</h3>
-              <p className="text-muted-foreground max-w-2xl">
-                Explore our courses to find the right learning path and begin your journey with Prompt Care Academy.
-              </p>
-              <Button asChild>
-                <Link href="/courses">Explore Our Courses</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Story Section */}
-      <section className="py-20 bg-muted/50">
-        <div className="container">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">The Heart of the Return: The Story of Prompt Care Academy</h2>
-              <div className="space-y-4 text-muted-foreground">
-                <p>
-                  For a decade, I walked the halls of American hospitals, first as a CNA and then as a Registered Nurse. I was
-                  immersed in a system of clinical precision and world-class standards, but my heart remained anchored in
-                  Nigeria. In 2009, that connection called me home. My father—my hero—had begun his battle with Alzheimer’s
-                  disease, and I knew there was only one place I belonged: by his side.
-                </p>
-                <p>
-                  I didn’t just come home to visit; I came home to serve.
-                </p>
-                <p>
-                  Upon my return, I found a void where there should have been a safety net. Professional home care was almost
-                  non-existent, leaving families to struggle in silence. I chose not to return to the United States. Instead,
-                  I chose to stay and build. I established Prompt Home Health to bridge the gap, bringing the rigorous standards
-                  I had mastered abroad to the soil that raised me.
-                </p>
-                {storyExpanded && (
-                  <>
-                    <p>
-                      For over sixteen years, I have steered that mission through the complexities of the Nigerian healthcare
-                      landscape. Since 2009, we have been at the bedsides of parents and grandparents, providing care where there
-                      was once only a silence.
-                    </p>
-                    <p>
-                      However, throughout this journey, I faced a recurring heartbreak: the search for caregivers who possessed
-                      both the technical skill of a professional nurse and the compassionate heart of a devoted child. I realized
-                      that while many had the will to care, they lacked the how.
-                    </p>
-                    <p>
-                      I didn’t wait for a global trend or a government solution. Long before the Japa syndrome began to dominate the
-                      national conversation, I was already in the room, personally training my staff for free. I was pouring my
-                      American clinical expertise into local hands, driven by the simple belief that our patients deserved better.
-                    </p>
-                    <p>
-                      Prompt Care Academy is the definitive realization of this lifelong odyssey. This Academy stands as a proven
-                      standard—a transition from being at the bedside to empowering thousands of others to stand there with
-                      confidence. We are scaling a legacy of excellence that has been practiced and refined on Nigerian soil since
-                      my return in 2009.
-                    </p>
-                    <p>
-                      Born from the hard-won lessons of a son who served as his father’s primary caregiver, Prompt Care Academy
-                      provides the world-class training that only decades of international and local experience can produce. We are
-                      here to train the hearts and hands of those who care.
-                    </p>
-                    <p className="pt-4 font-medium text-foreground">
-                      By Dr. Ike M. Okoye
-                      <br />
-                      Founder and CEO,
-                      <br />
-                      Prompt Care Academy
-                    </p>
-                  </>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                className="mt-6"
-                onClick={() => setStoryExpanded((prev) => !prev)}
-              >
-                {storyExpanded ? "Read less" : "Read more"}
-              </Button>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="relative w-full h-[360px] sm:h-[420px] lg:h-[520px] rounded-2xl overflow-hidden">
-                <Image
-                  src={storyImage}
-                  alt="Our story"
-                  fill
-                  className="object-contain object-top"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Values Section */}
-      <section className="py-20">
-        <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Values</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              These core principles guide everything we do
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {values.map((value, index) => (
+      <SectionShell backgroundType="gradient">
+        <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="grid gap-6 md:grid-cols-2">
+          {[
+            {
+              title: "Our Mission",
+              text: "Equip caregivers with practical, compassionate, and globally aligned skills that improve patient outcomes and family confidence.",
+            },
+            {
+              title: "Our Vision",
+              text: "Become Africa’s most trusted caregiver training authority for technical mastery, ethical leadership, and human-centered care.",
+            },
+          ].map((block) => (
+            <motion.div key={block.title} variants={fadeUp} className="rounded-2xl border border-border/80 bg-card/80 p-6 shadow-soft">
+              <h3 className="text-2xl font-semibold">{block.title}</h3>
               <motion.div
-                key={value.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 * index }}
+                className="mt-3 h-[2px] w-full bg-accent/70"
+                initial={{ scaleX: 0, transformOrigin: "left" }}
+                whileInView={{ scaleX: 1, transformOrigin: "left" }}
                 viewport={{ once: true }}
-              >
-                <Card className="h-full origin-center animate-[spin-shake_0.8s_ease-in-out_12,spin-shake_2.4s_ease-in-out_infinite_10s] transition-transform duration-300 hover:animate-none hover:scale-[1.04]">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="bg-primary/10 w-12 h-12 rounded-lg flex items-center justify-center">
-                      <value.icon className="w-6 h-6 text-primary" />
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              />
+              <p className="mt-4 text-muted-foreground">{block.text}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </SectionShell>
+
+      <SectionShell>
+        <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="space-y-8">
+          <motion.div variants={fadeUp} className="max-w-2xl space-y-2">
+            <h2 className="text-3xl font-bold md:text-4xl">Core Values</h2>
+            <p className="text-muted-foreground">The operating principles behind our teaching and care philosophy.</p>
+          </motion.div>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {values.map((value) => (
+              <motion.div key={value.title} variants={fadeUp} {...hoverLift()}>
+                <Card className="h-full border-border/80 transition-all duration-200 hover:border-accent/40 hover:shadow-lifted">
+                  <CardContent className="space-y-4 p-6">
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border/80 bg-muted/50 transition-all duration-200 group-hover:border-accent/40">
+                      <value.icon className="h-5 w-5 text-muted-foreground transition-all duration-200 hover:rotate-1 hover:text-accent" />
                     </div>
                     <h3 className="text-xl font-semibold">{value.title}</h3>
-                    <p className="text-muted-foreground">{value.description}</p>
+                    <p className="text-sm text-muted-foreground">{value.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+        </motion.div>
+      </SectionShell>
 
-      {/* Team Section */}
-      <section className="py-20 bg-muted/50">
-        <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Meet Our Team</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">The passionate people behind Prompt Care Academy</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
+      <SectionShell hasParallax className="bg-muted/25">
+        <div ref={teamRef} className="space-y-8">
+          <motion.div variants={fadeUp} initial="initial" whileInView="animate" viewport={{ once: true }} className="max-w-2xl space-y-2">
+            <h2 className="text-3xl font-bold md:text-4xl">Leadership & Team</h2>
+            <p className="text-muted-foreground">Experienced professionals committed to building healthcare confidence at scale.</p>
+          </motion.div>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {team.map((member, index) => (
-              <motion.div
+              <motion.article
                 key={member.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 * index }}
+                variants={fadeUp}
+                initial="initial"
+                whileInView="animate"
                 viewport={{ once: true }}
+                className="group overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft"
               >
-                <Card className="overflow-hidden">
-                  <div className="relative w-full h-[320px] rounded-2xl overflow-hidden bg-muted">
-                    <Image
-                      src={member.image}
-                      alt={member.name}
-                      fill
-                      className="object-contain object-top"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
-                  </div>
-                  <CardContent className="p-6 text-center">
-                    <h3 className="text-xl font-semibold mb-1">{member.name}</h3>
-                    <p className="text-muted-foreground">{member.role}</p>
-                  </CardContent>
-                </Card>
+                <div className="relative h-80 overflow-hidden bg-muted">
+                  <Image
+                    src={member.image}
+                    alt={`${member.name} portrait`}
+                    fill
+                    className="object-cover object-top grayscale transition-all duration-200 group-hover:scale-[1.02] group-hover:grayscale-0"
+                    sizes="(max-width: 1024px) 100vw, 33vw"
+                  />
+                </div>
+                <div className="space-y-2 p-5">
+                  <h3 className="inline-block text-xl font-semibold">
+                    {member.name}
+                    <span className="mt-1 block h-[2px] w-0 bg-accent transition-all duration-200 group-hover:w-full" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{member.role}</p>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+          <motion.p
+            variants={fadeUp}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            style={shouldReduceMotion ? undefined : { y: teamAccentY }}
+            className="text-sm text-muted-foreground"
+          >
+            Our training leadership combines 16+ years of Nigerian home-care operations with global clinical standards.
+          </motion.p>
+        </div>
+      </SectionShell>
+
+      <SectionShell backgroundType="gradient" hasFloatingAccent>
+        <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="space-y-8">
+          <motion.div variants={fadeUp} className="max-w-2xl space-y-2">
+            <h2 className="text-3xl font-bold md:text-4xl">Impact & Outcomes</h2>
+            <p className="text-muted-foreground">Measured outcomes that demonstrate educational quality and learner readiness.</p>
+          </motion.div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {impactStats.map((stat, index) => (
+              <motion.div key={stat.label} variants={fadeUp}>
+                <CountUpStat stat={stat} delayMs={index * 80} />
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+          <motion.div
+            aria-hidden="true"
+            variants={floating}
+            animate={shouldReduceMotion ? undefined : "animate"}
+            className="mx-auto h-16 w-40 rounded-full bg-accent/20 blur-2xl"
+          />
+        </motion.div>
+      </SectionShell>
 
-      {/* Testimonials Section */}
-      <Testimonials />
-
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="container">
-          <Card className="bg-primary text-primary-foreground overflow-hidden relative">
-            <CardContent className="p-12 text-center relative z-10">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Start Your Learning Journey?</h2>
-              <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-                Join thousands of students already learning with Prompt Care Academy
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" variant="secondary" asChild>
-                  <Link href="/register">Register Now!</Link>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  asChild
-                  className="bg-transparent text-primary-foreground border-primary-foreground hover:bg-primary-foreground/10"
-                >
-                  <Link href="/contact">Contact Us</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+      <SectionShell variant="immersive" backgroundType="gradient" hasFloatingAccent>
+        <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="mx-auto max-w-3xl space-y-5 text-center">
+          <div className="overflow-hidden">
+            <motion.h2 variants={maskReveal} className="text-3xl font-bold md:text-4xl">
+              Join the mission to raise the standard of care.
+            </motion.h2>
+          </div>
+          <motion.p variants={fadeUp} className="text-muted-foreground">
+            Build practical caregiving expertise that transforms patient experiences and family confidence.
+          </motion.p>
+          <motion.div variants={fadeUp} className="flex flex-col justify-center gap-3 sm:flex-row">
+            <Button className="h-11 bg-accent text-emerald-950 transition-all duration-200 hover:bg-accent/90" asChild>
+              <Link href="/courses">Explore Courses</Link>
+            </Button>
+            <Button variant="outline" className="h-11 border-accent/40 hover:border-accent hover:text-accent" asChild>
+              <Link href="/contact">Contact Admissions</Link>
+            </Button>
+          </motion.div>
+        </motion.div>
+      </SectionShell>
     </div>
   )
 }

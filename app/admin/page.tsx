@@ -41,6 +41,7 @@ import { useAuthStore } from "@/lib/store"
 import { RoleAnalyticsCard } from "@/components/skillup/role-analytics-card"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Line, LineChart } from "recharts"
 import { buildAdminRevenueTrend, buildRoleDistribution } from "@/lib/analytics/adapters"
+import { roleAnalyticsRegistry } from "@/lib/analytics/registry"
 
 export default function AdminDashboardPage() {
   const { token } = useAuthStore()
@@ -222,6 +223,7 @@ export default function AdminDashboardPage() {
 
   const revenueTrend = buildAdminRevenueTrend(payments)
   const roleDistribution = buildRoleDistribution(users)
+  const [revenueChartMeta, roleDistributionMeta] = roleAnalyticsRegistry.admin
 
   return (
     <div className="p-8">
@@ -607,7 +609,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
-        <RoleAnalyticsCard title="Revenue Trend" subtitle="Monthly revenue (NGN normalized)">
+        <RoleAnalyticsCard title={revenueChartMeta.title} subtitle={revenueChartMeta.subtitle}>
           {revenueTrend.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={revenueTrend}>
@@ -622,7 +624,7 @@ export default function AdminDashboardPage() {
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No revenue data.</div>
           )}
         </RoleAnalyticsCard>
-        <RoleAnalyticsCard title="Role Distribution" subtitle="Current user mix">
+        <RoleAnalyticsCard title={roleDistributionMeta.title} subtitle={roleDistributionMeta.subtitle}>
           {roleDistribution.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={roleDistribution}>

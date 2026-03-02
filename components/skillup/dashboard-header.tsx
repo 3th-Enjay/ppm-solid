@@ -98,7 +98,10 @@ export function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {
 
           <div className="flex items-center justify-center gap-2">
             <Image src="/promptcare-icon.png" alt="Prompt Care Academy" width={18} height={18} className="h-5 w-5" />
-            <h1 className="text-center text-sm font-semibold">Prompt Care Academy</h1>
+            <h1 className="text-center text-xs uppercase tracking-wide text-foreground">
+              <span className="font-bold">PROMPT</span> <span className="font-normal">CARE</span>{" "}
+              <span className="font-normal">ACADEMY</span>
+            </h1>
           </div>
 
           <div className="flex justify-end">

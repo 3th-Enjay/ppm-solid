@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, BarChart3, BookOpen, TrendingUp, Users } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft, Award, BarChart3, BookOpen, TrendingUp, Users } from "lucide-react"
+import { Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { RoleAnalyticsCard } from "@/components/skillup/role-analytics-card"
 import type { Course, Enrollment, Payment } from "@/lib/types"
 import { useAuthStore } from "@/lib/store"
+import { buildInstructorCourseQuality, buildInstructorEnrollmentByCourse } from "@/lib/analytics/adapters"
+import { roleAnalyticsRegistry } from "@/lib/analytics/registry"
 
 export default function InstructorAnalyticsPage() {
   const { user, token } = useAuthStore()
@@ -19,35 +22,24 @@ export default function InstructorAnalyticsPage() {
     const load = async () => {
       if (!user) return
       try {
-        const coursesRes = await fetch(`/api/courses?instructorName=${encodeURIComponent(user.name)}&includeDrafts=true`, {
-          headers: {
-            Authorization: `Bearer ${token || ""}`,
-          },
+        const coursesRes = await fetch(`/api/courses?instructorId=${encodeURIComponent(user.id)}&includeDrafts=true`, {
+          headers: { Authorization: `Bearer ${token || ""}` },
         })
         const coursesData = await coursesRes.json()
         const instructorCourses = coursesData.courses || []
         setCourses(instructorCourses)
 
         const courseIds = instructorCourses.map((course: Course) => course.id)
-        const courseIdQuery = courseIds.join(",")
-
         if (courseIds.length === 0) {
           setEnrollments([])
           setPayments([])
           return
         }
 
+        const query = courseIds.join(",")
         const [enrollmentsRes, paymentsRes] = await Promise.all([
-          fetch(`/api/enrollments?courseIds=${courseIdQuery}`, {
-            headers: {
-              Authorization: `Bearer ${token || ""}`,
-            },
-          }),
-          fetch(`/api/payments?courseIds=${courseIdQuery}`, {
-            headers: {
-              Authorization: `Bearer ${token || ""}`,
-            },
-          }),
+          fetch(`/api/enrollments?courseIds=${query}`, { headers: { Authorization: `Bearer ${token || ""}` } }),
+          fetch(`/api/payments?courseIds=${query}`, { headers: { Authorization: `Bearer ${token || ""}` } }),
         ])
 
         const enrollmentsData = await enrollmentsRes.json()
@@ -59,171 +51,147 @@ export default function InstructorAnalyticsPage() {
       }
     }
 
-    load()
+    void load()
   }, [user, token])
 
-  const analytics = useMemo(() => {
-    const totalCourses = courses.length
-    const publishedCourses = courses.filter((c) => c.published).length
-    const draftCourses = courses.filter((c) => !c.published).length
-
+  const stats = useMemo(() => {
     const uniqueStudents = new Set(enrollments.map((e) => e.userId)).size
-    const totalEnrollments = enrollments.length
-
     const completedPayments = payments.filter((p) => p.status === "completed" || p.status === "success")
     const totalRevenueNgn = completedPayments.reduce((sum, payment) => {
       if (payment.currency === "NGN") return sum + payment.amount
       if (payment.currency === "USD") return sum + payment.amount * 1250
-      if (payment.currency === "EUR") return sum + payment.amount * 1350
       if (payment.currency === "GBP") return sum + payment.amount * 1580
       return sum
     }, 0)
-
-    const avgRating =
-      courses.length > 0
-        ? courses.reduce((sum, course) => sum + (course.rating || 0), 0) / courses.length
-        : 0
-
-    const enrollmentsByCourse = enrollments.reduce<Record<string, number>>((acc, enrollment) => {
-      acc[enrollment.courseId] = (acc[enrollment.courseId] || 0) + 1
-      return acc
-    }, {})
-
-    const topCourses = Object.entries(enrollmentsByCourse)
-      .map(([courseId, count]) => {
-        const course = courses.find((c) => c.id === courseId)
-        return {
-          courseId,
-          title: course?.title || "Unknown course",
-          count,
-          published: course?.published || false,
-        }
-      })
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6)
-
+    const avgRating = courses.length > 0 ? courses.reduce((sum, c) => sum + (c.rating || 0), 0) / courses.length : 0
     return {
-      totalCourses,
-      publishedCourses,
-      draftCourses,
+      totalCourses: courses.length,
+      publishedCourses: courses.filter((c) => c.published).length,
       uniqueStudents,
-      totalEnrollments,
+      totalEnrollments: enrollments.length,
       totalRevenueNgn,
       avgRating: Number(avgRating.toFixed(1)),
-      topCourses,
     }
   }, [courses, enrollments, payments])
 
-  const maxTopCourse = analytics.topCourses[0]?.count || 1
+  const enrollmentByCourse = buildInstructorEnrollmentByCourse(courses, enrollments)
+  const qualityByCourse = buildInstructorCourseQuality(courses)
+  const completionMix = useMemo(() => {
+    const completed = enrollments.filter((e) => e.status === "completed").length
+    const active = enrollments.filter((e) => e.status === "active").length
+    const expired = enrollments.filter((e) => e.status === "expired").length
+    return [
+      { status: "Completed", total: completed },
+      { status: "Active", total: active },
+      { status: "Expired", total: expired },
+    ].filter((x) => x.total > 0)
+  }, [enrollments])
+  const [enrollmentMeta, qualityMeta] = roleAnalyticsRegistry.instructor
+  const pieColors = ["#22c7a8", "#4f46e5", "#ef4444"]
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
+    <div className="space-y-8 p-4 md:p-6 lg:p-8">
+      <div className="space-y-4">
         <Link href="/instructor">
           <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
         </Link>
+        <div>
+          <h1 className="text-3xl font-bold md:text-4xl">Instructor Analytics</h1>
+          <p className="mt-1 text-muted-foreground">Measure learner progress, course quality, and revenue outcomes.</p>
+        </div>
       </div>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Instructor Analytics</h1>
-        <p className="text-muted-foreground mt-2">Track course performance and student engagement</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+            <CardTitle className="text-sm font-medium">Courses</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalCourses}</div>
-            <p className="text-xs text-muted-foreground">
-              {analytics.publishedCourses} published, {analytics.draftCourses} drafts
-            </p>
-          </CardContent>
+          <CardContent className="text-2xl font-bold">{stats.totalCourses}</CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Unique Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.uniqueStudents}</div>
-            <p className="text-xs text-muted-foreground">Learners enrolled in your courses</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
+            <CardTitle className="text-sm font-medium">Published</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalEnrollments}</div>
-            <p className="text-xs text-muted-foreground">Seats filled across courses</p>
-          </CardContent>
+          <CardContent className="text-2xl font-bold">{stats.publishedCourses}</CardContent>
         </Card>
-
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Students</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">{stats.uniqueStudents}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="text-2xl font-bold">{stats.avgRating}</CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Revenue (NGN est.)</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">N{analytics.totalRevenueNgn.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Converted to Naira estimate</p>
-          </CardContent>
+          <CardContent className="text-2xl font-bold">N{stats.totalRevenueNgn.toLocaleString()}</CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Average Rating</CardTitle>
-            <CardDescription>Across all your courses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.avgRating} / 5</div>
-            <p className="text-xs text-muted-foreground">Based on student feedback</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <RoleAnalyticsCard title={enrollmentMeta.title} subtitle={enrollmentMeta.subtitle}>
+          {enrollmentByCourse.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={enrollmentByCourse}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="course" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} />
+                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Bar dataKey="enrollments" fill="var(--accent)" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No enrollment data.</div>
+          )}
+        </RoleAnalyticsCard>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Top Courses by Enrollment</CardTitle>
-            <CardDescription>Your most popular courses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {analytics.topCourses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No enrollments yet.</p>
-            ) : (
-              <div className="space-y-4">
-                {analytics.topCourses.map((course) => (
-                  <div key={course.courseId} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium">{course.title}</div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {course.published ? <Badge>Published</Badge> : <Badge variant="secondary">Draft</Badge>}
-                        {course.count} enrollments
-                      </div>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full bg-primary"
-                        style={{ width: `${Math.max(8, Math.round((course.count / maxTopCourse) * 100))}%` }}
-                      />
-                    </div>
-                  </div>
+        <RoleAnalyticsCard title={qualityMeta.title} subtitle={qualityMeta.subtitle}>
+          {qualityByCourse.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={qualityByCourse}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="course" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} />
+                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Line type="monotone" dataKey="rating" stroke="var(--primary)" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No quality data.</div>
+          )}
+        </RoleAnalyticsCard>
+      </div>
+
+      <RoleAnalyticsCard title="Enrollment Completion Mix" subtitle="How learners are progressing in your courses">
+        {completionMix.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={completionMix} dataKey="total" nameKey="status" outerRadius={100} label>
+                {completionMix.map((item, index) => (
+                  <Cell key={item.status} fill={pieColors[index % pieColors.length]} />
                 ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No completion data.</div>
+        )}
+      </RoleAnalyticsCard>
     </div>
   )
 }

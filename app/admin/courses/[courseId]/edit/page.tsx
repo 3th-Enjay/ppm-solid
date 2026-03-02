@@ -16,18 +16,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { ArrowLeft, Save, Trash2 } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
 import type { Course, CourseCategory, CourseLevel, Category } from "@/lib/types"
+import { AdminActionDialog } from "@/components/admin/AdminActionDialog"
 
 const levels: CourseLevel[] = ["Beginner Courses", "Intermediate Courses", "Pro Courses"]
 const levelLabels: Record<CourseLevel, string> = {
@@ -64,6 +56,8 @@ export default function AdminCourseEditPage() {
   const [publishNow, setPublishNow] = useState(false)
   const [approved, setApproved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [deletePending, setDeletePending] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
 
@@ -164,7 +158,7 @@ export default function AdminCourseEditPage() {
 
   const handleDelete = async () => {
     if (!course) return
-    if (!confirm("Delete this course? This cannot be undone.")) return
+    setDeletePending(true)
     try {
       const res = await fetch(`/api/courses/${course.id}`, {
         method: "DELETE",
@@ -179,6 +173,9 @@ export default function AdminCourseEditPage() {
       router.push("/admin/courses")
     } catch (error: any) {
       setErrorMessage(error?.message || "Failed to delete course.")
+      throw error
+    } finally {
+      setDeletePending(false)
     }
   }
 
@@ -351,30 +348,25 @@ export default function AdminCourseEditPage() {
           <Button type="button" variant="outline" asChild>
             <Link href={`/admin/courses/${course.id}/content`}>Edit Content</Link>
           </Button>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button type="button" variant="destructive">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Course
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete course</DialogTitle>
-                <DialogDescription>
-                  This will permanently delete the course and its content. This action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline">Cancel</Button>
-                <Button variant="destructive" onClick={handleDelete}>
-                  Delete Course
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button type="button" variant="destructive" onClick={() => setDeleteDialogOpen(true)} disabled={deletePending}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            {deletePending ? "Deleting..." : "Delete Course"}
+          </Button>
         </div>
       </div>
+
+      <AdminActionDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete course"
+        description="This permanently deletes the course and all associated content."
+        warningBadge="Destructive Action"
+        secondaryDescription={course ? `Course: ${course.title}` : undefined}
+        confirmLabel="Delete Course"
+        successToast="Course deleted successfully."
+        errorToast="Failed to delete course."
+        executeAction={handleDelete}
+      />
     </div>
   )
 }

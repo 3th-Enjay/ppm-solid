@@ -1,63 +1,102 @@
+import type { Metadata } from "next"
+import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { SectionShell } from "@/components/skillup/section-shell"
+import { LegalSection } from "@/components/skillup/legal-section"
+import { TOCNav, type TOCSection } from "@/components/skillup/toc-nav"
+
+export const metadata: Metadata = {
+  title: "Terms of Service | Prompt Care Academy",
+  description: "Read the Terms of Service for Prompt Care Academy training programs and services.",
+}
+
+const sections: TOCSection[] = [
+  { id: "introduction", label: "Introduction" },
+  { id: "eligibility", label: "Eligibility and Enrollment" },
+  { id: "intellectual-property", label: "Intellectual Property Rights" },
+  { id: "integrity", label: "Academic Integrity and Conduct" },
+  { id: "certification", label: "Certification Disclaimer" },
+]
+
 export default function TermsPage() {
   return (
-    <div className="container py-10 md:py-14">
-      <article className="mx-auto max-w-4xl space-y-8 rounded-2xl border border-border/80 bg-card/70 p-6 md:p-8">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-bold md:text-4xl">Terms of Service</h1>
+    <div className="pb-12">
+      <a href="#legal-content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2">
+        Skip to legal content
+      </a>
+
+      <SectionShell backgroundType="gradient">
+        <header className="mx-auto max-w-3xl space-y-2 text-center">
+          <Badge variant="info" className="rounded-full px-4 py-1">
+            Legal
+          </Badge>
+          <h1 className="text-4xl font-bold md:text-5xl">Terms of Service</h1>
           <p className="text-sm text-muted-foreground">Effective Date: Feb 24 2006</p>
+          <p className="text-sm text-muted-foreground">We value transparency and your data protection.</p>
         </header>
+      </SectionShell>
 
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold">1. Introduction</h2>
-          <p className="text-sm leading-7 text-muted-foreground">
-            Welcome to Prompt Care Academy, a subsidiary of Prompt Home Health. By accessing our website, enrolling in
-            our courses, or utilizing our training services, you agree to comply with and be bound by these Terms of
-            Service. These terms constitute a legally binding agreement between the student and the Academy.
-          </p>
-        </section>
+      <SectionShell>
+        <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <TOCNav sections={sections} />
+          </aside>
+          <article id="legal-content" className="max-w-3xl space-y-4">
+            <LegalSection id="introduction" title="1. Introduction">
+              <p>
+                Welcome to Prompt Care Academy, a subsidiary of Prompt Home Health. By accessing our website, enrolling in
+                our courses, or using our training services, you agree to these Terms of Service.
+              </p>
+            </LegalSection>
 
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold">2. Eligibility and Enrollment</h2>
-          <p className="text-sm leading-7 text-muted-foreground">
-            Our programs are professional vocational courses designed for individuals aged 18 and above. By enrolling,
-            you represent that all information provided is accurate and that you possess the foundational requirements
-            to undergo caregiver training.
-          </p>
-        </section>
+            <LegalSection id="eligibility" title="2. Eligibility and Enrollment">
+              <p>
+                Our programs are professional vocational courses for individuals aged 18 and above. By enrolling, you
+                confirm that your provided information is accurate and complete.
+              </p>
+            </LegalSection>
 
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold">3. Intellectual Property Rights</h2>
-          <p className="text-sm leading-7 text-muted-foreground">
-            All course materials including but not limited to video lectures, digital manuals, curriculum outlines, and
-            assessment tools are the exclusive intellectual property of Prompt Care Academy.
-          </p>
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-muted-foreground">
-            <li>
-              Restrictions: Users are strictly prohibited from recording, downloading (unless explicitly authorized), or
-              redistributing any content without prior written permission from Prompt Care Academy. Unauthorized use may
-              lead to immediate termination of access and potential legal action.
-            </li>
-          </ul>
-        </section>
+            <LegalSection id="intellectual-property" title="3. Intellectual Property Rights">
+              <p>
+                All course materials including video lectures, manuals, curriculum outlines, and assessment tools are
+                exclusive intellectual property of Prompt Care Academy.
+              </p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>
+                  Recording, downloading (unless explicitly authorized), or redistributing content without written
+                  permission is prohibited.
+                </li>
+                <li>Unauthorized use may result in immediate termination and potential legal action.</li>
+              </ul>
+            </LegalSection>
 
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold">4. Academic Integrity and Conduct</h2>
-          <p className="text-sm leading-7 text-muted-foreground">
-            Students are expected to maintain the highest level of professionalism during online forums and live
-            sessions. Any form of harassment, plagiarism, or sharing of login credentials will result in permanent
-            expulsion from the Academy without a refund.
-          </p>
-        </section>
+            <LegalSection id="integrity" title="4. Academic Integrity and Conduct">
+              <p>
+                Students must maintain professionalism in live sessions and forums. Harassment, plagiarism, or credential
+                sharing may result in permanent expulsion without refund.
+              </p>
+            </LegalSection>
 
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold">5. Certification Disclaimer</h2>
-          <p className="text-sm leading-7 text-muted-foreground">
-            Certification is awarded only upon the successful completion of all modules and required pass marks in
-            assessments. While Prompt Care Academy provides industry-standard training, we do not guarantee immediate
-            employment; the certificate serves as a validation of professional competency.
-          </p>
-        </section>
-      </article>
+            <LegalSection id="certification" title="5. Certification Disclaimer">
+              <p>
+                Certification is awarded only after successful completion of all modules and pass-mark requirements.
+                Prompt Care Academy does not guarantee immediate employment.
+              </p>
+            </LegalSection>
+          </article>
+        </div>
+      </SectionShell>
+
+      <SectionShell backgroundType="gradient">
+        <div className="mx-auto max-w-3xl space-y-3 text-center">
+          <h2 className="text-2xl font-semibold">Questions About Our Policies?</h2>
+          <p className="text-sm text-muted-foreground">Reach out to our admissions and support team for clarification.</p>
+          <Button asChild className="h-11 rounded-2xl">
+            <Link href="/contact">Contact Support</Link>
+          </Button>
+        </div>
+      </SectionShell>
     </div>
   )
 }

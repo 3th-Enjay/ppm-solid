@@ -39,16 +39,19 @@ export function FilterPanel({
   hasActiveFilters,
 }: FilterPanelProps) {
   return (
-    <Card variant="elevated" className="py-0">
-      <CardHeader className="border-b py-4">
+    <Card variant="elevated" className="rounded-3xl border-border/70 py-0">
+      <CardHeader className="border-b border-border/70 py-4">
         <CardTitle className="text-base">Filter Courses</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">Search</label>
+          <label htmlFor="course-search" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Search
+          </label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              id="course-search"
               placeholder="Search by title..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
@@ -58,7 +61,7 @@ export function FilterPanel({
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">Category</label>
+          <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Category</label>
           <Select value={categoryFilter} onValueChange={onCategoryChange}>
             <SelectTrigger>
               <SelectValue placeholder="All Categories" />
@@ -75,7 +78,7 @@ export function FilterPanel({
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">Level</label>
+          <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Level</label>
           <Select value={levelFilter} onValueChange={onLevelChange}>
             <SelectTrigger>
               <SelectValue placeholder="All Levels" />
@@ -90,7 +93,7 @@ export function FilterPanel({
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">Sort By</label>
+          <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Sort By</label>
           <Select value={sortBy} onValueChange={onSortChange}>
             <SelectTrigger>
               <SelectValue placeholder="Most Popular" />
@@ -104,7 +107,7 @@ export function FilterPanel({
           </Select>
         </div>
 
-        <div className="rounded-lg border border-border/80 bg-muted/30 p-3 text-xs text-muted-foreground">
+        <div className="rounded-2xl border border-border/80 bg-muted/30 p-3 text-xs text-muted-foreground">
           Showing {shownCourses} of {totalCourses} courses
         </div>
 

@@ -1,6 +1,6 @@
-﻿"use client"
+"use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
@@ -12,7 +12,8 @@ import {
   FileText,
   HelpCircle,
   PlayCircle,
-  ShoppingCart,
+  Quote,
+  ShieldCheck,
   Star,
   Users,
 } from "lucide-react"
@@ -20,14 +21,37 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AuthGateModal } from "@/components/skillup/auth-gate-modal"
 import { CourseCard } from "@/components/skillup/course-card"
-import { fadeUp } from "@/components/skillup/motion-presets"
+import { EnrollmentCard } from "@/components/skillup/enrollment-card"
+import { SectionShell } from "@/components/skillup/section-shell"
 import { useToast } from "@/hooks/use-toast"
+import { usePurchaseGuard } from "@/hooks/use-purchase-guard"
+import { fadeUp, maskReveal, sectionStagger, slowZoom, useReducedMotionSafe } from "@/lib/motion"
 import { useAuthStore, useCartStore, usePreferencesStore } from "@/lib/store"
 import type { Course, User as UserType } from "@/lib/types"
 import { formatCurrency, formatDuration } from "@/lib/utils/format"
+
+const testimonialData = [
+  {
+    id: "t1",
+    quote: "The practical modules made me confident in real caregiving scenarios within weeks.",
+    name: "Amaka Eze",
+    role: "Certified Caregiver",
+    image:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    id: "t2",
+    quote: "I moved from theory to applied skills with instructor feedback that felt personal.",
+    name: "Daniel Okeke",
+    role: "Home Health Assistant",
+    image:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+  },
+]
 
 export default function CourseDetailPage() {
   const params = useParams()
@@ -38,11 +62,15 @@ export default function CourseDetailPage() {
   const [instructor, setInstructor] = useState<UserType | null>(null)
   const [relatedCourses, setRelatedCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
+  const shouldReduceMotion = useReducedMotionSafe()
 
   const { currency } = usePreferencesStore()
   const { addToCart, items } = useCartStore()
   const { user } = useAuthStore()
   const { toast } = useToast()
+  const { isAuthGateOpen, setIsAuthGateOpen, loginHref, registerHref, requirePurchaseAuth, consumeStoredIntent } =
+    usePurchaseGuard()
+  const restoredIntentRef = useRef(false)
 
   useEffect(() => {
     const loadCourse = async () => {
@@ -70,8 +98,7 @@ export default function CourseDetailPage() {
             .slice(0, 3)
           setRelatedCourses(related)
         }
-      } catch (error) {
-        console.error("Failed to load course:", error)
+      } catch {
         setCourse(null)
         setInstructor(null)
         setRelatedCourses([])
@@ -82,6 +109,23 @@ export default function CourseDetailPage() {
 
     loadCourse()
   }, [slug])
+
+  useEffect(() => {
+    if (!user || !course || restoredIntentRef.current) return
+    const pending = consumeStoredIntent()
+    if (!pending) return
+    if (pending.courseId !== course.id && pending.courseSlug !== course.slug) return
+
+    restoredIntentRef.current = true
+    if (!items.find((item) => item.courseId === course.id)) {
+      addToCart({ courseId: course.id, course })
+    }
+    if (pending.action === "buy_now") {
+      router.push("/cart")
+      return
+    }
+    toast({ title: "Enrollment resumed", description: "Course added to your cart." })
+  }, [user, course, items, addToCart, consumeStoredIntent, router, toast])
 
   const isEnrolled = Boolean(course && user?.enrolledCourses.includes(course.id))
   const isInCart = Boolean(course && items.find((item) => item.courseId === course.id))
@@ -97,48 +141,42 @@ export default function CourseDetailPage() {
     [course],
   )
 
-  const overviewItems =
-    course?.overview && course.overview.length > 0
-      ? course.overview
-      : [
-          "Master the fundamentals and advanced concepts",
-          "Build real-world projects from scratch",
-          "Learn industry best practices",
-          "Get hands-on coding experience",
-          "Understand key concepts and patterns",
-          "Prepare for professional opportunities",
-        ]
+  const outcomes = (course?.overview || []).slice(0, 3)
 
-  const handleAddToCart = () => {
+  const runAddToCart = () => {
     if (!course) return
-
     if (user && user.enrolledCourses.includes(course.id)) {
       router.push("/dashboard")
       return
     }
-
     if (items.find((item) => item.courseId === course.id)) {
       router.push("/cart")
       return
     }
-
     addToCart({ courseId: course.id, course })
-    toast({ title: "Added to Cart", description: `${course.title} has been added to your cart` })
+    toast({ title: "Added to cart", description: `${course.title} has been added to your cart.` })
   }
 
-  const handleBuyNow = () => {
+  const runBuyNow = () => {
     if (!course) return
-
     if (user && user.enrolledCourses.includes(course.id)) {
       router.push("/dashboard")
       return
     }
-
     if (!items.find((item) => item.courseId === course.id)) {
       addToCart({ courseId: course.id, course })
     }
-
     router.push("/cart")
+  }
+
+  const handleAddToCart = () => {
+    if (!course) return
+    requirePurchaseAuth({ action: "add_to_cart", courseId: course.id, courseSlug: course.slug }, runAddToCart)
+  }
+
+  const handleBuyNow = () => {
+    if (!course) return
+    requirePurchaseAuth({ action: "buy_now", courseId: course.id, courseSlug: course.slug }, runBuyNow)
   }
 
   if (loading) {
@@ -166,81 +204,114 @@ export default function CourseDetailPage() {
   }
 
   return (
-    <div className="container py-10 md:py-14">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <main className="space-y-8">
-          <motion.section variants={fadeUp()} initial="hidden" animate="visible" className="space-y-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="level">{course.level}</Badge>
+    <div className="pb-12">
+      <SectionShell variant="split" hasParallax className="pb-10 pt-12">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <motion.div variants={sectionStagger} initial="initial" animate="animate" className="space-y-5">
+            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{course.category}</Badge>
+              <Badge variant="level">{course.level}</Badge>
+            </motion.div>
+
+            <div className="space-y-3">
+              <div className="overflow-hidden">
+                <motion.h1 variants={maskReveal} className="text-3xl font-bold leading-tight md:text-4xl">
+                  {course.title}
+                </motion.h1>
+              </div>
+              <motion.p variants={fadeUp} className="max-w-3xl text-base text-muted-foreground md:text-lg">
+                {course.description}
+              </motion.p>
             </div>
 
-            <h1 className="text-3xl font-bold leading-tight md:text-4xl">{course.title}</h1>
-            <p className="max-w-3xl text-lg text-muted-foreground">{course.description}</p>
-
-            <div className="flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
+            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
                 <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                <span className="font-medium text-foreground">{course.rating}</span>
-                <span>({course.enrollmentCount} students)</span>
-              </div>
-              <div className="flex items-center gap-1">
+                <strong className="text-foreground">{course.rating.toFixed(1)}</strong> ({course.enrollmentCount} students)
+              </span>
+              <span className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
-                <span>{formatDuration(course.totalDuration)}</span>
-              </div>
-              <div className="flex items-center gap-1">
+                {formatDuration(course.totalDuration)}
+              </span>
+              <span className="flex items-center gap-1.5">
                 <Users className="h-4 w-4" />
-                <span>{course.enrollmentCount} enrolled</span>
-              </div>
-            </div>
+                {course.enrollmentCount} enrolled
+              </span>
+            </motion.div>
+
+            <motion.div variants={fadeUp} className="grid gap-2 rounded-2xl border border-border/70 bg-card/60 p-4 text-sm">
+              {(outcomes.length > 0 ? outcomes : ["Build practical caregiving confidence", "Gain certified healthcare skills", "Prepare for real clinical workflows"]).map(
+                (item, index) => (
+                  <p key={`${item}-${index}`} className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary" />
+                    <span>{item}</span>
+                  </p>
+                ),
+              )}
+            </motion.div>
 
             {instructor ? (
-              <div className="flex items-center gap-3 rounded-xl border border-border/80 bg-card/70 p-3">
-                <Avatar>
+              <motion.div variants={fadeUp} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card/60 p-3">
+                <Avatar className="h-11 w-11">
                   <AvatarImage src={instructor.avatar || "/placeholder.svg"} alt={instructor.name} />
                   <AvatarFallback>{instructor.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="text-xs text-muted-foreground">Instructor</div>
-                  <div className="font-medium">{instructor.name}</div>
+                  <p className="text-xs text-muted-foreground">Instructor</p>
+                  <p className="font-medium">{instructor.name}</p>
                 </div>
-              </div>
+              </motion.div>
             ) : null}
-          </motion.section>
+          </motion.div>
 
-          <motion.section variants={fadeUp(0.05)} initial="hidden" animate="visible">
-            <div className="relative aspect-video overflow-hidden rounded-2xl border border-border/80 bg-muted">
-              <img
+          <motion.div variants={fadeUp} initial="initial" animate="animate">
+            <div className="relative aspect-video overflow-hidden rounded-3xl border border-border/70 bg-muted">
+              {/* Placeholder media: healthcare training environment or live skills demo */}
+              <motion.img
                 src={course.thumbnail || "/placeholder.svg"}
                 alt={course.title}
                 className="h-full w-full object-cover"
                 loading="eager"
                 decoding="async"
+                variants={shouldReduceMotion ? undefined : slowZoom}
+                initial={shouldReduceMotion ? undefined : "initial"}
+                animate={shouldReduceMotion ? undefined : "animate"}
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                <div className="rounded-full bg-white/90 p-4">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-black/30" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="rounded-full border border-white/30 bg-white/85 p-4 shadow-lg">
                   <PlayCircle className="h-12 w-12 text-primary" />
                 </div>
               </div>
             </div>
-          </motion.section>
+          </motion.div>
+        </div>
+      </SectionShell>
 
+      <div className="container grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <main className="space-y-8">
           <Tabs defaultValue="curriculum" className="w-full">
-            <TabsList className="w-full justify-start overflow-x-auto">
-              <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="instructor">Instructor</TabsTrigger>
+            <TabsList className="sticky top-20 z-20 w-full justify-start overflow-x-auto rounded-2xl border border-border/70 bg-background/95 p-1 backdrop-blur">
+              <TabsTrigger value="curriculum" className="rounded-xl">
+                Curriculum
+              </TabsTrigger>
+              <TabsTrigger value="overview" className="rounded-xl">
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="instructor" className="rounded-xl">
+                Instructor
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="curriculum" className="mt-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold">Course Curriculum</h2>
+                <h2 className="text-2xl font-semibold">Curriculum Preview</h2>
                 <p className="text-sm text-muted-foreground">
                   {course.modules.length} modules • {totalLessons} lessons
                 </p>
               </div>
 
-              <Card variant="elevated" className="py-2">
+              <Card variant="elevated" className="rounded-3xl border-border/70 py-2">
                 <CardContent className="p-4">
                   <Accordion type="single" collapsible className="w-full">
                     {course.modules.map((module, index) => (
@@ -286,51 +357,40 @@ export default function CourseDetailPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="overview" className="mt-6 space-y-6">
-              <div className="space-y-4">
-                <h2 className="text-2xl font-semibold">What You'll Learn</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {overviewItems.map((item, index) => (
-                    <div key={`${item}-${index}`} className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
-                      <span className="text-sm">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Card variant="elevated" className="py-0">
-                <CardHeader>
-                  <CardTitle>Course Includes</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-3 pb-6 text-sm md:grid-cols-2">
-                  <div className="flex items-center gap-2">
+            <TabsContent value="overview" className="mt-6">
+              <Card variant="elevated" className="rounded-3xl border-border/70 py-0">
+                <CardContent className="grid gap-3 p-6 text-sm md:grid-cols-2">
+                  <p className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatDuration(course.totalDuration)} on-demand video</span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                    {formatDuration(course.totalDuration)} on-demand video
+                  </p>
+                  <p className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span>{totalLessons} downloadable resources</span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                    {totalLessons} downloadable resources
+                  </p>
+                  <p className="flex items-center gap-2">
                     <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                    <span>{totalQuizzes} quizzes</span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                    {totalQuizzes} quizzes
+                  </p>
+                  <p className="flex items-center gap-2">
                     <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                    <span>{totalAssignments} assignments</span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                    {totalAssignments} assignments
+                  </p>
+                  <p className="flex items-center gap-2">
                     <Award className="h-4 w-4 text-muted-foreground" />
-                    <span>Certificate of completion</span>
-                  </div>
+                    Certificate of completion
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                    Instructor support included
+                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="instructor" className="mt-6">
               {instructor ? (
-                <Card variant="elevated" className="py-0">
+                <Card variant="elevated" className="rounded-3xl border-border/70 py-0">
                   <CardContent className="flex items-start gap-4 p-6">
                     <Avatar className="h-16 w-16">
                       <AvatarImage src={instructor.avatar || "/placeholder.svg"} alt={instructor.name} />
@@ -339,75 +399,51 @@ export default function CourseDetailPage() {
                     <div className="space-y-2">
                       <h3 className="text-xl font-semibold">{instructor.name}</h3>
                       <p className="text-sm text-muted-foreground">{instructor.bio}</p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Award className="h-4 w-4" />
-                          Expert Instructor
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          {course.enrollmentCount}+ students
-                        </span>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
               ) : null}
             </TabsContent>
           </Tabs>
+
+          <section className="space-y-4">
+            <h2 className="text-2xl font-semibold">Graduate Stories</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {testimonialData.map((item, index) => (
+                <motion.article
+                  key={item.id}
+                  variants={fadeUp}
+                  initial="initial"
+                  whileInView="animate"
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.08 }}
+                  className="rounded-3xl border border-border/70 bg-card/70 p-5"
+                >
+                  <Quote className="h-5 w-5 text-primary" />
+                  <p className="mt-3 text-sm text-muted-foreground">{item.quote}</p>
+                  <div className="mt-4 flex items-center gap-3">
+                    <img src={item.image} alt={item.name} className="h-10 w-10 rounded-full object-cover" loading="lazy" />
+                    <div>
+                      <p className="text-sm font-semibold">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">{item.role}</p>
+                    </div>
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          </section>
         </main>
 
         <aside>
           <div className="sticky top-24 space-y-4">
-            <Card variant="gradient" className="py-0">
-              <CardContent className="space-y-5 p-6">
-                <div className="space-y-1 text-center">
-                  <p className="text-4xl font-bold text-primary">{formatCurrency(course.price[currency], currency)}</p>
-                  <p className="text-sm text-muted-foreground">One-time payment • Lifetime access</p>
-                </div>
-
-                {isEnrolled ? (
-                  <Button variant="cta" size="lg" className="w-full" asChild>
-                    <Link href="/dashboard">Go to Course</Link>
-                  </Button>
-                ) : (
-                  <div className="space-y-3">
-                    <Button variant="cta" size="lg" className="w-full" onClick={handleBuyNow}>
-                      {isInCart ? "Go to Checkout" : "Buy Now"}
-                    </Button>
-                    {!isInCart ? (
-                      <Button variant="outline" size="lg" className="w-full" onClick={handleAddToCart}>
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Add to Cart
-                      </Button>
-                    ) : null}
-                  </div>
-                )}
-
-                <div className="space-y-2 border-t pt-4 text-sm">
-                  <p className="font-semibold">This course includes:</p>
-                  <div className="space-y-2 text-muted-foreground">
-                    <p className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
-                      {formatDuration(course.totalDuration)} video content
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
-                      Lifetime access
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
-                      Certificate of completion
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
-                      30-day money-back guarantee
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
+            <EnrollmentCard
+              price={course.price[currency]}
+              currency={currency}
+              isEnrolled={isEnrolled}
+              isInCart={isInCart}
+              onBuyNow={handleBuyNow}
+              onAddToCart={handleAddToCart}
+            />
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline">Share</Button>
               <Button variant="outline">Save</Button>
@@ -417,7 +453,7 @@ export default function CourseDetailPage() {
       </div>
 
       {relatedCourses.length > 0 ? (
-        <section className="mt-14 space-y-6">
+        <section className="container mt-14 space-y-6">
           <div className="space-y-2">
             <h2 className="text-2xl font-semibold">Related Courses</h2>
             <p className="text-sm text-muted-foreground">Keep learning with similar courses from this category.</p>
@@ -426,10 +462,11 @@ export default function CourseDetailPage() {
             {relatedCourses.map((related, index) => (
               <motion.div
                 key={related.id}
-                variants={fadeUp(Math.min(index * 0.04, 0.12))}
-                initial="hidden"
-                whileInView="visible"
+                variants={fadeUp}
+                initial="initial"
+                whileInView="animate"
                 viewport={{ once: true }}
+                transition={{ delay: Math.min(index * 0.05, 0.15) }}
               >
                 <CourseCard course={related} currency={currency} />
               </motion.div>
@@ -437,7 +474,13 @@ export default function CourseDetailPage() {
           </div>
         </section>
       ) : null}
+
+      <AuthGateModal
+        open={isAuthGateOpen}
+        onOpenChange={setIsAuthGateOpen}
+        loginHref={loginHref}
+        registerHref={registerHref}
+      />
     </div>
   )
 }
-

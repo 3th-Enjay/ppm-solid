@@ -36,6 +36,7 @@ import { useAuthStore } from "@/lib/store"
 import { RoleAnalyticsCard } from "@/components/skillup/role-analytics-card"
 import { Bar, BarChart, CartesianGrid, Pie, PieChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { buildFinanceCurrencyRevenue, buildFinanceStatusMix } from "@/lib/analytics/adapters"
+import { roleAnalyticsRegistry } from "@/lib/analytics/registry"
 
 export default function FinanceDashboard() {
   const { token } = useAuthStore()
@@ -301,6 +302,7 @@ export default function FinanceDashboard() {
   const currencyRevenue = buildFinanceCurrencyRevenue(payments)
   const statusMix = buildFinanceStatusMix(payments)
   const pieColors = ["#4f46e5", "#22c7a8", "#f59e0b", "#ef4444", "#64748b"]
+  const [currencyMeta, statusMeta] = roleAnalyticsRegistry.finance
 
   return (
     <div className="p-8">
@@ -361,7 +363,7 @@ export default function FinanceDashboard() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
-        <RoleAnalyticsCard title="Revenue by Currency" subtitle="Completed transactions only">
+        <RoleAnalyticsCard title={currencyMeta.title} subtitle={currencyMeta.subtitle}>
           {currencyRevenue.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={currencyRevenue}>
@@ -376,7 +378,7 @@ export default function FinanceDashboard() {
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No revenue data.</div>
           )}
         </RoleAnalyticsCard>
-        <RoleAnalyticsCard title="Transaction Status Mix" subtitle="All transaction statuses">
+        <RoleAnalyticsCard title={statusMeta.title} subtitle={statusMeta.subtitle}>
           {statusMix.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

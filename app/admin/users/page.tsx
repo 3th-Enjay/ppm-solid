@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Mail, Search, ShieldCheck, Trash2, UserCog, UserRound, Users } from "lucide-react"
+import { ArrowLeft, Loader2, Mail, Search, ShieldCheck, Trash2, UserCog, UserRound, Users } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +17,7 @@ import {
 import type { Enrollment, User, UserRole } from "@/lib/types"
 import { formatDate } from "@/lib/utils/format"
 import { useAuthStore } from "@/lib/store"
+import { AdminActionDialog } from "@/components/admin/AdminActionDialog"
 
 const ROLE_LABEL: Record<UserRole, string> = {
   student: "Students",
@@ -41,6 +42,9 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all")
   const [showUnverifiedOnly, setShowUnverifiedOnly] = useState(false)
+  const [pendingActionKey, setPendingActionKey] = useState<string | null>(null)
+  const [statusDialogUser, setStatusDialogUser] = useState<User | null>(null)
+  const [deleteDialogUser, setDeleteDialogUser] = useState<User | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -131,6 +135,8 @@ export default function AdminUsersPage() {
     }
 
     const nextStatus = (target.status || "active") === "active" ? "suspended" : "active"
+    const actionKey = `status-${target.id}`
+    setPendingActionKey(actionKey)
     try {
       const res = await fetch(`/api/users/${target.id}`, {
         method: "PATCH",
@@ -147,24 +153,25 @@ export default function AdminUsersPage() {
       setUsers((prev) => prev.map((u) => (u.id === target.id ? data.user : u)))
     } catch (error) {
       console.error("Failed to update user:", error)
+      throw error
+    } finally {
+      setPendingActionKey(null)
     }
   }
 
   const deleteUser = async (target: User) => {
-    const canDelete = 
+    const canDelete =
       target.role === "instructor" || 
       target.role === "finance" || 
       target.role === "admin" || 
       !target.emailVerified
 
     if (!canDelete) {
-      alert("Only instructors, finance users, admins, and unverified users can be deleted")
-      return
+      throw new Error("Only instructors, finance users, admins, and unverified users can be deleted")
     }
 
-    const roleLabel = target.role === "admin" ? "admin" : target.role === "instructor" ? "instructor" : target.role === "finance" ? "finance user" : "unverified user"
-    if (!confirm(`Delete ${roleLabel} ${target.email}? This cannot be undone.`)) return
-    
+    const actionKey = `delete-${target.id}`
+    setPendingActionKey(actionKey)
     try {
       const res = await fetch(`/api/users/${target.id}`, {
         method: "DELETE",
@@ -181,7 +188,9 @@ export default function AdminUsersPage() {
       setUsers((prev) => prev.filter((u) => u.id !== target.id))
     } catch (error) {
       console.error("Failed to delete user:", error)
-      alert(error instanceof Error ? error.message : "Failed to delete user")
+      throw error
+    } finally {
+      setPendingActionKey(null)
     }
   }
 
@@ -314,19 +323,33 @@ export default function AdminUsersPage() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => deleteUser(u)}
+                                  onClick={() => setDeleteDialogUser(u)}
+                                  disabled={pendingActionKey === `delete-${u.id}` || Boolean(statusDialogUser)}
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
+                                  {pendingActionKey === `delete-${u.id}` ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                  )}
+                                  {pendingActionKey === `delete-${u.id}` ? "Deleting..." : "Delete"}
                                 </Button>
                               )}
                               <Button
                                 size="sm"
                                 variant={status === "active" ? "destructive" : "default"}
-                                disabled={!canToggle}
-                                onClick={() => toggleUserStatus(u)}
+                                disabled={!canToggle || pendingActionKey === `status-${u.id}` || Boolean(deleteDialogUser)}
+                                onClick={() => setStatusDialogUser(u)}
                               >
-                                {status === "active" ? "Suspend" : "Activate"}
+                                {pendingActionKey === `status-${u.id}` ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Updating...
+                                  </>
+                                ) : status === "active" ? (
+                                  "Suspend"
+                                ) : (
+                                  "Activate"
+                                )}
                               </Button>
                             </div>
                           </div>
@@ -340,6 +363,50 @@ export default function AdminUsersPage() {
           })}
         </div>
       )}
+
+      <AdminActionDialog
+        open={Boolean(statusDialogUser)}
+        onOpenChange={(open) => {
+          if (!open) setStatusDialogUser(null)
+        }}
+        title={statusDialogUser?.status === "suspended" ? "Activate user" : "Suspend user"}
+        description={
+          statusDialogUser
+            ? `${statusDialogUser.name} (${statusDialogUser.email}) will be ${statusDialogUser.status === "suspended" ? "activated" : "suspended"}.`
+            : "Confirm status update."
+        }
+        warningBadge="Access Control"
+        secondaryDescription="This action immediately changes account access permissions."
+        confirmLabel={statusDialogUser?.status === "suspended" ? "Activate User" : "Suspend User"}
+        successToast="User status updated."
+        errorToast="Failed to update user status."
+        executeAction={async () => {
+          if (!statusDialogUser) return
+          await toggleUserStatus(statusDialogUser)
+        }}
+      />
+
+      <AdminActionDialog
+        open={Boolean(deleteDialogUser)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteDialogUser(null)
+        }}
+        title="Delete user"
+        description={
+          deleteDialogUser
+            ? `Delete ${deleteDialogUser.name} (${deleteDialogUser.email}). This action cannot be undone.`
+            : "Delete selected user."
+        }
+        warningBadge="Destructive Action"
+        secondaryDescription="Only eligible accounts can be deleted."
+        confirmLabel="Delete User"
+        successToast="User deleted successfully."
+        errorToast="Failed to delete user."
+        executeAction={async () => {
+          if (!deleteDialogUser) return
+          await deleteUser(deleteDialogUser)
+        }}
+      />
     </div>
   )
 }

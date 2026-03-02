@@ -14,6 +14,7 @@ import { useEffect, useState } from "react"
 import type { Course } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils/format"
 import { usePreferencesStore } from "@/lib/store"
+import { CtaBand } from "@/components/skillup/cta-band"
 
 export default function HomePage() {
   const [featuredCourses, setFeaturedCourses] = useState<Course[]>([])
@@ -51,21 +52,66 @@ export default function HomePage() {
     },
   ]
 
+  const trustItems = [
+    "Trusted by learners",
+    "Career-focused tracks",
+    "Instructor support",
+    "Practical outcomes",
+    "Clinical confidence",
+    "Global-ready training",
+  ]
+
+  const visualStack = [
+    "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1580281657527-47f249e8f4df?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1550831107-1553da8c8464?auto=format&fit=crop&w=900&q=80",
+  ]
+
+  const journeySlides = [
+    {
+      title: "Started with the Fundamentals",
+      text: "They entered with curiosity and built confidence through practical caregiver foundations.",
+      image: "https://images.unsplash.com/photo-1580281657527-47f249e8f4df?auto=format&fit=crop&w=1400&q=80",
+    },
+    {
+      title: "Learned in Realistic Clinical Contexts",
+      text: "Guided modules and hands-on simulations helped them apply what matters in real care scenarios.",
+      image: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&w=1400&q=80",
+    },
+    {
+      title: "Practiced Communication and Compassion",
+      text: "They developed patient-first communication, safety habits, and professional bedside confidence.",
+      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1400&q=80",
+    },
+    {
+      title: "Became Career-Ready Caregivers",
+      text: "Today they support families and healthcare teams with competence, empathy, and integrity.",
+      image: "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1400&q=80",
+    },
+  ]
+
+  const heroImageUrl = "https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?auto=format&fit=crop&w=1600&q=80"
+
   return (
     <div className="flex flex-col">
       <SkillupHero featuredCourses={featuredCourses} currency={currency} />
 
-      <SectionShell className="py-10 md:py-14">
-        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-border/80 bg-card/70 p-5 md:grid-cols-4 md:p-6">
-          {["Trusted by learners", "Career-focused tracks", "Instructor support", "Practical outcomes"].map((item) => (
-            <div key={item} className="text-center text-sm font-medium text-muted-foreground">
-              {item}
-            </div>
-          ))}
+      <SectionShell className="py-8 md:py-10" variant="split">
+        <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card/70">
+          <div className="marquee-track flex gap-3 p-4 md:p-5">
+            {[...trustItems, ...trustItems].map((item, index) => (
+              <span
+                key={`${item}-${index}`}
+                className="inline-flex whitespace-nowrap rounded-full border border-border/80 bg-background/70 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:border-accent/50 hover:text-accent"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
         </div>
       </SectionShell>
 
-      <SectionShell className="bg-muted/40">
+      <SectionShell className="bg-muted/30" variant="split" hasParallax hasFloatingAccent divider="wave">
         <motion.div
           variants={sectionStagger}
           initial="hidden"
@@ -83,22 +129,86 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {features.map((feature, index) => (
-              <motion.div key={feature.title} variants={fadeUp(0.06 * index)}>
-                <Card variant="elevated" interactive className="h-full">
-                  <CardContent className="space-y-4 p-6">
-                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                      <feature.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_minmax(0,0.9fr)]">
+            <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-1">
+              {features.map((feature, index) => (
+                <motion.div key={feature.title} variants={fadeUp(0.06 * index)}>
+                  <Card variant="elevated" interactive className="h-full transition-all duration-200 hover:-translate-y-1 hover:shadow-lifted">
+                    <CardContent className="space-y-4 p-6">
+                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/15">
+                        <feature.icon className="h-5 w-5 text-accent" />
+                      </div>
+                      <h3 className="text-xl font-semibold">{feature.title}</h3>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+              {visualStack.map((imageUrl, index) => (
+                <motion.div
+                  key={imageUrl}
+                  variants={fadeUp(0.08 * (index + 1))}
+                  className="overflow-hidden rounded-2xl border border-border/80 bg-card/80 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:border-accent/50 hover:shadow-lifted"
+                >
+                  <img
+                    src={imageUrl}
+                    alt={`Healthcare learning environment placeholder ${index + 1}`}
+                    className="h-40 w-full object-cover transition-transform duration-500 hover:scale-[1.04]"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </motion.div>
+              ))}
+              <motion.div variants={fadeUp(0.18)} className="rounded-2xl border border-accent/40 bg-accent/10 p-4 text-sm text-muted-foreground">
+                These image placeholders are temporary for layout and motion tuning. You can replace them later with
+                final branded media.
               </motion.div>
-            ))}
+            </div>
           </div>
         </motion.div>
+      </SectionShell>
+
+      <SectionShell variant="immersive" className="pb-10 pt-10 md:pt-12">
+        <motion.div variants={fadeUp()} initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-3">
+          <Badge variant="secondary" className="rounded-full px-3 py-1">
+            Learner Story Journey
+          </Badge>
+          <h2 className="text-3xl font-bold md:text-4xl">How learners grow with us into confident caregivers</h2>
+          <p className="max-w-2xl text-muted-foreground">
+            A visual walkthrough of the transformation process from training to real caregiving impact.
+          </p>
+        </motion.div>
+
+        <div className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2">
+          {journeySlides.map((slide, index) => (
+            <motion.article
+              key={slide.title}
+              variants={fadeUp(0.06 * index)}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="group relative min-h-[360px] min-w-[85%] snap-center overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft sm:min-w-[60%] lg:min-w-[46%]"
+            >
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,10,18,0.12)_15%,rgba(7,10,18,0.86)_100%)]" />
+              <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+                <div className="mb-2 inline-flex rounded-full border border-accent/45 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+                  Step {index + 1}
+                </div>
+                <h3 className="text-xl font-semibold text-white">{slide.title}</h3>
+                <p className="mt-2 text-sm text-white/85">{slide.text}</p>
+              </div>
+            </motion.article>
+          ))}
+        </div>
       </SectionShell>
 
       <SectionShell>
@@ -125,9 +235,20 @@ export default function HomePage() {
               viewport={{ once: true }}
             >
               <Link href={`/courses/${course.slug}`}>
-                <Card variant="elevated" interactive className="h-full overflow-hidden">
+                <Card
+                  variant="elevated"
+                  interactive
+                  className="h-full overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:rotate-[0.4deg] hover:border-accent/50 hover:shadow-lifted"
+                >
                   <div className="relative aspect-video overflow-hidden bg-muted">
-                    <img src={course.thumbnail || "/placeholder.svg"} alt={course.title} className="h-full w-full object-cover" />
+                    <img
+                      src={
+                        course.thumbnail ||
+                        "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80"
+                      }
+                      alt={course.title}
+                      className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.05]"
+                    />
                     <Badge className="absolute left-4 top-4">{course.level}</Badge>
                   </div>
                   <CardContent className="space-y-4 p-6">
@@ -153,21 +274,12 @@ export default function HomePage() {
 
       <Testimonials />
 
-      <SectionShell className="bg-primary text-primary-foreground">
-        <div className="mx-auto max-w-3xl space-y-5 text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">Ready to Start Learning?</h2>
-          <p className="text-primary-foreground/90">
-            Join thousands of students and transform your career with our expert-led courses.
-          </p>
-          <div className="flex flex-col justify-center gap-3 sm:flex-row">
-            <Button size="lg" variant="secondary" asChild>
-              <Link href="/register">Register Now!</Link>
-            </Button>
-            <Button size="lg" variant="glass" asChild>
-              <Link href="/courses">Explore Courses</Link>
-            </Button>
-          </div>
-        </div>
+      <SectionShell variant="immersive" className="pt-8 md:pt-12">
+        <CtaBand
+          title="Ready to Start Learning?"
+          description="Join thousands of students and transform your career with expert-led training and practical caregiver pathways."
+          backgroundImageUrl={heroImageUrl}
+        />
       </SectionShell>
     </div>
   )

@@ -1,24 +1,25 @@
 import type { Variants } from "framer-motion"
+import {
+  DURATION_MEDIUM,
+  EASE_OUT,
+  fadeUp as fadeUpVariant,
+  sectionStagger as sectionStaggerVariant,
+} from "@/lib/motion"
 
+// Backward-compatible wrappers while pages migrate to `@/lib/motion`.
 export const sectionStagger: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.05,
-    },
-  },
+  hidden: sectionStaggerVariant.initial,
+  visible: sectionStaggerVariant.animate,
 }
 
 export const fadeUp = (delay = 0): Variants => ({
-  hidden: { opacity: 0, y: 16 },
+  hidden: fadeUpVariant.initial,
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.45,
-      ease: "easeOut",
+      duration: DURATION_MEDIUM,
+      ease: EASE_OUT,
       delay,
     },
   },
@@ -30,8 +31,8 @@ export const scaleIn = (delay = 0): Variants => ({
     opacity: 1,
     scale: 1,
     transition: {
-      duration: 0.35,
-      ease: "easeOut",
+      duration: DURATION_MEDIUM,
+      ease: EASE_OUT,
       delay,
     },
   },

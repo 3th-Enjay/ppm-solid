@@ -37,6 +37,8 @@ type HistoryItem = {
   courseId?: string
 }
 
+const DASHBOARD_FEED_PAGE_SIZE = 8
+
 export default function DashboardPage() {
   const { user } = useAuthStore()
   const [enrollments, setEnrollments] = useState<EnrollmentWithCourse[]>([])
@@ -44,6 +46,12 @@ export default function DashboardPage() {
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([])
   const [activities, setActivities] = useState<DashboardActivity[]>([])
   const [notes, setNotes] = useState<LearningNote[]>([])
+  const [historyPage, setHistoryPage] = useState(1)
+  const [activityPage, setActivityPage] = useState(1)
+  const [historyHasMore, setHistoryHasMore] = useState(false)
+  const [activityHasMore, setActivityHasMore] = useState(false)
+  const [historyLoadingMore, setHistoryLoadingMore] = useState(false)
+  const [activityLoadingMore, setActivityLoadingMore] = useState(false)
   const [noteText, setNoteText] = useState("")
   const [noteCourseId, setNoteCourseId] = useState<string>("all")
   const [stats, setStats] = useState({
@@ -53,53 +61,55 @@ export default function DashboardPage() {
     totalHours: 0,
   })
 
+  const loadDashboardBase = async () => {
+    if (!user) return
+    try {
+      const [enrollmentsRes, paymentsRes, historyRes, activityRes] = await Promise.all([
+        fetch(`/api/enrollments?userId=${user.id}`),
+        fetch(`/api/payments`),
+        fetch(`/api/history?userId=${user.id}&page=1&limit=${DASHBOARD_FEED_PAGE_SIZE}`),
+        fetch(`/api/activity?userId=${user.id}&page=1&limit=${DASHBOARD_FEED_PAGE_SIZE}`),
+      ])
+      const data = await enrollmentsRes.json()
+      const paymentsData = await paymentsRes.json()
+      const historyData = await historyRes.json()
+      const activityData = await activityRes.json()
+      const enriched = (data.enrollments || []) as EnrollmentWithCourse[]
+      const userPayments = ((paymentsData.payments || []) as Payment[]).filter((p) => p.userId === user.id)
+
+      setEnrollments(enriched)
+      setPayments(userPayments)
+      setHistoryItems(((historyData.history || []) as any[]).map((h) => ({ ...h, when: new Date(h.when) })))
+      setActivities(((activityData.activities || []) as any[]).map((a) => ({ ...a, when: new Date(a.when) })))
+      setHistoryPage(1)
+      setActivityPage(1)
+      setHistoryHasMore(Boolean(historyData.pagination?.hasMore))
+      setActivityHasMore(Boolean(activityData.pagination?.hasMore))
+
+      const completed = enriched.filter((e) => e.status === "completed").length
+      const inProgress = enriched.filter((e) => e.status === "active").length
+      const totalMinutes = enriched.reduce((sum, e) => sum + (e.course?.totalDuration || 0), 0)
+
+      setStats({
+        totalCourses: enriched.length,
+        inProgress,
+        completed,
+        totalHours: Math.round(totalMinutes / 60),
+      })
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error)
+      setEnrollments([])
+      setPayments([])
+      setHistoryItems([])
+      setActivities([])
+      setHistoryHasMore(false)
+      setActivityHasMore(false)
+    }
+  }
+
   useEffect(() => {
     if (!user) return
-
-    const loadEnrollments = async () => {
-      try {
-        const [enrollmentsRes, paymentsRes, historyRes, activityRes] = await Promise.all([
-          fetch(`/api/enrollments?userId=${user.id}`),
-          fetch(`/api/payments`),
-          fetch(`/api/history?userId=${user.id}`),
-          fetch(`/api/activity?userId=${user.id}`),
-        ])
-        const data = await enrollmentsRes.json()
-        const paymentsData = await paymentsRes.json()
-        const historyData = await historyRes.json()
-        const activityData = await activityRes.json()
-        const enriched = (data.enrollments || []) as EnrollmentWithCourse[]
-        const userPayments = ((paymentsData.payments || []) as Payment[]).filter((p) => p.userId === user.id)
-
-        setEnrollments(enriched)
-        setPayments(userPayments)
-        setHistoryItems(
-          ((historyData.history || []) as any[]).map((h) => ({ ...h, when: new Date(h.when) })),
-        )
-        setActivities(
-          ((activityData.activities || []) as any[]).map((a) => ({ ...a, when: new Date(a.when) })),
-        )
-
-        const completed = enriched.filter((e) => e.status === "completed").length
-        const inProgress = enriched.filter((e) => e.status === "active").length
-        const totalMinutes = enriched.reduce((sum, e) => sum + (e.course?.totalDuration || 0), 0)
-
-        setStats({
-          totalCourses: enriched.length,
-          inProgress,
-          completed,
-          totalHours: Math.round(totalMinutes / 60),
-        })
-      } catch (error) {
-        console.error("Failed to load enrollments:", error)
-        setEnrollments([])
-        setPayments([])
-        setHistoryItems([])
-        setActivities([])
-      }
-    }
-
-    loadEnrollments()
+    void loadDashboardBase()
   }, [user])
 
   useEffect(() => {
@@ -140,8 +150,46 @@ export default function DashboardPage() {
   )
 
   const activeCourses = enrollments.filter((e) => e.status === "active")
-  const learningHistory = historyItems.slice(0, 8)
-  const lastActivities = activities.slice(0, 8)
+  const learningHistory = historyItems
+  const lastActivities = activities
+
+  const loadMoreHistory = async () => {
+    if (!user || historyLoadingMore || !historyHasMore) return
+    setHistoryLoadingMore(true)
+    try {
+      const nextPage = historyPage + 1
+      const res = await fetch(`/api/history?userId=${user.id}&page=${nextPage}&limit=${DASHBOARD_FEED_PAGE_SIZE}`)
+      if (!res.ok) return
+      const data = await res.json()
+      const nextItems = ((data.history || []) as any[]).map((h) => ({ ...h, when: new Date(h.when) }))
+      setHistoryItems((prev) => [...prev, ...nextItems])
+      setHistoryPage(nextPage)
+      setHistoryHasMore(Boolean(data.pagination?.hasMore))
+    } catch {
+      // no-op for now
+    } finally {
+      setHistoryLoadingMore(false)
+    }
+  }
+
+  const loadMoreActivities = async () => {
+    if (!user || activityLoadingMore || !activityHasMore) return
+    setActivityLoadingMore(true)
+    try {
+      const nextPage = activityPage + 1
+      const res = await fetch(`/api/activity?userId=${user.id}&page=${nextPage}&limit=${DASHBOARD_FEED_PAGE_SIZE}`)
+      if (!res.ok) return
+      const data = await res.json()
+      const nextItems = ((data.activities || []) as any[]).map((a) => ({ ...a, when: new Date(a.when) }))
+      setActivities((prev) => [...prev, ...nextItems])
+      setActivityPage(nextPage)
+      setActivityHasMore(Boolean(data.pagination?.hasMore))
+    } catch {
+      // no-op for now
+    } finally {
+      setActivityLoadingMore(false)
+    }
+  }
 
   const addNote = async () => {
     if (!noteText.trim()) return
@@ -334,6 +382,11 @@ export default function DashboardPage() {
                     <p className="text-xs text-muted-foreground">{formatRelativeTime(item.when)}</p>
                   </div>
                 ))}
+                {historyHasMore ? (
+                  <Button variant="outline" className="w-full" onClick={loadMoreHistory} disabled={historyLoadingMore}>
+                    {historyLoadingMore ? "Loading..." : "Load More"}
+                  </Button>
+                ) : null}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No learning history yet.</p>
@@ -354,6 +407,16 @@ export default function DashboardPage() {
                     <p className="text-xs text-muted-foreground">{formatRelativeTime(activity.when)}</p>
                   </div>
                 ))}
+                {activityHasMore ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={loadMoreActivities}
+                    disabled={activityLoadingMore}
+                  >
+                    {activityLoadingMore ? "Loading..." : "Load More"}
+                  </Button>
+                ) : null}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No activity yet.</p>
