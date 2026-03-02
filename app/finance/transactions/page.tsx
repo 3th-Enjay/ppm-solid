@@ -27,9 +27,14 @@ import {
 import type { Payment } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils/format"
 
+type EnrichedPayment = Payment & {
+  courses?: Array<{ id: string; title: string }>
+  user?: { id: string; name: string; email: string; role: string }
+}
+
 export default function FinanceTransactionsPage() {
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([])
+  const [payments, setPayments] = useState<EnrichedPayment[]>([])
+  const [filteredPayments, setFilteredPayments] = useState<EnrichedPayment[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currencyFilter, setCurrencyFilter] = useState<string>("all")
@@ -44,9 +49,9 @@ export default function FinanceTransactionsPage() {
 
   const loadPayments = async () => {
     try {
-      const res = await fetch("/api/payments")
+      const res = await fetch("/api/payments?includeDetails=true")
       const data = await res.json()
-      const allPayments: Payment[] = data.payments || []
+      const allPayments: EnrichedPayment[] = data.payments || []
       setPayments(allPayments)
     } catch (error) {
       console.error("Error loading payments:", error)
@@ -60,7 +65,10 @@ export default function FinanceTransactionsPage() {
       filtered = filtered.filter((p) =>
         p.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.userId.toLowerCase().includes(searchQuery.toLowerCase())
+        p.userId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.courses?.some((course) => course.title.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     }
 
@@ -312,11 +320,13 @@ export default function FinanceTransactionsPage() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-3 font-semibold">Reference</th>
-                    <th className="text-left p-3 font-semibold">Student ID</th>
+                    <th className="text-left p-3 font-semibold">Customer</th>
+                    <th className="text-left p-3 font-semibold">Courses</th>
                     <th className="text-left p-3 font-semibold">Amount</th>
                     <th className="text-left p-3 font-semibold">Currency</th>
                     <th className="text-left p-3 font-semibold">Status</th>
                     <th className="text-left p-3 font-semibold">Date</th>
+                    <th className="text-left p-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -327,7 +337,21 @@ export default function FinanceTransactionsPage() {
                           {payment.reference}
                         </code>
                       </td>
-                      <td className="p-3 font-medium">{payment.userId}</td>
+                      <td className="p-3 font-medium">
+                        {payment.user ? (
+                          <div>
+                            <p>{payment.user.name}</p>
+                            <p className="text-xs text-muted-foreground">{payment.user.email}</p>
+                          </div>
+                        ) : (
+                          payment.userId
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <p className="line-clamp-2 text-xs">
+                          {payment.courses?.length ? payment.courses.map((c) => c.title).join(", ") : payment.courseId}
+                        </p>
+                      </td>
                       <td className="p-3 font-semibold">
                         {formatCurrency(payment.amount, payment.currency)}
                       </td>
@@ -348,6 +372,11 @@ export default function FinanceTransactionsPage() {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
+                      </td>
+                      <td className="p-3">
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/finance/transactions/${payment.id}`}>View Transaction</Link>
+                        </Button>
                       </td>
                     </tr>
                   ))}

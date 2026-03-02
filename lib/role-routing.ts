@@ -26,3 +26,13 @@ export function getSafeRedirectForRole(role: string, requestedRedirect?: string 
 
   return roleHome
 }
+
+export function getCourseDetailPathForRole(role: string | undefined, course: { id: string; slug?: string }): string {
+  if (role === "admin") {
+    return `/admin/courses/${course.id}/edit`
+  }
+  if (course.slug) {
+    return `/courses/${course.slug}`
+  }
+  return "/courses"
+}

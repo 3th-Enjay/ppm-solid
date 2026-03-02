@@ -23,12 +23,13 @@ export async function POST(request: NextRequest) {
     const callbackUrl = process.env.NEXT_PUBLIC_APP_URL
       ? `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success`
       : undefined
+    const invoiceNumber = `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 
     const paymentInit = await paystackService.initializePayment({
       email,
       amount,
       currency: currency as Currency,
-      metadata: { userId, courseIds },
+      metadata: { userId, courseIds, invoiceNumber },
       callbackUrl,
     })
 
@@ -41,7 +42,10 @@ export async function POST(request: NextRequest) {
       currency: currency as Currency,
       status: "pending",
       reference: paymentInit.reference,
+      invoiceNumber,
       paymentMethod: "paystack",
+      gatewayStatus: "pending",
+      gatewayMessage: "Awaiting payment authorization on Paystack.",
       createdAt: new Date(),
     })
 

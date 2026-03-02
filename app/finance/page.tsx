@@ -516,8 +516,8 @@ export default function FinanceDashboard() {
                         })}
                       </td>
                       <td className="p-3">
-                        <Button variant="ghost" size="sm">
-                          View
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/finance/transactions/${payment.id}`}>View Transaction</Link>
                         </Button>
                       </td>
                     </tr>

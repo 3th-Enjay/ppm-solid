@@ -18,7 +18,6 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
-  Filter,
   RotateCcw,
   Search,
   XCircle,
@@ -27,14 +26,20 @@ import {
 import type { Payment } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils/format"
 import { AdminActionDialog } from "@/components/admin/AdminActionDialog"
+import { AdminStatRow } from "@/components/admin/AdminStatRow"
+import { AdminFilterBar } from "@/components/admin/AdminFilterBar"
 
 export default function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([])
+  type EnrichedPayment = Payment & {
+    courses?: Array<{ id: string; title: string }>
+    user?: { id: string; name: string; email: string; role: string }
+  }
+  const [payments, setPayments] = useState<EnrichedPayment[]>([])
+  const [filteredPayments, setFilteredPayments] = useState<EnrichedPayment[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currencyFilter, setCurrencyFilter] = useState<string>("all")
-  const [refundTarget, setRefundTarget] = useState<Payment | null>(null)
+  const [refundTarget, setRefundTarget] = useState<EnrichedPayment | null>(null)
   const [pendingRefundId, setPendingRefundId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -47,9 +52,9 @@ export default function AdminPaymentsPage() {
 
   const loadPayments = async () => {
     try {
-      const res = await fetch("/api/payments")
+      const res = await fetch("/api/payments?includeDetails=true")
       const data = await res.json()
-      const allPayments: Payment[] = data.payments || []
+      const allPayments: EnrichedPayment[] = data.payments || []
       setPayments(allPayments)
     } catch (error) {
       console.error("Error loading payments:", error)
@@ -63,7 +68,10 @@ export default function AdminPaymentsPage() {
       filtered = filtered.filter((p) =>
         p.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.userId.toLowerCase().includes(searchQuery.toLowerCase())
+        p.userId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.courses?.some((course) => course.title.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     }
 
@@ -136,13 +144,13 @@ export default function AdminPaymentsPage() {
     }
   }
 
-  const handleRefund = async (payment: Payment) => {
+  const handleRefund = async (payment: EnrichedPayment, refundReason?: string) => {
     setPendingRefundId(payment.id)
     try {
       const res = await fetch(`/api/payments/${payment.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "refunded" }),
+        body: JSON.stringify({ status: "refunded", refundReason }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -174,39 +182,27 @@ export default function AdminPaymentsPage() {
         <p className="text-muted-foreground mt-2">Review payments, manage refunds, and monitor status</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Total Payments</p>
-            <p className="text-2xl font-bold">{totals.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Completed</p>
-            <p className="text-2xl font-bold text-green-600">{totals.completed}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Pending</p>
-            <p className="text-2xl font-bold text-yellow-600">{totals.pending}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Refunded</p>
-            <p className="text-2xl font-bold text-blue-600">{totals.refunded}</p>
-          </CardContent>
-        </Card>
+      <div className="mb-6">
+        <AdminStatRow
+          items={[
+            { key: "total", label: "Total Payments", value: totals.total, icon: CreditCard },
+            { key: "completed", label: "Completed", value: totals.completed, icon: CheckCircle2 },
+            { key: "pending", label: "Pending", value: totals.pending, icon: Clock },
+            { key: "refunded", label: "Refunded", value: totals.refunded, icon: RotateCcw },
+          ]}
+        />
       </div>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>Search by reference or filter by status/currency</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="mb-6">
+        <AdminFilterBar
+          title="Filters"
+          description="Search by reference, customer, course, and filter by status/currency."
+          onClear={() => {
+            setSearchQuery("")
+            setStatusFilter("all")
+            setCurrencyFilter("all")
+          }}
+        >
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -240,20 +236,12 @@ export default function AdminPaymentsPage() {
                 <SelectItem value="GBP">GBP</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSearchQuery("")
-                setStatusFilter("all")
-                setCurrencyFilter("all")
-              }}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Clear Filters
-            </Button>
+            <div className="flex items-center text-xs text-muted-foreground">
+              URL-synced filters planned in next pass.
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </AdminFilterBar>
+      </div>
 
       <Card>
         <CardHeader>
@@ -278,7 +266,8 @@ export default function AdminPaymentsPage() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-3 font-semibold">Reference</th>
-                    <th className="text-left p-3 font-semibold">Student ID</th>
+                    <th className="text-left p-3 font-semibold">Customer</th>
+                    <th className="text-left p-3 font-semibold">Courses</th>
                     <th className="text-left p-3 font-semibold">Amount</th>
                     <th className="text-left p-3 font-semibold">Currency</th>
                     <th className="text-left p-3 font-semibold">Status</th>
@@ -294,7 +283,21 @@ export default function AdminPaymentsPage() {
                           {payment.reference}
                         </code>
                       </td>
-                      <td className="p-3 font-medium">{payment.userId}</td>
+                      <td className="p-3 font-medium">
+                        {payment.user ? (
+                          <div>
+                            <p>{payment.user.name}</p>
+                            <p className="text-xs text-muted-foreground">{payment.user.email}</p>
+                          </div>
+                        ) : (
+                          payment.userId
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <p className="line-clamp-2 text-xs">
+                          {payment.courses?.length ? payment.courses.map((c) => c.title).join(", ") : payment.courseId}
+                        </p>
+                      </td>
                       <td className="p-3 font-semibold">
                         {formatCurrency(payment.amount, payment.currency)}
                       </td>
@@ -335,6 +338,9 @@ export default function AdminPaymentsPage() {
                               )}
                             </Button>
                           )}
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/admin/payments/${payment.id}`}>View Transaction</Link>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -365,9 +371,9 @@ export default function AdminPaymentsPage() {
         confirmLabel="Confirm Refund"
         successToast="Payment refunded successfully."
         errorToast="Refund failed."
-        executeAction={async () => {
+        executeAction={async (note) => {
           if (!refundTarget) return
-          await handleRefund(refundTarget)
+          await handleRefund(refundTarget, note)
         }}
       />
     </div>

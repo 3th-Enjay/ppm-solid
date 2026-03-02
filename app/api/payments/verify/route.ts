@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
         completedAt: new Date(),
         amount: verification.amount,
         currency: verification.currency,
+        paidAt: verification.paidAt || new Date(),
+        transactionId: verification.transactionId,
+        gatewayStatus: verification.gatewayStatus || "success",
+        gatewayMessage: verification.gatewayMessage || "Payment verified successfully.",
+        gatewayChannel: verification.channel,
       })
 
       // Auto-enroll user in course if not already enrolled
@@ -58,6 +63,10 @@ export async function GET(request: NextRequest) {
     } else {
       await db.updatePaymentByReference(reference, {
         status: "failed",
+        gatewayStatus: verification.gatewayStatus || "failed",
+        gatewayMessage: verification.gatewayMessage || "Payment verification failed.",
+        transactionId: verification.transactionId,
+        gatewayChannel: verification.channel,
       })
     }
 
@@ -66,6 +75,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       verified: verification.status === "success",
+      paystackMessage: verification.gatewayMessage,
       payment: updatedPayment,
     })
   } catch (error) {

@@ -1,71 +1,63 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { CheckCircle, Download, ArrowRight, Loader2 } from "lucide-react"
-import { formatCurrency, formatDate } from "@/lib/utils/format"
 import Link from "next/link"
-import type { Payment } from "@/lib/types"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { CheckCircle, Download, ExternalLink, Loader2, Printer, XCircle } from "lucide-react"
+import { formatCurrency, formatDate } from "@/lib/utils/format"
+import { useCartStore } from "@/lib/store"
 
-export default function CheckoutSuccessPage() {
+type PaymentWithDetails = {
+  id: string
+  reference: string
+  amount: number
+  currency: string
+  status: string
+  paymentMethod: string
+  invoiceNumber?: string
+  transactionId?: string
+  gatewayMessage?: string
+  gatewayStatus?: string
+  createdAt: string | Date
+  courses?: Array<{ id: string; title: string; slug?: string; thumbnail?: string }>
+}
+
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const reference = searchParams.get("reference")
-  const [payment, setPayment] = useState<Payment | null>(null)
-  const [courses, setCourses] = useState<{ id: string; title: string; thumbnail?: string }[]>([])
+  const trxref = searchParams.get("trxref")
+  const paymentReference = reference || trxref
+  const [payment, setPayment] = useState<PaymentWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
+  const [paystackMessage, setPaystackMessage] = useState("")
+  const { clearCart } = useCartStore()
 
   useEffect(() => {
-    if (!reference) {
+    if (!paymentReference) {
       router.push("/courses")
       return
     }
 
     const loadPayment = async () => {
+      setLoading(true)
       try {
-        const res = await fetch(`/api/payments?reference=${reference}`)
-        const data = await res.json()
-        let foundPayment = data.payments?.[0] || null
+        const verifyRes = await fetch(`/api/payments/verify?reference=${encodeURIComponent(paymentReference)}`)
+        const verifyData = await verifyRes.json()
+        setPaystackMessage(verifyData.paystackMessage || "")
+
+        const paymentRes = await fetch(
+          `/api/payments?reference=${encodeURIComponent(paymentReference)}&includeDetails=true`,
+        )
+        const paymentData = await paymentRes.json()
+        const foundPayment = (paymentData.payments || [])[0] || null
         setPayment(foundPayment)
 
-        if (foundPayment && foundPayment.status !== "completed") {
-          await fetch(`/api/payments/verify?reference=${reference}`)
-          const refreshed = await fetch(`/api/payments?reference=${reference}`)
-          const refreshedData = await refreshed.json()
-          const refreshedPayment = refreshedData.payments?.[0] || null
-          setPayment(refreshedPayment)
-          if (refreshedPayment) {
-            foundPayment = refreshedPayment
-          }
-        }
-
-        const ids =
-          foundPayment?.courseIds && foundPayment.courseIds.length > 0
-            ? foundPayment.courseIds
-            : foundPayment?.courseId
-            ? [foundPayment.courseId]
-            : []
-
-        if (ids.length > 0) {
-          const courseResponses = await Promise.all(
-            ids.map((id: string) => fetch(`/api/courses/${id}`))
-          )
-          const courseData = await Promise.all(
-            courseResponses.map(async (res, index) => {
-              if (!res.ok) {
-                return { id: ids[index], title: ids[index] }
-              }
-              const data = await res.json()
-              return {
-                id: data.course?.id || ids[index],
-                title: data.course?.title || ids[index],
-                thumbnail: data.course?.thumbnail,
-              }
-            })
-          )
-          setCourses(courseData)
+        if (foundPayment && (foundPayment.status === "completed" || foundPayment.status === "success")) {
+          clearCart()
         }
       } catch (error) {
         console.error("Failed to load payment:", error)
@@ -74,8 +66,15 @@ export default function CheckoutSuccessPage() {
       }
     }
 
-    loadPayment()
-  }, [reference, router])
+    void loadPayment()
+  }, [paymentReference, router, clearCart])
+
+  const statusLabel = useMemo(() => {
+    if (!payment) return "pending"
+    if (payment.status === "completed" || payment.status === "success") return "success"
+    if (payment.status === "failed") return "failed"
+    return payment.status
+  }, [payment])
 
   if (loading) {
     return (
@@ -83,8 +82,8 @@ export default function CheckoutSuccessPage() {
         <Card className="max-w-lg w-full">
           <CardContent className="flex flex-col items-center justify-center gap-3 p-10 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <h2 className="text-xl font-semibold">Loading payment details</h2>
-            <p className="text-sm text-muted-foreground">Please wait while we confirm your transaction.</p>
+            <h2 className="text-xl font-semibold">Loading transaction details</h2>
+            <p className="text-sm text-muted-foreground">Please wait while we confirm your Paystack transaction.</p>
           </CardContent>
         </Card>
       </div>
@@ -96,9 +95,9 @@ export default function CheckoutSuccessPage() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-lg w-full">
           <CardContent className="p-10 text-center space-y-4">
-            <h2 className="text-xl font-semibold">Payment details unavailable</h2>
+            <h2 className="text-xl font-semibold">Transaction details unavailable</h2>
             <p className="text-sm text-muted-foreground">
-              We could not load your payment details yet. You can check your payment history.
+              We could not load your transaction details yet. Check payment history.
             </p>
             <Button asChild>
               <Link href="/dashboard/payments">Go to Payments</Link>
@@ -109,88 +108,132 @@ export default function CheckoutSuccessPage() {
     )
   }
 
-  const downloadInvoice = () => {
-    alert(`Invoice ${payment.reference} downloaded`)
-  }
+  const isSuccess = statusLabel === "success"
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="max-w-2xl w-full">
-        <CardContent className="p-12 text-center">
-          <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="h-12 w-12 text-green-600" />
+      <Card className="max-w-3xl w-full">
+        <CardContent className="p-10">
+          <div className="mb-8 text-center">
+            <div
+              className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full ${
+                isSuccess ? "bg-green-100" : "bg-red-100"
+              }`}
+            >
+              {isSuccess ? (
+                <CheckCircle className="h-12 w-12 text-green-600" />
+              ) : (
+                <XCircle className="h-12 w-12 text-red-600" />
+              )}
+            </div>
+            <h1 className="text-3xl font-bold">{isSuccess ? "Payment Successful" : "Payment Failed"}</h1>
+            <p className="mt-2 text-muted-foreground">
+              {isSuccess
+                ? "Your transaction was processed and your course access has been updated."
+                : "Your transaction did not complete successfully. Review the details below."}
+            </p>
           </div>
 
-          <h1 className="text-3xl font-bold mb-3 text-balance">Payment Successful!</h1>
-          <p className="text-muted-foreground mb-8">
-            Thank you for your purchase. You now have lifetime access to your courses.
-          </p>
-
-          {/* Payment Details */}
-          <div className="bg-muted/50 rounded-lg p-6 mb-8 text-left">
-            <div className="grid gap-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Payment Reference</span>
-                <span className="font-mono font-medium">{payment.reference}</span>
+          <div className="mb-8 rounded-lg border bg-muted/40 p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-semibold">Transaction Summary</h2>
+              <Badge variant={isSuccess ? "default" : "destructive"}>{payment.status}</Badge>
+            </div>
+            <div className="grid gap-3 text-sm md:grid-cols-2">
+              <div className="flex justify-between gap-3 rounded border bg-background p-3">
+                <span className="text-muted-foreground">Reference</span>
+                <span className="font-mono">{payment.reference}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Amount Paid</span>
-                <span className="font-semibold">{formatCurrency(payment.amount, payment.currency)}</span>
+              <div className="flex justify-between gap-3 rounded border bg-background p-3">
+                <span className="text-muted-foreground">Amount</span>
+                <span className="font-semibold">{formatCurrency(payment.amount, payment.currency as any)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3 rounded border bg-background p-3">
+                <span className="text-muted-foreground">Invoice</span>
+                <span>{payment.invoiceNumber || "N/A"}</span>
+              </div>
+              <div className="flex justify-between gap-3 rounded border bg-background p-3">
+                <span className="text-muted-foreground">Transaction ID</span>
+                <span>{payment.transactionId || "N/A"}</span>
+              </div>
+              <div className="flex justify-between gap-3 rounded border bg-background p-3">
                 <span className="text-muted-foreground">Date</span>
-                <span>{formatDate(payment.createdAt)}</span>
+                <span>{formatDate(payment.createdAt as any)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3 rounded border bg-background p-3">
                 <span className="text-muted-foreground">Payment Method</span>
-                <span>Paystack</span>
+                <span>{payment.paymentMethod}</span>
+              </div>
+              <div className="flex justify-between gap-3 rounded border bg-background p-3 md:col-span-2">
+                <span className="text-muted-foreground">Paystack Message</span>
+                <span className="text-right">{paystackMessage || payment.gatewayMessage || "No message received."}</span>
               </div>
             </div>
           </div>
 
-          {/* Courses */}
-          <div className="mb-8 text-left">
-            <h3 className="font-semibold mb-3">Enrolled Courses:</h3>
+          <div className="mb-8">
+            <h3 className="mb-3 font-semibold">Courses in This Transaction</h3>
             <div className="space-y-2">
-              {courses.length > 0 ? (
-                courses.map((course) => (
-                  <div key={course.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <img
-                      src={course.thumbnail || "/placeholder.svg"}
-                      alt={course.title}
-                      className="w-16 h-12 object-cover rounded"
-                    />
-                    <span className="font-medium">{course.title}</span>
-                  </div>
+              {payment.courses && payment.courses.length > 0 ? (
+                payment.courses.map((course) => (
+                  <Link
+                    key={course.id}
+                    href={course.slug ? `/courses/${course.slug}` : "/courses"}
+                    className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/40"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <img
+                        src={course.thumbnail || "/placeholder.svg"}
+                        alt={course.title}
+                        className="h-12 w-16 rounded object-cover"
+                      />
+                      <span className="truncate font-medium">{course.title}</span>
+                    </div>
+                    <span className="flex items-center text-sm text-primary">
+                      Open
+                      <ExternalLink className="ml-2 h-4 w-4" />
+                    </span>
+                  </Link>
                 ))
               ) : (
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <img
-                    src="/placeholder.svg"
-                    alt="Course"
-                    className="w-16 h-12 object-cover rounded"
-                  />
-                  <span className="font-medium">{payment.courseId}</span>
-                </div>
+                <p className="text-sm text-muted-foreground">No course metadata found for this transaction.</p>
               )}
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={downloadInvoice} className="flex-1 bg-transparent">
-              <Download className="h-4 w-4 mr-2" />
-              Download Invoice
+          <div className="grid gap-3 md:grid-cols-3">
+            <Button variant="outline" onClick={() => window.print()}>
+              <Printer className="h-4 w-4 mr-2" />
+              Print
             </Button>
-            <Button asChild className="flex-1">
-              <Link href="/dashboard/courses">
-                Start Learning
-                <ArrowRight className="h-4 w-4 ml-2" />
+            <Button variant="outline" onClick={() => window.print()}>
+              <Download className="h-4 w-4 mr-2" />
+              Save as PDF
+            </Button>
+            <Button asChild>
+              <Link href={payment.id ? `/dashboard/payments/${payment.id}` : "/dashboard/payments"}>
+                View Transaction
               </Link>
             </Button>
           </div>
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="max-w-md w-full">
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">Loading transaction result...</CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <CheckoutSuccessContent />
+    </Suspense>
   )
 }

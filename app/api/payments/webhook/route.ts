@@ -37,12 +37,20 @@ export async function POST(request: Request) {
       const amount = event?.data?.amount
       const currency = event?.data?.currency || payment.currency
       const paidAt = event?.data?.paid_at || event?.data?.paidAt
+      const gatewayMessage = event?.data?.gateway_response || "Payment successful"
+      const transactionId = event?.data?.id ? String(event.data.id) : undefined
+      const channel = event?.data?.channel
 
       await updatePayment({
         status: "completed",
         completedAt: paidAt ? new Date(paidAt) : new Date(),
         amount: typeof amount === "number" ? paystackService.fromSubunit(amount, currency) : payment.amount,
         currency,
+        paidAt: paidAt ? new Date(paidAt) : new Date(),
+        gatewayStatus: "success",
+        gatewayMessage,
+        transactionId,
+        gatewayChannel: channel,
       })
 
       const courseIds = payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
@@ -68,11 +76,21 @@ export async function POST(request: Request) {
       break
     }
     case "charge.failed": {
-      await updatePayment({ status: "failed" })
+      await updatePayment({
+        status: "failed",
+        gatewayStatus: "failed",
+        gatewayMessage: event?.data?.gateway_response || "Payment failed",
+        transactionId: event?.data?.id ? String(event.data.id) : undefined,
+        gatewayChannel: event?.data?.channel,
+      })
       break
     }
     case "refund.processed": {
-      await updatePayment({ status: "refunded" })
+      await updatePayment({
+        status: "refunded",
+        refundedAt: new Date(),
+        gatewayMessage: "Refund processed by Paystack.",
+      })
       break
     }
     case "refund.failed": {

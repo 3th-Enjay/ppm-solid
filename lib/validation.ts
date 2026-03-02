@@ -90,6 +90,7 @@ export const paymentInitializeSchema = z.object({
 
 export const paymentRefundSchema = z.object({
   status: z.enum(["refunded"]),
+  refundReason: z.string().min(3).optional(),
 })
 
 export const otpVerifySchema = z.object({

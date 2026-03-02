@@ -130,11 +130,20 @@ export interface Payment {
   userId: string
   courseId: string
   courseIds?: string[]
+  invoiceNumber?: string
   amount: number
   currency: Currency
   status: PaymentStatus
   reference: string
   paymentMethod: string
+  transactionId?: string
+  gatewayStatus?: string
+  gatewayMessage?: string
+  gatewayChannel?: string
+  paidAt?: Date
+  refundReason?: string
+  refundedBy?: string
+  refundedAt?: Date
   createdAt: Date
   completedAt?: Date
 }

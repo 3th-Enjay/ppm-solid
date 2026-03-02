@@ -528,6 +528,10 @@ class MockDatabase {
     return this.payments.find((p) => p.reference === reference)
   }
 
+  async getPaymentById(id: string): Promise<Payment | undefined> {
+    return this.payments.find((p) => p.id === id)
+  }
+
   async updatePaymentByReference(reference: string, updates: Partial<Payment>): Promise<Payment | undefined> {
     const paymentIndex = this.payments.findIndex((p) => p.reference === reference)
     if (paymentIndex === -1) return undefined

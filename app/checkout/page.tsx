@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { useAuthStore, useCartStore, usePreferencesStore } from "@/lib/store"
 import { formatCurrency } from "@/lib/utils/format"
 import { CreditCard, Loader2, Lock } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -16,6 +17,7 @@ export default function CheckoutPage() {
   const { items, clearCart, hydrated: cartHydrated } = useCartStore()
   const { currency, hydrated: preferencesHydrated } = usePreferencesStore()
   const [loading, setLoading] = useState(false)
+  const { toast } = useToast()
   const [billingInfo, setBillingInfo] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -79,7 +81,11 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       console.error("Payment error:", error)
-      alert("Payment failed. Please try again.")
+      toast({
+        title: "Payment initialization failed",
+        description: "Unable to initialize Paystack payment. Please try again.",
+        variant: "destructive",
+      })
       setLoading(false)
     }
   }

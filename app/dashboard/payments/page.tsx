@@ -1,51 +1,37 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { CreditCard } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
-import type { Course, Payment } from "@/lib/types"
+import type { Payment } from "@/lib/types"
 import { formatCurrency, formatDate } from "@/lib/utils/format"
+
+type EnrichedPayment = Payment & {
+  courses?: Array<{ id: string; title: string }>
+}
 
 export default function PaymentsPage() {
   const { user } = useAuthStore()
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [courseTitles, setCourseTitles] = useState<Record<string, string>>({})
+  const [payments, setPayments] = useState<EnrichedPayment[]>([])
 
   useEffect(() => {
     if (!user) return
     const loadPayments = async () => {
       try {
-        const res = await fetch(`/api/payments?userId=${user.id}`)
+        const res = await fetch(`/api/payments?userId=${user.id}&includeDetails=true`)
         const data = await res.json()
-        setPayments((data.payments || []) as Payment[])
+        setPayments((data.payments || []) as EnrichedPayment[])
       } catch (error) {
         console.error("Failed to load payments:", error)
         setPayments([])
       }
     }
-    loadPayments()
+    void loadPayments()
   }, [user])
-
-  useEffect(() => {
-    if (payments.length === 0) return
-    const loadCourses = async () => {
-      try {
-        const res = await fetch("/api/courses?includeDrafts=true")
-        const data = await res.json()
-        const map: Record<string, string> = {}
-        const courses: Course[] = data.courses || []
-        for (const course of courses) {
-          map[course.id] = course.title
-        }
-        setCourseTitles(map)
-      } catch (error) {
-        console.error("Failed to load courses:", error)
-      }
-    }
-    loadCourses()
-  }, [payments.length])
 
   return (
     <div className="p-8">
@@ -57,26 +43,33 @@ export default function PaymentsPage() {
       {payments.length > 0 ? (
         <div className="space-y-4">
           {payments.map((payment) => {
-            const hasMultiple = payment.courseIds && payment.courseIds.length > 1
-            const courseTitle = hasMultiple
-              ? `Multiple courses (${payment.courseIds?.length})`
-              : courseTitles[payment.courseId] || payment.courseId
+            const purchasedCourseNames =
+              payment.courses && payment.courses.length > 0
+                ? payment.courses.map((course) => course.title).join(", ")
+                : payment.courseId
+
             return (
               <Card key={payment.id}>
                 <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold mb-1">{courseTitle}</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <div className="flex justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="mb-1 truncate font-semibold">{purchasedCourseNames}</h3>
+                      <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
                         <span>{formatDate(payment.createdAt)}</span>
                         <span>•</span>
-                        <span>{payment.reference}</span>
+                        <span className="truncate">{payment.reference}</span>
                       </div>
-                      <Badge variant={payment.status === "completed" ? "default" : "secondary"}>{payment.status}</Badge>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={payment.status === "completed" ? "default" : "secondary"}>{payment.status}</Badge>
+                        {payment.invoiceNumber ? <Badge variant="outline">{payment.invoiceNumber}</Badge> : null}
+                      </div>
                     </div>
-                    <div className="text-right">
+                    <div className="space-y-2 text-right">
                       <div className="text-2xl font-bold">{formatCurrency(payment.amount, payment.currency)}</div>
                       <p className="text-sm text-muted-foreground">{payment.paymentMethod}</p>
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/dashboard/payments/${payment.id}`}>View Transaction</Link>
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
