@@ -94,8 +94,8 @@ export default function AboutPage() {
   const teamAccentY = useTransform(teamScroll, [0, 1], [10, -10])
 
   const team: TeamMember[] = [
-    { name: "Dr Amara Okoye", role: "Director", image: directorImage },
     { name: "Dr Ikechukwu Okoye", role: "Founder & CEO", image: ceoImage },
+    { name: "Dr Amara Okoye", role: "Director", image: directorImage },
     { name: "Eunice", role: "Tutor", image: euniceImage },
     { name: "Chinedu Amadi", role: "Tutor", image: chineduImage },
   ]

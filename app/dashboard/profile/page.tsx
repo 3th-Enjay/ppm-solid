@@ -1,37 +1,80 @@
 "use client"
 
 import { useState } from "react"
+import { motion } from "framer-motion"
+import { CalendarDays, CreditCard, Save, ShieldCheck, UserIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useAuthStore } from "@/lib/store"
-import { Save, UserIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { getTrainingLocationLabel, ONSITE_TRAINING } from "@/lib/student-registration"
 
 export default function ProfilePage() {
-  const { user, token } = useAuthStore()
+  const { user, token, setAuth } = useAuthStore()
   const { toast } = useToast()
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [showTrainingModal, setShowTrainingModal] = useState(false)
   const [profile, setProfile] = useState({
     name: user?.name || "",
     email: user?.email || "",
     bio: user?.bio || "",
   })
 
-  const handleSave = () => {
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been updated successfully.",
-    })
-  }
-
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   })
+
+  const studentProfile = user?.studentProfile
+
+  const handleSave = async () => {
+    if (!user || !token) return
+    setSavingProfile(true)
+    try {
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: profile.name.trim(),
+          bio: profile.bio.trim() || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.user) {
+        throw new Error(data?.error || "Failed to update profile")
+      }
+
+      setAuth(data.user, token)
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      })
+    } finally {
+      setSavingProfile(false)
+    }
+  }
 
   const handlePasswordUpdate = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -75,17 +118,125 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-balance">Profile Settings</h1>
-        <p className="text-muted-foreground mt-2">Manage your account settings and preferences</p>
+    <motion.div
+      className="space-y-8 p-4 md:p-6 lg:p-8"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <div>
+        <h1 className="text-3xl font-bold text-balance">Student Profile</h1>
+        <p className="mt-2 text-muted-foreground">
+          Manage your account and view your on-site training registration details.
+        </p>
       </div>
 
-      <Tabs defaultValue="general" className="max-w-3xl">
-        <TabsList>
+      <Tabs defaultValue="training" className="max-w-4xl">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="training">Training Profile</TabsTrigger>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="training">
+          <Card className="border-primary/20">
+            <CardHeader>
+              <CardTitle>{ONSITE_TRAINING.formTitle}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              {studentProfile ? (
+                <>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Full Name</p>
+                      <p className="font-medium">{user?.name}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Email</p>
+                      <p className="font-medium">{user?.email}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Phone Number</p>
+                      <p className="font-medium">{studentProfile.phoneNumber}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">WhatsApp Number</p>
+                      <p className="font-medium">{studentProfile.whatsappNumber}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Gender</p>
+                      <p className="font-medium capitalize">{studentProfile.gender.replace(/_/g, " ")}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Date of Birth</p>
+                      <p className="font-medium">{studentProfile.dateOfBirth}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Preferred Location</p>
+                      <p className="font-medium">
+                        {getTrainingLocationLabel(studentProfile.preferredLocation)} -{" "}
+                        {studentProfile.preferredLocationStartDate}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Healthcare Professional</p>
+                      <p className="font-medium">
+                        {studentProfile.isHealthcareProfessional ? "Yes" : "No"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-muted-foreground">Current Role or Field</p>
+                    <p className="font-medium">{studentProfile.currentRoleOrField}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-muted-foreground">Current Address</p>
+                    <p className="font-medium">{studentProfile.currentAddress}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-muted-foreground">Why Interested</p>
+                    <p className="font-medium">{studentProfile.trainingInterest}</p>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Payment Status</p>
+                      <p className="font-medium">
+                        {studentProfile.paymentStatus === "yes" ? "Paid" : "Not yet paid"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Payment Reference</p>
+                      <p className="font-medium">{studentProfile.paymentReference || "Not provided"}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Registration Fee</p>
+                      <p className="font-medium">₦{studentProfile.registrationFeeNgn.toLocaleString("en-NG")}</p>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-muted-foreground">Submitted</p>
+                      <p className="font-medium">
+                        {new Date(studentProfile.submittedAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => setShowTrainingModal(true)} variant="outline">
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      View Program Summary
+                    </Button>
+                    <Button asChild variant="cta">
+                      <a href={studentProfile.paymentLink} target="_blank" rel="noreferrer">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Open Payment Link
+                      </a>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted-foreground">No training registration details found for this account.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="general">
           <Card>
@@ -93,13 +244,10 @@ export default function ProfilePage() {
               <CardTitle>Profile Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="mb-6 flex items-center gap-4">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
                   <UserIcon className="h-10 w-10 text-primary" />
                 </div>
-                <Button variant="outline" className="bg-transparent">
-                  Change Avatar
-                </Button>
               </div>
 
               <div className="space-y-2">
@@ -127,9 +275,9 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <Button onClick={handleSave} className="w-full">
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
+              <Button onClick={handleSave} className="w-full" disabled={savingProfile}>
+                <Save className="mr-2 h-4 w-4" />
+                {savingProfile ? "Saving..." : "Save Changes"}
               </Button>
             </CardContent>
           </Card>
@@ -182,6 +330,30 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+
+      <Dialog open={showTrainingModal} onOpenChange={setShowTrainingModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Program Summary</DialogTitle>
+            <DialogDescription>
+              Your submitted registration details for Prompt Care Academy.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 px-6 pb-2 text-sm">
+            <p>{ONSITE_TRAINING.durationDays} Days Intensive Training</p>
+            <p>{ONSITE_TRAINING.hours}+ Hours (Theory & Practical)</p>
+            <p>International Certification</p>
+            <p>Internship Support</p>
+            <p className="inline-flex items-center gap-2 text-muted-foreground">
+              <ShieldCheck className="h-4 w-4" />
+              Support: {ONSITE_TRAINING.supportPhone}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowTrainingModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
   )
 }

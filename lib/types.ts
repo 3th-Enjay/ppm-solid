@@ -1,6 +1,29 @@
 // Core type definitions for the Prompt Care Academy platform
 
 export type UserRole = "student" | "instructor" | "admin" | "finance"
+export type StudentGender = "male" | "female" | "other" | "prefer_not_to_say"
+export type TrainingLocation = "enugu" | "abuja"
+
+export interface StudentRegistrationProfile {
+  formTitle: string
+  phoneNumber: string
+  whatsappNumber: string
+  gender: StudentGender
+  dateOfBirth: string
+  currentAddress: string
+  isHealthcareProfessional: boolean
+  currentRoleOrField: string
+  preferredLocation: TrainingLocation
+  preferredLocationStartDate: string
+  trainingInterest: string
+  registrationFeeNgn: number
+  paymentStatus: "yes" | "no"
+  paymentReference?: string
+  paymentLink: string
+  agreedSlotSecured: boolean
+  agreedDetailsCorrect: boolean
+  submittedAt: Date
+}
 
 export interface User {
   id: string
@@ -14,6 +37,7 @@ export interface User {
   emailVerified?: boolean
   otpHash?: string
   otpExpiresAt?: Date
+  studentProfile?: StudentRegistrationProfile
   enrolledCourses: string[] // Course IDs
   createdAt: Date
   updatedAt: Date

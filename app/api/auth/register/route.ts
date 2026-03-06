@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { authService } from "@/lib/auth"
 import { registerSchema } from "@/lib/validation"
 import { ZodError } from "zod"
+import {
+  getTrainingLocationStartDate,
+  ONSITE_TRAINING,
+} from "@/lib/student-registration"
 
 export async function POST(request: Request) {
   try {
@@ -10,20 +14,33 @@ export async function POST(request: Request) {
     // Validate input
     const validated = registerSchema.parse(body)
 
-    // Attempt registration
-    const role = validated.role || "student"
-    if (role === "admin" || role === "finance") {
-      return NextResponse.json(
-        { error: "Admin and Finance accounts must be created by an administrator." },
-        { status: 403 }
-      )
-    }
+    // Public registration for this flow is student-only.
+    const role = "student"
 
     const result = await authService.registerWithOtp(
       validated.email,
       validated.password,
       validated.name,
-      role
+      role,
+      {
+        formTitle: ONSITE_TRAINING.formTitle,
+        phoneNumber: validated.phoneNumber,
+        whatsappNumber: validated.whatsappNumber,
+        gender: validated.gender,
+        dateOfBirth: validated.dateOfBirth,
+        currentAddress: validated.currentAddress,
+        isHealthcareProfessional: validated.isHealthcareProfessional === "yes",
+        currentRoleOrField: validated.currentRoleOrField,
+        preferredLocation: validated.preferredLocation,
+        preferredLocationStartDate: getTrainingLocationStartDate(validated.preferredLocation),
+        trainingInterest: validated.trainingInterest,
+        registrationFeeNgn: ONSITE_TRAINING.registrationFeeNgn,
+        paymentStatus: validated.paymentStatus,
+        paymentReference: validated.paymentReference?.trim() || undefined,
+        paymentLink: ONSITE_TRAINING.paymentLink,
+        agreedSlotSecured: validated.agreedSlotSecured,
+        agreedDetailsCorrect: validated.agreedDetailsCorrect,
+      }
     )
 
     return NextResponse.json({

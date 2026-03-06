@@ -9,6 +9,15 @@ import { Search, Mail, BookOpen, Award, Ban, CheckCircle, Users } from "lucide-r
 import type { User, Enrollment, Course } from "@/lib/types"
 import { formatDate } from "@/lib/utils/format"
 import { useAuthStore } from "@/lib/store"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { getTrainingLocationLabel } from "@/lib/student-registration"
 
 export default function AdminStudentsPage() {
   const { token } = useAuthStore()
@@ -17,6 +26,7 @@ export default function AdminStudentsPage() {
   const [filteredStudents, setFilteredStudents] = useState<User[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [coursesById, setCoursesById] = useState<Record<string, Course>>({})
+  const [selectedStudent, setSelectedStudent] = useState<User | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -61,7 +71,10 @@ export default function AdminStudentsPage() {
       const filtered = students.filter(
         (student) =>
           student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          student.email.toLowerCase().includes(searchQuery.toLowerCase()),
+          student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          student.studentProfile?.phoneNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          student.studentProfile?.whatsappNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          student.studentProfile?.currentRoleOrField?.toLowerCase().includes(searchQuery.toLowerCase()),
       )
       setFilteredStudents(filtered)
     } else {
@@ -121,7 +134,7 @@ export default function AdminStudentsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3 mb-6">
+      <div className="grid gap-4 md:grid-cols-4 mb-6">
         <Card>
           <CardContent className="p-6">
             <div className="text-2xl font-bold">{students.length}</div>
@@ -138,6 +151,12 @@ export default function AdminStudentsPage() {
           <CardContent className="p-6">
             <div className="text-2xl font-bold">{enrollments.length}</div>
             <p className="text-sm text-muted-foreground">Total Enrollments</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold">{students.filter((s) => s.studentProfile).length}</div>
+            <p className="text-sm text-muted-foreground">Registration Profiles</p>
           </CardContent>
         </Card>
       </div>
@@ -194,11 +213,32 @@ export default function AdminStudentsPage() {
                           <div className="font-semibold">{formatDate(student.createdAt)}</div>
                         </div>
                       </div>
+                      {student.studentProfile ? (
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                          <Badge variant="secondary">
+                            {getTrainingLocationLabel(student.studentProfile.preferredLocation)}
+                          </Badge>
+                          <Badge variant={student.studentProfile.paymentStatus === "yes" ? "default" : "outline"}>
+                            {student.studentProfile.paymentStatus === "yes" ? "Payment: Yes" : "Payment: No"}
+                          </Badge>
+                          <Badge variant="outline">{student.studentProfile.phoneNumber}</Badge>
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-xs text-muted-foreground">No registration profile submitted.</p>
+                      )}
                     </div>
                   </div>
 
                   {/* Actions */}
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedStudent(student)}
+                      disabled={!student.studentProfile}
+                    >
+                      View Registration
+                    </Button>
                     <Button
                       variant={student.status === "active" ? "destructive" : "default"}
                       size="sm"
@@ -258,6 +298,110 @@ export default function AdminStudentsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={Boolean(selectedStudent)} onOpenChange={(open) => !open && setSelectedStudent(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Student Registration Details</DialogTitle>
+            <DialogDescription>
+              ATL view of submitted on-site training registration details.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedStudent?.studentProfile ? (
+            <div className="space-y-4 px-6 text-sm">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Full Name</p>
+                  <p className="font-medium">{selectedStudent.name}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Email</p>
+                  <p className="font-medium">{selectedStudent.email}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Phone Number</p>
+                  <p className="font-medium">{selectedStudent.studentProfile.phoneNumber}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">WhatsApp Number</p>
+                  <p className="font-medium">{selectedStudent.studentProfile.whatsappNumber}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Gender</p>
+                  <p className="font-medium capitalize">
+                    {selectedStudent.studentProfile.gender.replace(/_/g, " ")}
+                  </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Date of Birth</p>
+                  <p className="font-medium">{selectedStudent.studentProfile.dateOfBirth}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Healthcare Professional</p>
+                  <p className="font-medium">
+                    {selectedStudent.studentProfile.isHealthcareProfessional ? "Yes" : "No"}
+                  </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Current Role / Field</p>
+                  <p className="font-medium">{selectedStudent.studentProfile.currentRoleOrField}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Preferred Location</p>
+                  <p className="font-medium">
+                    {getTrainingLocationLabel(selectedStudent.studentProfile.preferredLocation)} -{" "}
+                    {selectedStudent.studentProfile.preferredLocationStartDate}
+                  </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Payment Status</p>
+                  <p className="font-medium">
+                    {selectedStudent.studentProfile.paymentStatus === "yes" ? "Yes" : "No"}
+                  </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Payment Reference</p>
+                  <p className="font-medium">{selectedStudent.studentProfile.paymentReference || "Not provided"}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Registration Fee</p>
+                  <p className="font-medium">
+                    ₦{selectedStudent.studentProfile.registrationFeeNgn.toLocaleString("en-NG")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-md border p-3">
+                <p className="text-muted-foreground">Current Address</p>
+                <p className="font-medium">{selectedStudent.studentProfile.currentAddress}</p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-muted-foreground">Training Interest</p>
+                <p className="font-medium">{selectedStudent.studentProfile.trainingInterest}</p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Slot Secured Agreement</p>
+                  <p className="font-medium">
+                    {selectedStudent.studentProfile.agreedSlotSecured ? "Accepted" : "Not accepted"}
+                  </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Details Correct Agreement</p>
+                  <p className="font-medium">
+                    {selectedStudent.studentProfile.agreedDetailsCorrect ? "Accepted" : "Not accepted"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="px-6 text-sm text-muted-foreground">No registration profile found.</div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setSelectedStudent(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

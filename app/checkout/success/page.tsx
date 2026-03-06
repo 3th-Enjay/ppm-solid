@@ -6,9 +6,10 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Download, ExternalLink, Loader2, Printer, XCircle } from "lucide-react"
+import { CheckCircle, Copy, Download, ExternalLink, Loader2, Printer, XCircle } from "lucide-react"
 import { formatCurrency, formatDate } from "@/lib/utils/format"
 import { useCartStore } from "@/lib/store"
+import { useToast } from "@/hooks/use-toast"
 
 type PaymentWithDetails = {
   id: string
@@ -21,6 +22,7 @@ type PaymentWithDetails = {
   transactionId?: string
   gatewayMessage?: string
   gatewayStatus?: string
+  gatewayChannel?: string
   createdAt: string | Date
   courses?: Array<{ id: string; title: string; slug?: string; thumbnail?: string }>
 }
@@ -35,6 +37,7 @@ function CheckoutSuccessContent() {
   const [loading, setLoading] = useState(true)
   const [paystackMessage, setPaystackMessage] = useState("")
   const { clearCart } = useCartStore()
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!paymentReference) {
@@ -75,6 +78,68 @@ function CheckoutSuccessContent() {
     if (payment.status === "failed") return "failed"
     return payment.status
   }, [payment])
+
+  const receiptText = useMemo(() => {
+    if (!payment) return ""
+    const courses =
+      payment.courses && payment.courses.length > 0
+        ? payment.courses.map((course) => `- ${course.title}`).join("\n")
+        : "- Course metadata unavailable"
+
+    return [
+      "PROMPT CARE ACADEMY - PAYMENT RECEIPT",
+      "====================================",
+      "",
+      "APP TRANSACTION DETAILS",
+      `Reference: ${payment.reference}`,
+      `Status: ${payment.status}`,
+      `Amount: ${formatCurrency(payment.amount, payment.currency as any)}`,
+      `Invoice Number: ${payment.invoiceNumber || "N/A"}`,
+      `Payment Method: ${payment.paymentMethod}`,
+      `App Created At: ${formatDate(payment.createdAt as any)}`,
+      `Transaction ID: ${payment.transactionId || "N/A"}`,
+      "",
+      "PAYSTACK DETAILS",
+      `Gateway Status: ${payment.gatewayStatus || "N/A"}`,
+      `Gateway Message: ${paystackMessage || payment.gatewayMessage || "N/A"}`,
+      `Channel: ${payment.gatewayChannel || "N/A"}`,
+      "",
+      "COURSES PURCHASED",
+      courses,
+      "",
+      `Generated At: ${new Date().toISOString()}`,
+    ].join("\n")
+  }, [payment, paystackMessage])
+
+  const handleCopyReceipt = async () => {
+    if (!receiptText) return
+    try {
+      await navigator.clipboard.writeText(receiptText)
+      toast({
+        title: "Copied",
+        description: "Transaction details copied to clipboard.",
+      })
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy details. Try download instead.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDownloadReceipt = () => {
+    if (!receiptText || !payment) return
+    const blob = new Blob([receiptText], { type: "text/plain;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement("a")
+    anchor.href = url
+    anchor.download = `promptcare-receipt-${payment.reference}.txt`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }
 
   if (loading) {
     return (
@@ -164,6 +229,14 @@ function CheckoutSuccessContent() {
                 <span className="text-muted-foreground">Payment Method</span>
                 <span>{payment.paymentMethod}</span>
               </div>
+              <div className="flex justify-between gap-3 rounded border bg-background p-3">
+                <span className="text-muted-foreground">Paystack Status</span>
+                <span>{payment.gatewayStatus || "N/A"}</span>
+              </div>
+              <div className="flex justify-between gap-3 rounded border bg-background p-3">
+                <span className="text-muted-foreground">Paystack Channel</span>
+                <span>{payment.gatewayChannel || "N/A"}</span>
+              </div>
               <div className="flex justify-between gap-3 rounded border bg-background p-3 md:col-span-2">
                 <span className="text-muted-foreground">Paystack Message</span>
                 <span className="text-right">{paystackMessage || payment.gatewayMessage || "No message received."}</span>
@@ -201,14 +274,22 @@ function CheckoutSuccessContent() {
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-5">
+            <Button variant="outline" onClick={handleCopyReceipt}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Details
+            </Button>
             <Button variant="outline" onClick={() => window.print()}>
               <Printer className="h-4 w-4 mr-2" />
               Print
             </Button>
+            <Button variant="outline" onClick={handleDownloadReceipt}>
+              <Download className="h-4 w-4 mr-2" />
+              Download Receipt
+            </Button>
             <Button variant="outline" onClick={() => window.print()}>
               <Download className="h-4 w-4 mr-2" />
-              Save as PDF
+              Save PDF
             </Button>
             <Button asChild>
               <Link href={payment.id ? `/dashboard/payments/${payment.id}` : "/dashboard/payments"}>

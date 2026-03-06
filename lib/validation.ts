@@ -13,10 +13,33 @@ export const registerSchema = z
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string(),
     role: z.enum(["student", "instructor", "admin", "finance"]).optional(),
+    phoneNumber: z.string().min(7, "Phone number is required"),
+    whatsappNumber: z.string().min(7, "WhatsApp number is required"),
+    gender: z.enum(["male", "female", "other", "prefer_not_to_say"]),
+    dateOfBirth: z.string().min(1, "Date of birth is required"),
+    currentAddress: z.string().min(5, "Current address is required"),
+    isHealthcareProfessional: z.enum(["yes", "no"]),
+    currentRoleOrField: z.string().min(2, "Current role or field is required"),
+    preferredLocation: z.enum(["enugu", "abuja"]),
+    trainingInterest: z
+      .string()
+      .min(10, "Tell us why you are interested in this training"),
+    paymentStatus: z.enum(["yes", "no"]),
+    paymentReference: z.string().optional(),
+    agreedSlotSecured: z.boolean(),
+    agreedDetailsCorrect: z.boolean(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
+  })
+  .refine((data) => data.agreedSlotSecured, {
+    message: "You must confirm that your slot is secured after payment",
+    path: ["agreedSlotSecured"],
+  })
+  .refine((data) => data.agreedDetailsCorrect, {
+    message: "Please confirm your details are correct",
+    path: ["agreedDetailsCorrect"],
   })
 
 export const contactSchema = z.object({

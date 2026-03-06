@@ -15,6 +15,7 @@ import type { Course, Enrollment, Payment } from "@/lib/types"
 import { formatDuration, formatRelativeTime } from "@/lib/utils/format"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { getTrainingLocationLabel, ONSITE_TRAINING } from "@/lib/student-registration"
 
 type EnrollmentWithCourse = Enrollment & { course: Course | undefined }
 type LearningNote = {
@@ -152,6 +153,7 @@ export default function DashboardPage() {
   const activeCourses = enrollments.filter((e) => e.status === "active")
   const learningHistory = historyItems
   const lastActivities = activities
+  const studentProfile = user?.studentProfile
 
   const loadMoreHistory = async () => {
     if (!user || historyLoadingMore || !historyHasMore) return
@@ -241,6 +243,29 @@ export default function DashboardPage() {
         <MetricCard title="Completed" value={stats.completed} icon={Award} toneClass="text-emerald-500" />
         <MetricCard title="Learning Hours" value={stats.totalHours} icon={Clock} toneClass="text-sky-500" />
       </div>
+
+      {studentProfile ? (
+        <motion.div variants={fadeUp(0.05)} initial="hidden" animate="visible">
+          <Card variant="elevated" className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/10">
+            <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">On-site Training</p>
+                <h2 className="text-xl font-semibold">{ONSITE_TRAINING.formTitle}</h2>
+                <p className="text-sm text-muted-foreground">
+                  Location: {getTrainingLocationLabel(studentProfile.preferredLocation)} -{" "}
+                  {studentProfile.preferredLocationStartDate}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Payment Status: {studentProfile.paymentStatus === "yes" ? "Paid" : "Pending payment"}
+                </p>
+              </div>
+              <Button asChild variant="cta">
+                <Link href="/dashboard/profile">View Student Profile</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-3">
         <Card variant="elevated" className="xl:col-span-2">

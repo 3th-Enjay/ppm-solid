@@ -1,6 +1,6 @@
 // Authentication utilities with bcrypt and JWT
 import { getDB } from "./db"
-import type { User } from "./types"
+import type { StudentRegistrationProfile, User } from "./types"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import crypto from "crypto"
@@ -173,7 +173,8 @@ export const authService = {
     email: string,
     password: string,
     name: string,
-    role: "student" | "instructor" | "admin" | "finance" = "student"
+    role: "student" | "instructor" | "admin" | "finance" = "student",
+    studentProfile?: Omit<StudentRegistrationProfile, "submittedAt">
   ): Promise<{ user: User }> {
     const db = getDB()
     const normalizedEmail = email.trim().toLowerCase()
@@ -193,6 +194,12 @@ export const authService = {
       password: hashedPassword,
       name,
       role,
+      studentProfile: studentProfile
+        ? {
+            ...studentProfile,
+            submittedAt: new Date(),
+          }
+        : undefined,
       emailVerified: false,
       otpHash,
       otpExpiresAt,
