@@ -215,6 +215,9 @@ export default function AdminStudentsPage() {
                       </div>
                       {student.studentProfile ? (
                         <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                          <Badge variant="secondary" className="uppercase">
+                            {student.studentProfile.trainingMode}
+                          </Badge>
                           <Badge variant="secondary">
                             {getTrainingLocationLabel(student.studentProfile.preferredLocation)}
                           </Badge>
@@ -352,6 +355,10 @@ export default function AdminStudentsPage() {
                     {getTrainingLocationLabel(selectedStudent.studentProfile.preferredLocation)} -{" "}
                     {selectedStudent.studentProfile.preferredLocationStartDate}
                   </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Training Mode</p>
+                  <p className="font-medium uppercase">{selectedStudent.studentProfile.trainingMode}</p>
                 </div>
                 <div className="rounded-md border p-3">
                   <p className="text-muted-foreground">Payment Status</p>

@@ -185,7 +185,7 @@ export async function sendPasswordResetEmail(params: { to: string; name: string;
     subject: "Reset your Promptcare Academy password",
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #10B981 0%, #8B5CF6 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+        <div style="background: linear-gradient(135deg, #10B981 0%, #16A34A 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 24px;">Password Reset Request</h1>
         </div>
         <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
@@ -231,4 +231,3 @@ export async function sendPasswordResetEmail(params: { to: string; name: string;
     throw error
   }
 }
-

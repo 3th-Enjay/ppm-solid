@@ -87,7 +87,7 @@ export default function InstructorAnalyticsPage() {
     ].filter((x) => x.total > 0)
   }, [enrollments])
   const [enrollmentMeta, qualityMeta] = roleAnalyticsRegistry.instructor
-  const pieColors = ["#22c7a8", "#4f46e5", "#ef4444"]
+  const pieColors = ["#22c7a8", "#16a34a", "#ef4444"]
 
   return (
     <div className="space-y-8 p-4 md:p-6 lg:p-8">
@@ -195,3 +195,4 @@ export default function InstructorAnalyticsPage() {
     </div>
   )
 }
+

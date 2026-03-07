@@ -214,9 +214,9 @@ export default function AboutPage() {
           <div className="relative grid gap-4 sm:grid-cols-2">
             {/* Placeholder media intent: early stage training, small group learning, and hands-on care practice. */}
             {[
-              "https://images.unsplash.com/photo-1580281657527-47f249e8f4df?auto=format&fit=crop&w=1200&q=80",
+              "/prompt-heroimg1.jpeg",
               "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80",
-              "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80",
+              "/prompt-heroimg3.jpeg",
             ].map((img, index) => (
               <motion.div
                 key={img}
@@ -386,3 +386,4 @@ export default function AboutPage() {
     </div>
   )
 }
+

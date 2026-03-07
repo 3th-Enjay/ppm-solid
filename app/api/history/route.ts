@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
+import { getTokenFromRequest } from "@/lib/jwt"
+import { authService } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,14 +9,26 @@ export async function GET(request: NextRequest) {
     const page = Number(request.nextUrl.searchParams.get("page") || "1")
     const limit = Number(request.nextUrl.searchParams.get("limit") || "20")
 
-    if (!userId) {
-      return NextResponse.json({ error: "userId is required" }, { status: 400 })
+    const token = getTokenFromRequest(request)
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const user = await authService.getCurrentUser(token)
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (userId && userId !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const targetUserId = userId || user.id
 
     const db = getDB() as any
     const [enrollments, certificates] = await Promise.all([
-      db.getEnrollmentsByUserId(userId),
-      db.getCertificatesByUserId(userId),
+      db.getEnrollmentsByUserId(targetUserId),
+      db.getCertificatesByUserId(targetUserId),
     ])
 
     const enrollmentEvents = await Promise.all(
@@ -90,4 +104,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to load learning history" }, { status: 500 })
   }
 }
-

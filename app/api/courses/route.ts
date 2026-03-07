@@ -61,7 +61,37 @@ export async function GET(request: NextRequest) {
       user = await authService.getCurrentUser(token)
     }
 
-    const safeCourses = courses.map((c: any) => maskCourseForUser(c, user))
+    const instructorIds = Array.from(new Set((courses || []).map((course: any) => course.instructorId).filter(Boolean)))
+    const instructors = await Promise.all(instructorIds.map((id: string) => db.findUserById(id)))
+    const instructorById = new Map(
+      instructors
+        .filter(Boolean)
+        .map((instructor: any) => [
+          instructor.id,
+          {
+            name: instructor.name || "Instructor",
+            avatar: instructor.avatar || "/placeholder.svg",
+            bio: instructor.bio || "",
+            headline: instructor.instructorProfile?.professionalHeadline || "",
+            yearsOfExperience: instructor.instructorProfile?.yearsOfExperience || 0,
+            specialties: instructor.instructorProfile?.specialties || [],
+          },
+        ]),
+    )
+
+    const safeCourses = courses.map((c: any) => {
+      const safe = maskCourseForUser(c, user)
+      const instructor = instructorById.get(c.instructorId)
+      return {
+        ...safe,
+        instructorName: instructor?.name,
+        instructorAvatar: instructor?.avatar,
+        instructorBio: instructor?.bio,
+        instructorHeadline: instructor?.headline,
+        instructorYearsOfExperience: instructor?.yearsOfExperience,
+        instructorSpecialties: instructor?.specialties,
+      }
+    })
 
     return NextResponse.json({ courses: safeCourses })
   } catch (error) {

@@ -125,8 +125,8 @@ export default function InstructorDashboard() {
       title: "Total Enrollments", 
       value: stats.totalEnrollments, 
       icon: TrendingUp, 
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50",
       subtitle: "All course enrollments"
     },
     { 
@@ -141,8 +141,8 @@ export default function InstructorDashboard() {
       title: "Total Revenue",
       value: `₦${stats.totalRevenue.toLocaleString()}`,
       icon: TrendingUp,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
+      color: "text-lime-600",
+      bgColor: "bg-lime-50",
       subtitle: "From all courses"
     },
   ]
@@ -361,3 +361,4 @@ export default function InstructorDashboard() {
     </div>
   )
 }
+

@@ -1,21 +1,36 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
+import { getTokenFromRequest } from "@/lib/jwt"
+import { authService } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get("userId")
     const page = Number(request.nextUrl.searchParams.get("page") || "1")
     const limit = Number(request.nextUrl.searchParams.get("limit") || "20")
-    if (!userId) {
-      return NextResponse.json({ error: "userId is required" }, { status: 400 })
+
+    const token = getTokenFromRequest(request)
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const user = await authService.getCurrentUser(token)
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (userId && userId !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const targetUserId = userId || user.id
 
     const db = getDB() as any
     const [enrollments, payments, certificates, notes] = await Promise.all([
-      db.getEnrollmentsByUserId(userId),
-      db.getPaymentsByUserId(userId),
-      db.getCertificatesByUserId(userId),
-      db.getNotesByUserId(userId),
+      db.getEnrollmentsByUserId(targetUserId),
+      db.getPaymentsByUserId(targetUserId),
+      db.getCertificatesByUserId(targetUserId),
+      db.getNotesByUserId(targetUserId),
     ])
 
     const enrollmentActivities = await Promise.all(
@@ -91,4 +106,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to load activities" }, { status: 500 })
   }
 }
-

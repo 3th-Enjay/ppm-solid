@@ -267,8 +267,8 @@ export default function FinanceDashboard() {
       title: "Successful Transactions",
       value: stats.successfulTransactions,
       icon: CheckCircle2,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50",
       subtitle: `${stats.pendingTransactions} pending`,
     },
     {
@@ -283,8 +283,8 @@ export default function FinanceDashboard() {
       title: "Today's Revenue",
       value: `₦${stats.todayRevenue.toLocaleString()}`,
       icon: Calendar,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
+      color: "text-lime-600",
+      bgColor: "bg-lime-50",
       change: "+5.3%",
       trend: "up",
     },
@@ -301,7 +301,7 @@ export default function FinanceDashboard() {
 
   const currencyRevenue = buildFinanceCurrencyRevenue(payments)
   const statusMix = buildFinanceStatusMix(payments)
-  const pieColors = ["#4f46e5", "#22c7a8", "#f59e0b", "#ef4444", "#64748b"]
+  const pieColors = ["#16a34a", "#22c7a8", "#f59e0b", "#ef4444", "#64748b"]
   const [currencyMeta, statusMeta] = roleAnalyticsRegistry.finance
 
   return (
@@ -590,3 +590,4 @@ export default function FinanceDashboard() {
     </div>
   )
 }
+

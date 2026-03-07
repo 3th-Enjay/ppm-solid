@@ -19,6 +19,39 @@ export async function GET(request: NextRequest) {
       enrollments = await db.getAllEnrollments()
     } else if (userId) {
       enrollments = await db.getEnrollmentsByUserId(userId)
+      // Keep onsite students automatically enrolled in all approved courses.
+      const user = await db.findUserById(userId)
+      if (
+        user?.role === "student" &&
+        user.studentProfile &&
+        (user.studentProfile.trainingMode === "onsite" ||
+          (!user.studentProfile.trainingMode && (user.studentProfile.registrationFeeNgn || 0) > 0))
+      ) {
+        const allCourses = await db.getAllCourses()
+        const existingCourseIds = new Set(enrollments.map((item: any) => item.courseId))
+        let created = false
+
+        for (const course of allCourses || []) {
+          if (existingCourseIds.has(course.id)) continue
+          const enrollment = await db.createEnrollment({
+            userId,
+            courseId: course.id,
+            progress: 0,
+            completedLessons: [],
+            status: "active",
+            enrolledAt: new Date(),
+          })
+          enrollments.push(enrollment)
+          existingCourseIds.add(course.id)
+          created = true
+        }
+
+        if (created) {
+          await db.updateUser(userId, {
+            enrolledCourses: Array.from(existingCourseIds),
+          })
+        }
+      }
     } else if (courseId || courseIds) {
       const ids = courseIds ? courseIds.split(",") : [courseId as string]
       const allEnrollments = await db.getAllEnrollments()

@@ -52,10 +52,15 @@ export default function LoginPage() {
       })
       const result = await res.json()
 
+      const requestedRedirect = typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("redirect")
+        : null
+
       if (!res.ok || !result?.user) {
         if (result?.requiresVerification) {
           // Redirect to verify OTP page
-          router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`)
+          const redirectParam = requestedRedirect ? `&redirect=${encodeURIComponent(requestedRedirect)}` : ""
+          router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}${redirectParam}`)
           toast({
             title: "Email verification required",
             description: "Please verify your email to continue. Use the code from signup, or tap Resend on the verify page.",
@@ -76,9 +81,6 @@ export default function LoginPage() {
         description: `Logged in as ${result.user.name}`,
       })
 
-      const requestedRedirect = typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("redirect")
-        : null
       const destination = getSafeRedirectForRole(result.user.role, requestedRedirect)
 
       // Use replace so login page isn't kept in browser history after auth
@@ -192,7 +194,11 @@ export default function LoginPage() {
           <div className="mt-6 text-center text-sm">
             Don't have an account?{" "}
             <Link href="/register" className="text-primary hover:underline font-medium">
-              Sign up
+              Sign up as student
+            </Link>{" "}
+            or{" "}
+            <Link href="/register-instructor" className="text-primary hover:underline font-medium">
+              register as instructor
             </Link>
           </div>
         </CardContent>

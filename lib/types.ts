@@ -4,7 +4,15 @@ export type UserRole = "student" | "instructor" | "admin" | "finance"
 export type StudentGender = "male" | "female" | "other" | "prefer_not_to_say"
 export type TrainingLocation = "enugu" | "abuja"
 
+export interface InstructorProfile {
+  phoneNumber: string
+  professionalHeadline: string
+  specialties: string[]
+  yearsOfExperience: number
+}
+
 export interface StudentRegistrationProfile {
+  trainingMode: "onsite" | "online"
   formTitle: string
   phoneNumber: string
   whatsappNumber: string
@@ -38,6 +46,7 @@ export interface User {
   otpHash?: string
   otpExpiresAt?: Date
   studentProfile?: StudentRegistrationProfile
+  instructorProfile?: InstructorProfile
   enrolledCourses: string[] // Course IDs
   createdAt: Date
   updatedAt: Date
@@ -63,6 +72,12 @@ export interface Course {
   category: CourseCategory
   level: CourseLevel
   instructorId: string
+  instructorName?: string
+  instructorAvatar?: string
+  instructorBio?: string
+  instructorHeadline?: string
+  instructorYearsOfExperience?: number
+  instructorSpecialties?: string[]
   price: {
     NGN: number
     USD: number

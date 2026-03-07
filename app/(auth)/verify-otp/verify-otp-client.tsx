@@ -10,12 +10,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
-import { getRoleHomePath } from "@/lib/role-routing"
+import { getSafeRedirectForRole } from "@/lib/role-routing"
 
 export default function VerifyOtpClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState(searchParams.get("email") || "")
+  const redirectParam = searchParams.get("redirect")
   const { setAuth } = useAuthStore()
   const { toast } = useToast()
 
@@ -54,7 +55,8 @@ export default function VerifyOtpClient() {
         description: "Your account is now active.",
       })
       const role = data.user?.role || "student"
-      router.replace(getRoleHomePath(role))
+      const destination = getSafeRedirectForRole(role, redirectParam)
+      router.replace(destination)
       router.refresh()
     } catch (err: any) {
       setError(err.message || "Verification failed")

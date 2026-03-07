@@ -30,26 +30,18 @@ export async function POST(request: Request) {
 
     const validated = parsed.data
 
-    // Explicit bypass: check env ADMIN_ACCOUNTS credentials first
-    const ADMIN_ACCOUNTS_EMAIL = (process.env.ADMIN_ACCOUNTS_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL)?.trim().toLowerCase()
-    const ADMIN_ACCOUNTS_PASSWORD = (process.env.ADMIN_ACCOUNTS_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD)?.trim()
-    const normalizedInputEmail = validated.email.trim().toLowerCase()
-
     // Attempt login (this handles both env admin and regular users)
     const result = await authService.login(validated.email, validated.password)
 
     if (!result) {
-      // Check if user exists and needs verification
-      const db = (await import("@/lib/db")).getDB()
-      const user = await db.findUserByEmail(validated.email.trim().toLowerCase())
-      
-      if (user && user.emailVerified === false) {
+      // Only report verification required when credentials are valid.
+      const status = await authService.validateCredentials(validated.email, validated.password)
+      if (status === "unverified") {
         return NextResponse.json({ 
           error: "Email not verified. Please check your email for the verification code.",
           requiresVerification: true 
         }, { status: 403 })
       }
-      
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 

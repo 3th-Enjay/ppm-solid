@@ -41,7 +41,7 @@ const testimonialData = [
     name: "Amaka Eze",
     role: "Certified Caregiver",
     image:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+      "https://images.pexels.com/photos/762020/pexels-photo-762020.jpeg?auto=compress&cs=tinysrgb&w=200",
   },
   {
     id: "t2",
@@ -49,7 +49,7 @@ const testimonialData = [
     name: "Daniel Okeke",
     role: "Home Health Assistant",
     image:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+      "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=200",
   },
 ]
 
@@ -259,6 +259,9 @@ export default function CourseDetailPage() {
                 <div>
                   <p className="text-xs text-muted-foreground">Instructor</p>
                   <p className="font-medium">{instructor.name}</p>
+                  {instructor.instructorProfile?.professionalHeadline ? (
+                    <p className="text-xs text-muted-foreground">{instructor.instructorProfile.professionalHeadline}</p>
+                  ) : null}
                 </div>
               </motion.div>
             ) : null}
@@ -399,6 +402,12 @@ export default function CourseDetailPage() {
                     <div className="space-y-2">
                       <h3 className="text-xl font-semibold">{instructor.name}</h3>
                       <p className="text-sm text-muted-foreground">{instructor.bio}</p>
+                      {instructor.instructorProfile ? (
+                        <div className="text-xs text-muted-foreground">
+                          <p>{instructor.instructorProfile.yearsOfExperience}+ years experience</p>
+                          <p>{instructor.instructorProfile.specialties.join(", ")}</p>
+                        </div>
+                      ) : null}
                     </div>
                   </CardContent>
                 </Card>
@@ -484,3 +493,4 @@ export default function CourseDetailPage() {
     </div>
   )
 }
+

@@ -154,6 +154,11 @@ export default function DashboardPage() {
   const learningHistory = historyItems
   const lastActivities = activities
   const studentProfile = user?.studentProfile
+  const isOnsiteProfile = Boolean(
+    studentProfile &&
+      (studentProfile.trainingMode === "onsite" ||
+        (!studentProfile.trainingMode && (studentProfile.registrationFeeNgn || 0) > 0)),
+  )
 
   const loadMoreHistory = async () => {
     if (!user || historyLoadingMore || !historyHasMore) return
@@ -244,7 +249,7 @@ export default function DashboardPage() {
         <MetricCard title="Learning Hours" value={stats.totalHours} icon={Clock} toneClass="text-sky-500" />
       </div>
 
-      {studentProfile ? (
+      {studentProfile && isOnsiteProfile ? (
         <motion.div variants={fadeUp(0.05)} initial="hidden" animate="visible">
           <Card variant="elevated" className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/10">
             <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
@@ -261,6 +266,22 @@ export default function DashboardPage() {
               </div>
               <Button asChild variant="cta">
                 <Link href="/dashboard/profile">View Student Profile</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ) : null}
+      {studentProfile && !isOnsiteProfile ? (
+        <motion.div variants={fadeUp(0.05)} initial="hidden" animate="visible">
+          <Card variant="elevated" className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/10">
+            <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Online Training</p>
+                <h2 className="text-xl font-semibold">{studentProfile.formTitle}</h2>
+                <p className="text-sm text-muted-foreground">Your registration is active. Purchase courses to unlock paid content.</p>
+              </div>
+              <Button asChild variant="cta">
+                <Link href="/courses">Browse Courses</Link>
               </Button>
             </CardContent>
           </Card>

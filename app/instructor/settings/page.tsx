@@ -16,6 +16,10 @@ export default function InstructorSettingsPage() {
   const [name, setName] = useState("")
   const [bio, setBio] = useState("")
   const [avatar, setAvatar] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [professionalHeadline, setProfessionalHeadline] = useState("")
+  const [specialties, setSpecialties] = useState("")
+  const [yearsOfExperience, setYearsOfExperience] = useState("0")
   const [saving, setSaving] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
@@ -25,6 +29,10 @@ export default function InstructorSettingsPage() {
     setName(user.name || "")
     setBio(user.bio || "")
     setAvatar(user.avatar || "")
+    setPhoneNumber(user.instructorProfile?.phoneNumber || "")
+    setProfessionalHeadline(user.instructorProfile?.professionalHeadline || "")
+    setSpecialties((user.instructorProfile?.specialties || []).join(", "))
+    setYearsOfExperience(String(user.instructorProfile?.yearsOfExperience || 0))
   }, [user])
 
   const handleSave = async () => {
@@ -33,6 +41,15 @@ export default function InstructorSettingsPage() {
     setSuccessMessage("")
     setErrorMessage("")
     try {
+      const parsedSpecialties = specialties
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+      const includeInstructorProfile =
+        phoneNumber.trim().length > 0 &&
+        professionalHeadline.trim().length > 0 &&
+        parsedSpecialties.length > 0
+
       const res = await fetch(`/api/users/${user.id}`, {
         method: "PATCH",
         headers: {
@@ -43,6 +60,14 @@ export default function InstructorSettingsPage() {
           name: name.trim() || undefined,
           bio: bio.trim() || undefined,
           avatar: avatar.trim() || undefined,
+          instructorProfile: includeInstructorProfile
+            ? {
+                phoneNumber: phoneNumber.trim(),
+                professionalHeadline: professionalHeadline.trim(),
+                specialties: parsedSpecialties,
+                yearsOfExperience: Number(yearsOfExperience || 0),
+              }
+            : undefined,
         }),
       })
       const data = await res.json()
@@ -116,6 +141,46 @@ export default function InstructorSettingsPage() {
               value={avatar}
               onChange={(e) => setAvatar(e.target.value)}
               placeholder="https://..."
+            />
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+234..."
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="yearsOfExperience">Years of Experience</Label>
+              <Input
+                id="yearsOfExperience"
+                type="number"
+                min={0}
+                max={60}
+                value={yearsOfExperience}
+                onChange={(e) => setYearsOfExperience(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="professionalHeadline">Professional Headline</Label>
+            <Input
+              id="professionalHeadline"
+              value={professionalHeadline}
+              onChange={(e) => setProfessionalHeadline(e.target.value)}
+              placeholder="Registered Nurse and Caregiving Instructor"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="specialties">Specialties (comma separated)</Label>
+            <Input
+              id="specialties"
+              value={specialties}
+              onChange={(e) => setSpecialties(e.target.value)}
+              placeholder="Elder care, CPR, Patient safety"
             />
           </div>
           <Button onClick={handleSave} disabled={saving}>

@@ -133,6 +133,24 @@ export const authService = {
     return { user: userWithoutPassword as User, token }
   },
 
+  async validateCredentials(email: string, password: string): Promise<"invalid" | "unverified" | "ok"> {
+    const db = getDB()
+    const normalizedEmail = email?.trim().toLowerCase()
+    if (!normalizedEmail) return "invalid"
+
+    const user = await db.findUserByEmail(normalizedEmail)
+    if (!user) return "invalid"
+
+    const passwordValid = await validateUserPassword(user, password)
+    if (!passwordValid) return "invalid"
+
+    if (user.emailVerified === false) {
+      return "unverified"
+    }
+
+    return "ok"
+  },
+
   async register(
     email: string,
     password: string,
@@ -174,7 +192,8 @@ export const authService = {
     password: string,
     name: string,
     role: "student" | "instructor" | "admin" | "finance" = "student",
-    studentProfile?: Omit<StudentRegistrationProfile, "submittedAt">
+    studentProfile?: Omit<StudentRegistrationProfile, "submittedAt">,
+    extraUserFields?: Partial<Pick<User, "bio" | "avatar" | "instructorProfile">>
   ): Promise<{ user: User }> {
     const db = getDB()
     const normalizedEmail = email.trim().toLowerCase()
@@ -194,6 +213,9 @@ export const authService = {
       password: hashedPassword,
       name,
       role,
+      bio: extraUserFields?.bio,
+      avatar: extraUserFields?.avatar,
+      instructorProfile: extraUserFields?.instructorProfile,
       studentProfile: studentProfile
         ? {
             ...studentProfile,

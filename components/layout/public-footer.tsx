@@ -90,9 +90,9 @@ export function PublicFooter() {
 
           <div>
             <h3 className="mb-4 text-sm font-semibold">Get Started</h3>
-            <p className="mb-4 text-sm text-muted-foreground">Create an account and start learning today.</p>
-            <Link href="/register" className="text-sm font-semibold text-primary hover:underline">
-              Register Now
+            <p className="mb-4 text-sm text-muted-foreground">Teach learners and publish courses with your profile.</p>
+            <Link href="/register-instructor" className="text-sm font-semibold text-primary hover:underline">
+              Register as an Instructor
             </Link>
           </div>
         </div>

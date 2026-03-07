@@ -211,7 +211,7 @@ export default function ContactPage() {
         hasParallax
         hasFloatingAccent
         backgroundType="image"
-        backgroundImageUrl="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1800&q=80"
+        backgroundImageUrl="https://images.pexels.com/photos/6303396/pexels-photo-6303396.jpeg?auto=compress&cs=tinysrgb&w=1800"
         backgroundImageAlt="Admissions advisor speaking with a prospective learner"
         className="text-white"
       >
@@ -495,3 +495,4 @@ export default function ContactPage() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -62,30 +62,31 @@ export default function HomePage() {
   ]
 
   const visualStack = [
-    "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1580281657527-47f249e8f4df?auto=format&fit=crop&w=900&q=80",
+    "/prompt-heroimg3.jpeg",
+    "https://images.pexels.com/photos/35645507/pexels-photo-35645507.jpeg?auto=compress&cs=tinysrgb&w=900",
     "https://images.unsplash.com/photo-1550831107-1553da8c8464?auto=format&fit=crop&w=900&q=80",
+    "https://images.pexels.com/photos/35645529/pexels-photo-35645529.jpeg?auto=compress&cs=tinysrgb&w=900",
   ]
 
   const journeySlides = [
     {
-      title: "Started with the Fundamentals",
-      text: "They entered with curiosity and built confidence through practical caregiver foundations.",
+      title: "Start with the Fundamentals",
+      text: "They start with curiosity and build confidence through practical caregiver foundations.",
       image: "https://images.unsplash.com/photo-1580281657527-47f249e8f4df?auto=format&fit=crop&w=1400&q=80",
     },
     {
-      title: "Learned in Realistic Clinical Contexts",
-      text: "Guided modules and hands-on simulations helped them apply what matters in real care scenarios.",
+      title: "Learn in Realistic Clinical Contexts",
+      text: "Guided modules and hands-on simulations help them apply what matters in real care scenarios.",
       image: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&w=1400&q=80",
     },
     {
-      title: "Practiced Communication and Compassion",
-      text: "They developed patient-first communication, safety habits, and professional bedside confidence.",
+      title: "Practice Communication and Compassion",
+      text: "They practice patient-first communication, safety habits, and professional bedside confidence.",
       image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1400&q=80",
     },
     {
-      title: "Became Career-Ready Caregivers",
-      text: "Today they support families and healthcare teams with competence, empathy, and integrity.",
+      title: "Become Career-Ready Caregivers",
+      text: "They become ready to support families and healthcare teams with competence, empathy, and integrity.",
       image: "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1400&q=80",
     },
   ]
@@ -161,10 +162,6 @@ export default function HomePage() {
                   />
                 </motion.div>
               ))}
-              <motion.div variants={fadeUp(0.18)} className="rounded-2xl border border-accent/40 bg-accent/10 p-4 text-sm text-muted-foreground">
-                These image placeholders are temporary for layout and motion tuning. You can replace them later with
-                final branded media.
-              </motion.div>
             </div>
           </div>
         </motion.div>
@@ -284,4 +281,5 @@ export default function HomePage() {
     </div>
   )
 }
+
 

@@ -39,6 +39,11 @@ export default function ProfilePage() {
   })
 
   const studentProfile = user?.studentProfile
+  const isOnsiteProfile = Boolean(
+    studentProfile &&
+      (studentProfile.trainingMode === "onsite" ||
+        (!studentProfile.trainingMode && (studentProfile.registrationFeeNgn || 0) > 0)),
+  )
 
   const handleSave = async () => {
     if (!user || !token) return
@@ -126,7 +131,7 @@ export default function ProfilePage() {
       <div>
         <h1 className="text-3xl font-bold text-balance">Student Profile</h1>
         <p className="mt-2 text-muted-foreground">
-          Manage your account and view your on-site training registration details.
+          Manage your account and view your registration details.
         </p>
       </div>
 
@@ -140,7 +145,7 @@ export default function ProfilePage() {
         <TabsContent value="training">
           <Card className="border-primary/20">
             <CardHeader>
-              <CardTitle>{ONSITE_TRAINING.formTitle}</CardTitle>
+              <CardTitle>{studentProfile?.formTitle || ONSITE_TRAINING.formTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               {studentProfile ? (
@@ -197,20 +202,29 @@ export default function ProfilePage() {
                     <p className="font-medium">{studentProfile.trainingInterest}</p>
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
-                    <div className="rounded-lg border p-3">
-                      <p className="text-muted-foreground">Payment Status</p>
-                      <p className="font-medium">
-                        {studentProfile.paymentStatus === "yes" ? "Paid" : "Not yet paid"}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                      <p className="text-muted-foreground">Payment Reference</p>
-                      <p className="font-medium">{studentProfile.paymentReference || "Not provided"}</p>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                      <p className="text-muted-foreground">Registration Fee</p>
-                      <p className="font-medium">₦{studentProfile.registrationFeeNgn.toLocaleString("en-NG")}</p>
-                    </div>
+                    {isOnsiteProfile ? (
+                      <>
+                        <div className="rounded-lg border p-3">
+                          <p className="text-muted-foreground">Payment Status</p>
+                          <p className="font-medium">
+                            {studentProfile.paymentStatus === "yes" ? "Paid" : "Not yet paid"}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border p-3">
+                          <p className="text-muted-foreground">Payment Reference</p>
+                          <p className="font-medium">{studentProfile.paymentReference || "Not provided"}</p>
+                        </div>
+                        <div className="rounded-lg border p-3">
+                          <p className="text-muted-foreground">Registration Fee</p>
+                          <p className="font-medium">NGN {studentProfile.registrationFeeNgn.toLocaleString("en-NG")}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-lg border p-3">
+                        <p className="text-muted-foreground">Access Model</p>
+                        <p className="font-medium">Online students purchase courses to unlock paid content.</p>
+                      </div>
+                    )}
                     <div className="rounded-lg border p-3">
                       <p className="text-muted-foreground">Submitted</p>
                       <p className="font-medium">
@@ -223,12 +237,14 @@ export default function ProfilePage() {
                       <CalendarDays className="mr-2 h-4 w-4" />
                       View Program Summary
                     </Button>
-                    <Button asChild variant="cta">
-                      <a href={studentProfile.paymentLink} target="_blank" rel="noreferrer">
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Open Payment Link
-                      </a>
-                    </Button>
+                    {isOnsiteProfile && studentProfile.paymentLink ? (
+                      <Button asChild variant="cta">
+                        <a href={studentProfile.paymentLink} target="_blank" rel="noreferrer">
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Open Payment Link
+                        </a>
+                      </Button>
+                    ) : null}
                   </div>
                 </>
               ) : (

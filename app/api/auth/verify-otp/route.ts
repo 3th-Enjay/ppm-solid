@@ -3,6 +3,7 @@ import { authService } from "@/lib/auth"
 import { otpVerifySchema } from "@/lib/validation"
 import { ZodError } from "zod"
 import { sendWelcomeEmail } from "@/lib/email"
+import { getDB } from "@/lib/db"
 
 export async function POST(request: Request) {
   try {
@@ -22,9 +23,50 @@ export async function POST(request: Request) {
       console.error("Failed to send welcome email:", err)
     }
 
+    // Onsite students should get free access to all courses and materials.
+    let responseUser = result.user
+    if (
+      result.user.role === "student" &&
+      result.user.studentProfile &&
+      (result.user.studentProfile.trainingMode === "onsite" ||
+        (!result.user.studentProfile.trainingMode && (result.user.studentProfile.registrationFeeNgn || 0) > 0))
+    ) {
+      try {
+        const db = getDB()
+        const [allCourses, existingEnrollments] = await Promise.all([
+          db.getAllCourses(),
+          db.getEnrollmentsByUserId(result.user.id),
+        ])
+
+        const enrolledCourseIds = new Set((existingEnrollments || []).map((item: any) => item.courseId))
+        for (const course of allCourses || []) {
+          if (enrolledCourseIds.has(course.id)) continue
+          await db.createEnrollment({
+            userId: result.user.id,
+            courseId: course.id,
+            progress: 0,
+            completedLessons: [],
+            status: "active",
+            enrolledAt: new Date(),
+          })
+          enrolledCourseIds.add(course.id)
+        }
+
+        const updatedUser = await db.updateUser(result.user.id, {
+          enrolledCourses: Array.from(enrolledCourseIds),
+        })
+        if (updatedUser) {
+          const { password: _password, ...safeUser } = updatedUser as any
+          responseUser = safeUser
+        }
+      } catch (enrollmentError) {
+        console.error("Failed to auto-enroll onsite student:", enrollmentError)
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      user: result.user,
+      user: responseUser,
       token: result.token,
     })
   } catch (error) {

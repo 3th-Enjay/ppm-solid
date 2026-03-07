@@ -60,7 +60,7 @@ export default function ReportsPage() {
   const statusMix = buildFinanceStatusMix(payments)
   const revenueTrend = buildAdminRevenueTrend(payments)
   const [currencyMeta, statusMeta] = roleAnalyticsRegistry.finance
-  const pieColors = ["#4f46e5", "#22c7a8", "#f59e0b", "#ef4444", "#64748b"]
+  const pieColors = ["#16a34a", "#22c7a8", "#f59e0b", "#ef4444", "#64748b"]
 
   return (
     <div className="space-y-8 p-4 md:p-6 lg:p-8">
@@ -179,3 +179,4 @@ export default function ReportsPage() {
     </div>
   )
 }
+

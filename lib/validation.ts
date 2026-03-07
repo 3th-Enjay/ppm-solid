@@ -6,13 +6,21 @@ export const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 })
 
-export const registerSchema = z
-  .object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Invalid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string(),
-    role: z.enum(["student", "instructor", "admin", "finance"]).optional(),
+const registerBaseSchema = z.object({
+  registrationType: z.enum(["onsite", "online"]),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+  role: z.enum(["student", "instructor", "admin", "finance"]).optional(),
+  acceptTerms: z.boolean().refine((value) => value === true, {
+    message: "Please accept the terms and privacy policy.",
+  }),
+})
+
+export const onsiteRegisterSchema = registerBaseSchema
+  .extend({
+    registrationType: z.literal("onsite"),
     phoneNumber: z.string().min(7, "Phone number is required"),
     whatsappNumber: z.string().min(7, "WhatsApp number is required"),
     gender: z.enum(["male", "female", "other", "prefer_not_to_say"]),
@@ -21,9 +29,7 @@ export const registerSchema = z
     isHealthcareProfessional: z.enum(["yes", "no"]),
     currentRoleOrField: z.string().min(2, "Current role or field is required"),
     preferredLocation: z.enum(["enugu", "abuja"]),
-    trainingInterest: z
-      .string()
-      .min(10, "Tell us why you are interested in this training"),
+    trainingInterest: z.string().min(10, "Tell us why you are interested in this training"),
     paymentStatus: z.enum(["yes", "no"]),
     paymentReference: z.string().optional(),
     agreedSlotSecured: z.boolean(),
@@ -40,6 +46,56 @@ export const registerSchema = z
   .refine((data) => data.agreedDetailsCorrect, {
     message: "Please confirm your details are correct",
     path: ["agreedDetailsCorrect"],
+  })
+  .refine((data) => data.paymentStatus === "yes", {
+    message: "Onsite students must confirm payment before registration.",
+    path: ["paymentStatus"],
+  })
+
+export const onlineRegisterSchema = registerBaseSchema
+  .extend({
+    registrationType: z.literal("online"),
+    phoneNumber: z.string().min(7, "Phone number is required"),
+    whatsappNumber: z.string().min(7, "WhatsApp number is required"),
+    gender: z.enum(["male", "female", "other", "prefer_not_to_say"]),
+    dateOfBirth: z.string().min(1, "Date of birth is required"),
+    currentAddress: z.string().min(5, "Current address is required"),
+    isHealthcareProfessional: z.enum(["yes", "no"]),
+    currentRoleOrField: z.string().min(2, "Current role or field is required"),
+    preferredLocation: z.enum(["enugu", "abuja"]),
+    trainingInterest: z.string().min(10, "Tell us why you are interested in this training"),
+    agreedDetailsCorrect: z.boolean(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  })
+  .refine((data) => data.agreedDetailsCorrect, {
+    message: "Please confirm your details are correct",
+    path: ["agreedDetailsCorrect"],
+  })
+
+export const registerSchema = z.union([onsiteRegisterSchema, onlineRegisterSchema])
+
+export const instructorRegisterSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+    phoneNumber: z.string().min(7, "Phone number is required"),
+    professionalHeadline: z.string().min(5, "Professional headline is required"),
+    specialties: z.string().min(2, "Provide at least one specialty"),
+    yearsOfExperience: z.coerce.number().min(0).max(60),
+    bio: z.string().min(20, "Bio must be at least 20 characters"),
+    avatar: z.string().url("Avatar must be a valid URL").optional().or(z.literal("")),
+    acceptTerms: z.boolean().refine((value) => value === true, {
+      message: "Please accept the terms and privacy policy.",
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
   })
 
 export const contactSchema = z.object({
@@ -164,6 +220,14 @@ export const userUpdateSchema = z.object({
   name: z.string().min(2).optional(),
   bio: z.string().optional(),
   avatar: z.string().optional(),
+  instructorProfile: z
+    .object({
+      phoneNumber: z.string().min(7),
+      professionalHeadline: z.string().min(5),
+      specialties: z.array(z.string().min(1)).min(1),
+      yearsOfExperience: z.number().min(0).max(60),
+    })
+    .optional(),
   status: z.enum(["active", "suspended"]).optional(),
 })
 

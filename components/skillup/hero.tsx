@@ -81,7 +81,7 @@ export function SkillupHero({ featuredCourses, currency }: SkillupHeroProps) {
                 size="lg"
                 variant="outline"
                 asChild
-                className="border-accent/40 transition-all duration-200 hover:scale-[1.02] hover:border-accent hover:text-accent"
+                className="border-accent/40 transition-all duration-200 hover:scale-[1.02] hover:border-accent hover:text-accent-foreground"
               >
                 <Link href="/register">Register Now!</Link>
               </Button>
@@ -110,7 +110,7 @@ export function SkillupHero({ featuredCourses, currency }: SkillupHeroProps) {
               transition={reducedMotion ? undefined : { duration: 0.6, ease: "easeOut" }}
             >
               <motion.img
-                src="https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?auto=format&fit=crop&w=1400&q=80"
+                src="/prompt-heroimg2.jpeg"
                 alt="Healthcare trainees in a practical class"
                 className="h-[360px] w-full object-cover md:h-[470px]"
                 animate={reducedMotion ? undefined : { scale: [1, 1.06, 1] }}

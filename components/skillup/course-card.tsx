@@ -63,6 +63,19 @@ export function CourseCard({
             {course.title}
           </h3>
           <p className="line-clamp-1 text-sm text-muted-foreground">{course.description}</p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <img
+              src={course.instructorAvatar || "/placeholder.svg"}
+              alt={course.instructorName || "Instructor"}
+              className="h-5 w-5 rounded-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+            <span className="line-clamp-1">
+              {course.instructorName || "Instructor"}
+              {course.instructorHeadline ? ` - ${course.instructorHeadline}` : ""}
+            </span>
+          </div>
         </Link>
 
         <div className="mt-auto space-y-4">

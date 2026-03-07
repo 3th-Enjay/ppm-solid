@@ -19,9 +19,14 @@ export const ONSITE_TRAINING = {
   registrationFeeNgn: 150000,
   paymentLink:
     process.env.NEXT_PUBLIC_ONSITE_TRAINING_PAYMENT_URL ||
-    "https://paystack.com/pay/promptcare-academy-onsite-training",
+    "/contact?subject=Onsite%20Training%20Payment%20Link",
   paymentProviderHint: "Paystack or Flutterwave",
   supportPhone: "09030910091",
+} as const
+
+export const ONLINE_TRAINING = {
+  formTitle: "Online Student Registration",
+  formDescription: "Register for online training. Courses are paid individually.",
 } as const
 
 export function getTrainingLocationLabel(location: TrainingLocation): string {

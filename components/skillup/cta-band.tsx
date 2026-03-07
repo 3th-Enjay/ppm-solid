@@ -20,7 +20,7 @@ export function CtaBand({ title, description, imageUrl, backgroundImageUrl }: Ct
         src={
           backgroundImageUrl ||
           imageUrl ||
-          "https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?auto=format&fit=crop&w=1600&q=80"
+          "https://images.pexels.com/photos/6303647/pexels-photo-6303647.jpeg?auto=compress&cs=tinysrgb&w=1600"
         }
         alt="Healthcare students in practical training"
         className="absolute inset-0 h-full w-full object-cover"
@@ -68,3 +68,4 @@ export function CtaBand({ title, description, imageUrl, backgroundImageUrl }: Ct
     </section>
   )
 }
+
