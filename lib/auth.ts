@@ -12,6 +12,10 @@ export interface SessionData {
   role: string
 }
 
+export type ResendOtpResult =
+  | { ok: true }
+  | { ok: false; reason: "not_found_or_verified" | "email_send_failed" }
+
 const JWT_SECRET = (process.env.JWT_SECRET || "your-secret-key-change-in-production").trim()
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d").trim()
 const OTP_EXPIRES_MINUTES = Number(process.env.OTP_EXPIRES_MINUTES || 15)
@@ -228,12 +232,9 @@ export const authService = {
       enrolledCourses: [],
     })
 
-    // Send OTP email - if it fails, log but don't fail registration
-    try {
-      await sendOtpEmail({ to: normalizedEmail, name, otp })
-    } catch (error) {
+    // Send OTP email in background so registration response is not delayed by email provider latency.
+    void sendOtpEmail({ to: normalizedEmail, name, otp }).catch((error) => {
       console.error("Failed to send OTP email:", error)
-      // In development, log the OTP to console
       if (process.env.NODE_ENV === "development") {
         console.log("=".repeat(50))
         console.log("REGISTRATION OTP (Email sending failed):")
@@ -241,8 +242,7 @@ export const authService = {
         console.log("OTP Code:", otp)
         console.log("=".repeat(50))
       }
-      // Don't throw - user is created, they can request resend
-    }
+    })
 
     const { password: _, ...userWithoutPassword } = user
     return { user: userWithoutPassword as User }
@@ -279,13 +279,13 @@ export const authService = {
     return { user: userWithoutPassword as User, token }
   },
 
-  async resendOtp(email: string): Promise<boolean> {
+  async resendOtp(email: string): Promise<ResendOtpResult> {
     const db = getDB()
     const normalizedEmail = email.trim().toLowerCase()
     const user = await db.findUserByEmail(normalizedEmail)
 
     if (!user || user.emailVerified) {
-      return false
+      return { ok: false, reason: "not_found_or_verified" }
     }
 
     const otp = generateOtpCode()
@@ -295,10 +295,10 @@ export const authService = {
     await db.updateUser(user.id, { otpHash, otpExpiresAt })
     try {
       await sendOtpEmail({ to: normalizedEmail, name: user.name, otp })
-      return true
+      return { ok: true }
     } catch (error) {
       console.error("Failed to resend OTP email:", error)
-      return false
+      return { ok: false, reason: "email_send_failed" }
     }
   },
 

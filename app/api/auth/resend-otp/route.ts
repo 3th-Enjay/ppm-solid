@@ -8,9 +8,19 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validated = otpResendSchema.parse(body)
 
-    const success = await authService.resendOtp(validated.email)
-    if (!success) {
-      return NextResponse.json({ error: "Unable to resend OTP" }, { status: 400 })
+    const result = await authService.resendOtp(validated.email)
+    if (!result.ok) {
+      if (result.reason === "not_found_or_verified") {
+        // Avoid noisy client-facing 400s during OTP UX retries.
+        return NextResponse.json({
+          success: true,
+          message: "Account is already verified or unavailable for OTP resend.",
+        })
+      }
+      return NextResponse.json(
+        { error: "OTP email could not be sent. Please try again shortly." },
+        { status: 502 },
+      )
     }
 
     return NextResponse.json({ success: true })
