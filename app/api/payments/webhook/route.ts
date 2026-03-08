@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
 import { paystackService } from "@/lib/paystack"
 import { notifyManualReviewAlert } from "@/lib/payment-alerts"
+import { logPaymentEvent } from "@/lib/payments/runtime"
 import { evaluateVerification } from "@/lib/payments/verification"
 
 export async function POST(request: Request) {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
   try {
     event = JSON.parse(rawBody)
   } catch {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+    return NextResponse.json({ received: true }, { status: 200 })
   }
 
   const reference = event?.data?.reference
@@ -34,143 +35,283 @@ export async function POST(request: Request) {
     await db.updatePaymentByReference(reference, updates)
   }
 
-  switch (event?.event) {
-    case "charge.success": {
-      if (payment.status === "completed" || payment.status === "success") {
-        return NextResponse.json({ received: true })
-      }
+  try {
+    switch (event?.event) {
+      case "charge.success": {
+        const currentPayment = (await db.getPaymentByReference(reference)) || payment
+        if (currentPayment.status === "completed" || currentPayment.status === "success") {
+          await logPaymentEvent(db, {
+            reference,
+            paymentId: currentPayment.id,
+            type: "webhook",
+            source: "api/payments/webhook",
+            status: currentPayment.status,
+            message: "Duplicate charge.success webhook ignored.",
+          })
+          break
+        }
 
-      const amount = event?.data?.amount
-      const currency = event?.data?.currency || payment.currency
-      const paidAt = event?.data?.paid_at || event?.data?.paidAt
-      const gatewayMessage = event?.data?.gateway_response || "Payment successful"
-      const transactionId = event?.data?.id ? String(event.data.id) : undefined
-      const channel = event?.data?.channel
-      const amountInMajorUnit =
-        typeof amount === "number" ? paystackService.fromSubunit(amount, currency) : payment.amount
-
-      const paystackEmail = event?.data?.customer?.email
-      const user = await db.findUserById(payment.userId)
-      const evaluation = evaluateVerification({
-        verification: {
-          status: "success",
-          amount: amountInMajorUnit,
-          currency,
-          customerEmail: paystackEmail ? String(paystackEmail) : undefined,
-        },
-        payment: {
-          amount: payment.amount,
-          currency: payment.currency,
-        },
-        userEmail: user?.email,
-        source: "webhook",
-      })
-
-      if (evaluation.targetStatus === "manual_review") {
-        const reason = evaluation.reason || "Webhook mismatch."
-        await updatePayment({
-          status: "manual_review",
-          verificationLocked: false,
-          gatewayStatus: "success",
-          gatewayMessage: reason,
-          transactionId,
-          gatewayChannel: channel,
-          manualReviewReason: reason,
-          manualReviewSource: "webhook",
-          manualReviewCreatedAt: payment.manualReviewCreatedAt || new Date(),
-          manualReviewUpdatedAt: new Date(),
-          reviewedAt: new Date(),
-        })
-        await notifyManualReviewAlert({
-          reference,
-          paymentType: payment.paymentType,
-          amount: payment.amount,
-          currency: payment.currency,
-          userEmail: user?.email,
-          source: "webhook",
-          reason,
-        })
-        return NextResponse.json({ received: true })
-      }
-
-      await updatePayment({
-        status: "completed",
-        completedAt: paidAt ? new Date(paidAt) : new Date(),
-        amount: amountInMajorUnit,
-        currency,
-        paidAt: paidAt ? new Date(paidAt) : new Date(),
-        gatewayStatus: "success",
-        gatewayMessage,
-        transactionId,
-        gatewayChannel: channel,
-        verificationLocked: false,
-      })
-
-      const isOnsiteRegistration = payment.paymentType === "onsite_registration"
-      let courseIds = payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
-      if (isOnsiteRegistration) {
-        const allCourses = await db.getAllCourses()
-        courseIds = (allCourses || []).map((course: any) => course.id)
-      }
-      for (const courseId of courseIds) {
-        const existing = await db.getEnrollment(payment.userId, courseId)
-        if (!existing) {
-          await db.createEnrollment({
-            userId: payment.userId,
-            courseId,
-            progress: 0,
-            completedLessons: [],
-            status: "active",
-            enrolledAt: new Date(),
+        let lockedPayment: any = undefined
+        if (typeof db.acquirePaymentVerificationLock === "function") {
+          lockedPayment = await db.acquirePaymentVerificationLock(reference, 5)
+        } else if (!currentPayment.verificationLocked) {
+          lockedPayment = await db.updatePaymentByReference(reference, {
+            verificationLocked: true,
+            verificationAttempts: (currentPayment.verificationAttempts || 0) + 1,
+            lastVerificationAt: new Date(),
+            status: currentPayment.status === "pending" ? "processing" : currentPayment.status,
           })
         }
-      }
 
-      const currentUser = await db.findUserById(payment.userId)
-      if (currentUser) {
-        const updatedCourses = Array.from(new Set([...(currentUser.enrolledCourses || []), ...courseIds]))
-        const profile = currentUser.studentProfile
-        await db.updateUser(payment.userId, {
-          enrolledCourses: updatedCourses,
-          ...(isOnsiteRegistration && profile
-            ? {
-                studentProfile: {
-                  ...profile,
-                  paymentStatus: "yes",
-                  paymentReference: reference,
-                },
-              }
-            : {}),
+        if (!lockedPayment) {
+          const latest = await db.getPaymentByReference(reference)
+          if (latest && (latest.verificationAttempts || 0) >= 5 && latest.status !== "manual_review") {
+            const reason = "Verification attempts exceeded safe limit."
+            await db.updatePaymentByReference(reference, {
+              status: "manual_review",
+              verificationLocked: false,
+              verificationLockToken: undefined,
+              verificationLockExpiresAt: undefined,
+              manualReviewReason: reason,
+              manualReviewSource: "webhook",
+              manualReviewCreatedAt: latest.manualReviewCreatedAt || new Date(),
+              manualReviewUpdatedAt: new Date(),
+              reviewedAt: new Date(),
+              gatewayMessage: reason,
+            })
+            await logPaymentEvent(db, {
+              reference,
+              paymentId: latest.id,
+              type: "manual_review",
+              source: "api/payments/webhook",
+              status: "manual_review",
+              message: reason,
+            })
+          }
+          await logPaymentEvent(db, {
+            reference,
+            paymentId: currentPayment.id,
+            type: "webhook",
+            source: "api/payments/webhook",
+            status: "skipped",
+            message: "Webhook skipped due to active verification lock or attempt threshold.",
+          })
+          break
+        }
+
+        const amount = event?.data?.amount
+        const currency = event?.data?.currency || currentPayment.currency
+        const paidAt = event?.data?.paid_at || event?.data?.paidAt
+        const gatewayMessage = event?.data?.gateway_response || "Payment successful"
+        const transactionId = event?.data?.id ? String(event.data.id) : undefined
+        const channel = event?.data?.channel
+        const gatewayFee = typeof event?.data?.fees === "number" ? paystackService.fromSubunit(event.data.fees, currency) : undefined
+        const customerCode = event?.data?.customer?.customer_code
+        const amountInMajorUnit =
+          typeof amount === "number" ? paystackService.fromSubunit(amount, currency) : currentPayment.amount
+
+        const paystackEmail = event?.data?.customer?.email
+        const user = await db.findUserById(currentPayment.userId)
+        const evaluation = evaluateVerification({
+          verification: {
+            status: "success",
+            amount: amountInMajorUnit,
+            currency,
+            customerEmail: paystackEmail ? String(paystackEmail) : undefined,
+          },
+          payment: {
+            amount: currentPayment.amount,
+            currency: currentPayment.currency,
+          },
+          userEmail: user?.email,
+          source: "webhook",
         })
+
+        if (evaluation.targetStatus === "manual_review") {
+          const reason = evaluation.reason || "Webhook mismatch."
+          await updatePayment({
+            status: "manual_review",
+            verificationLocked: false,
+            verificationLockToken: undefined,
+            verificationLockExpiresAt: undefined,
+            gatewayStatus: "success",
+            gatewayMessage: reason,
+            transactionId,
+            gatewayChannel: channel,
+            gatewayFee,
+            customerEmail: paystackEmail ? String(paystackEmail) : undefined,
+            customerCode: customerCode ? String(customerCode) : undefined,
+            manualReviewReason: reason,
+            manualReviewSource: "webhook",
+            manualReviewCreatedAt: currentPayment.manualReviewCreatedAt || new Date(),
+            manualReviewUpdatedAt: new Date(),
+            reviewedAt: new Date(),
+          })
+          await notifyManualReviewAlert({
+            reference,
+            paymentType: currentPayment.paymentType,
+            amount: currentPayment.amount,
+            currency: currentPayment.currency,
+            userEmail: user?.email,
+            source: "webhook",
+            reason,
+          })
+          await logPaymentEvent(db, {
+            reference,
+            paymentId: currentPayment.id,
+            type: "manual_review",
+            source: "api/payments/webhook",
+            status: "manual_review",
+            message: reason,
+            metadata: { mismatches: evaluation.mismatches },
+          })
+          break
+        }
+
+        await updatePayment({
+          status: "completed",
+          completedAt: paidAt ? new Date(paidAt) : new Date(),
+          amount: amountInMajorUnit,
+          currency,
+          paidAt: paidAt ? new Date(paidAt) : new Date(),
+          gatewayStatus: "success",
+          gatewayMessage,
+          transactionId,
+          gatewayChannel: channel,
+          gatewayFee,
+          customerEmail: paystackEmail ? String(paystackEmail) : undefined,
+          customerCode: customerCode ? String(customerCode) : undefined,
+          verificationLocked: false,
+          verificationLockToken: undefined,
+          verificationLockExpiresAt: undefined,
+        })
+
+        const isOnsiteRegistration = currentPayment.paymentType === "onsite_registration"
+        let courseIds =
+          currentPayment.courseIds && currentPayment.courseIds.length > 0
+            ? currentPayment.courseIds
+            : [currentPayment.courseId]
+        if (isOnsiteRegistration) {
+          const allCourses = await db.getAllCourses()
+          courseIds = (allCourses || []).map((course: any) => course.id)
+        }
+        for (const courseId of courseIds) {
+          const existing = await db.getEnrollment(currentPayment.userId, courseId)
+          if (!existing) {
+            await db.createEnrollment({
+              userId: currentPayment.userId,
+              courseId,
+              progress: 0,
+              completedLessons: [],
+              status: "active",
+              enrolledAt: new Date(),
+            })
+          }
+        }
+
+        const currentUser = await db.findUserById(currentPayment.userId)
+        if (currentUser) {
+          const updatedCourses = Array.from(new Set([...(currentUser.enrolledCourses || []), ...courseIds]))
+          const profile = currentUser.studentProfile
+          await db.updateUser(currentPayment.userId, {
+            enrolledCourses: updatedCourses,
+            ...(isOnsiteRegistration && profile
+              ? {
+                  studentProfile: {
+                    ...profile,
+                    paymentStatus: "yes",
+                    paymentReference: reference,
+                  },
+                }
+              : {}),
+          })
+        }
+
+        await logPaymentEvent(db, {
+          reference,
+          paymentId: currentPayment.id,
+          type: "webhook",
+          source: "api/payments/webhook",
+          status: "completed",
+          message: "Webhook charge.success processed.",
+          metadata: { transactionId, channel },
+        })
+        break
       }
-      break
+      case "charge.failed": {
+        if (payment.status === "completed" || payment.status === "success") break
+        await updatePayment({
+          status: "failed",
+          gatewayStatus: "failed",
+          gatewayMessage: event?.data?.gateway_response || "Payment failed",
+          transactionId: event?.data?.id ? String(event.data.id) : undefined,
+          gatewayChannel: event?.data?.channel,
+          gatewayFee:
+            typeof event?.data?.fees === "number"
+              ? paystackService.fromSubunit(event.data.fees, event?.data?.currency || payment.currency)
+              : undefined,
+          customerEmail: event?.data?.customer?.email ? String(event.data.customer.email) : undefined,
+          customerCode: event?.data?.customer?.customer_code ? String(event.data.customer.customer_code) : undefined,
+          verificationLocked: false,
+          verificationLockToken: undefined,
+          verificationLockExpiresAt: undefined,
+        })
+        await logPaymentEvent(db, {
+          reference,
+          paymentId: payment.id,
+          type: "webhook",
+          source: "api/payments/webhook",
+          status: "failed",
+          message: event?.data?.gateway_response || "Payment failed",
+        })
+        break
+      }
+      case "refund.processed": {
+        await updatePayment({
+          status: "refunded",
+          refundedAt: new Date(),
+          gatewayMessage: "Refund processed by Paystack.",
+          verificationLocked: false,
+          verificationLockToken: undefined,
+          verificationLockExpiresAt: undefined,
+        })
+        await logPaymentEvent(db, {
+          reference,
+          paymentId: payment.id,
+          type: "webhook",
+          source: "api/payments/webhook",
+          status: "refunded",
+          message: "Refund processed webhook received.",
+        })
+        break
+      }
+      case "refund.failed": {
+        break
+      }
+      default:
+        break
     }
-    case "charge.failed": {
-      await updatePayment({
-        status: "failed",
-        gatewayStatus: "failed",
-        gatewayMessage: event?.data?.gateway_response || "Payment failed",
-        transactionId: event?.data?.id ? String(event.data.id) : undefined,
-        gatewayChannel: event?.data?.channel,
+  } catch (error) {
+    console.error("Webhook processing error:", error)
+    if (typeof db.releasePaymentVerificationLock === "function") {
+      await db.releasePaymentVerificationLock(reference)
+    } else {
+      await db.updatePaymentByReference(reference, {
         verificationLocked: false,
+        verificationLockToken: undefined,
+        verificationLockExpiresAt: undefined,
       })
-      break
     }
-    case "refund.processed": {
-      await updatePayment({
-        status: "refunded",
-        refundedAt: new Date(),
-        gatewayMessage: "Refund processed by Paystack.",
-      })
-      break
-    }
-    case "refund.failed": {
-      // Keep existing status, just acknowledge.
-      break
-    }
-    default:
-      break
+    await logPaymentEvent(db, {
+      reference,
+      paymentId: payment.id,
+      type: "webhook",
+      source: "api/payments/webhook",
+      status: "error",
+      message: "Webhook processing error encountered.",
+    })
   }
 
-  return NextResponse.json({ received: true })
+  // Paystack expects 200 acknowledgements for authenticated webhooks.
+  return NextResponse.json({ received: true }, { status: 200 })
 }

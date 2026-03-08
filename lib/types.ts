@@ -190,8 +190,13 @@ export interface Payment {
   gatewayStatus?: string
   gatewayMessage?: string
   gatewayChannel?: string
+  gatewayFee?: number
+  customerEmail?: string
+  customerCode?: string
   verificationAttempts?: number
   verificationLocked?: boolean
+  verificationLockToken?: string
+  verificationLockExpiresAt?: Date
   lastVerificationAt?: Date
   manualReviewReason?: string
   manualReviewSource?: PaymentReviewSource
@@ -210,6 +215,20 @@ export interface Payment {
   refundedAt?: Date
   createdAt: Date
   completedAt?: Date
+}
+
+export type PaymentEventType = "initialize" | "webhook" | "verify" | "reconcile" | "manual_review"
+
+export interface PaymentEvent {
+  id: string
+  reference: string
+  paymentId?: string
+  type: PaymentEventType
+  source: string
+  status?: string
+  message?: string
+  metadata?: Record<string, unknown>
+  createdAt: Date
 }
 
 export interface Certificate {

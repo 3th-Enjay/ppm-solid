@@ -13,6 +13,7 @@ import type {
   AdminLog,
   Category,
   LearningNote,
+  PaymentEvent,
 } from './types'
 import { ObjectId } from 'mongodb'
 
@@ -36,6 +37,24 @@ function toObject<T extends { id: string }>(doc: any): T {
   }
   if (converted.completedAt && typeof converted.completedAt === 'object') {
     converted.completedAt = new Date(converted.completedAt)
+  }
+  if (converted.paidAt && typeof converted.paidAt === 'object') {
+    converted.paidAt = new Date(converted.paidAt)
+  }
+  if (converted.refundedAt && typeof converted.refundedAt === 'object') {
+    converted.refundedAt = new Date(converted.refundedAt)
+  }
+  if (converted.lastVerificationAt && typeof converted.lastVerificationAt === 'object') {
+    converted.lastVerificationAt = new Date(converted.lastVerificationAt)
+  }
+  if (converted.verificationLockExpiresAt && typeof converted.verificationLockExpiresAt === 'object') {
+    converted.verificationLockExpiresAt = new Date(converted.verificationLockExpiresAt)
+  }
+  if (converted.manualReviewCreatedAt && typeof converted.manualReviewCreatedAt === 'object') {
+    converted.manualReviewCreatedAt = new Date(converted.manualReviewCreatedAt)
+  }
+  if (converted.manualReviewUpdatedAt && typeof converted.manualReviewUpdatedAt === 'object') {
+    converted.manualReviewUpdatedAt = new Date(converted.manualReviewUpdatedAt)
   }
   if (converted.issuedAt && typeof converted.issuedAt === 'object') {
     converted.issuedAt = new Date(converted.issuedAt)
@@ -263,8 +282,17 @@ export class MongoDBDatabase {
       ...enrollment,
       enrolledAt: new Date(),
     }
-    const result = await collection.insertOne(toDocument(newEnrollment as Enrollment))
-    return { ...newEnrollment, id: result.insertedId.toString() } as Enrollment
+    try {
+      const result = await collection.insertOne(toDocument(newEnrollment as Enrollment))
+      return { ...newEnrollment, id: result.insertedId.toString() } as Enrollment
+    } catch (error: any) {
+      // Unique (userId, courseId) index guard: return existing enrollment for idempotency.
+      if (error?.code === 11000) {
+        const existing = await collection.findOne({ userId: enrollment.userId, courseId: enrollment.courseId })
+        if (existing) return toObject<Enrollment>(existing)
+      }
+      throw error
+    }
   }
 
   async updateEnrollment(id: string, updates: Partial<Enrollment>): Promise<Enrollment | undefined> {
@@ -316,6 +344,64 @@ export class MongoDBDatabase {
     }
     const result = await collection.insertOne(toDocument(newPayment as Payment))
     return { ...newPayment, id: result.insertedId.toString() } as Payment
+  }
+
+  async getStalePayments(params: { statuses: Payment['status'][]; cutoff: Date; limit: number }): Promise<Payment[]> {
+    const collection = await getCollection<Payment>('payments')
+    const docs = await collection
+      .find({
+        status: { $in: params.statuses },
+        createdAt: { $lte: params.cutoff },
+      })
+      .sort({ createdAt: 1 })
+      .limit(params.limit)
+      .toArray()
+    return docs.map(toObject<Payment>)
+  }
+
+  async acquirePaymentVerificationLock(reference: string, maxAttempts = 5): Promise<Payment | undefined> {
+    const collection = await getCollection<Payment>('payments')
+    const now = new Date()
+    const token = new ObjectId().toString()
+    const lockExpiry = new Date(now.getTime() + 2 * 60 * 1000)
+
+    const result = await collection.findOneAndUpdate(
+      {
+        reference,
+        status: { $in: ['pending', 'processing'] },
+        $expr: { $lt: [{ $ifNull: ['$verificationAttempts', 0] }, maxAttempts] },
+        $or: [
+          { verificationLocked: { $ne: true } },
+          { verificationLockExpiresAt: { $lte: now } },
+          { verificationLockExpiresAt: { $exists: false } },
+        ],
+      },
+      {
+        $set: {
+          verificationLocked: true,
+          verificationLockToken: token,
+          verificationLockExpiresAt: lockExpiry,
+          lastVerificationAt: now,
+          status: 'processing',
+        },
+        $inc: { verificationAttempts: 1 },
+      },
+      { returnDocument: 'after' }
+    )
+    return result ? toObject<Payment>(result) : undefined
+  }
+
+  async releasePaymentVerificationLock(reference: string): Promise<Payment | undefined> {
+    const collection = await getCollection<Payment>('payments')
+    const result = await collection.findOneAndUpdate(
+      { reference },
+      {
+        $set: { verificationLocked: false },
+        $unset: { verificationLockToken: '', verificationLockExpiresAt: '' },
+      },
+      { returnDocument: 'after' }
+    )
+    return result ? toObject<Payment>(result) : undefined
   }
 
   async updatePayment(id: string, updates: Partial<Payment>): Promise<Payment | undefined> {
@@ -390,6 +476,16 @@ export class MongoDBDatabase {
       doc = await collection.findOne({ id })
     }
     return doc ? toObject<Assignment>(doc) : undefined
+  }
+
+  async createPaymentEvent(event: Omit<PaymentEvent, 'id' | 'createdAt'>): Promise<PaymentEvent> {
+    const collection = await getCollection<PaymentEvent>('payment_events')
+    const newEvent: Omit<PaymentEvent, 'id'> = {
+      ...event,
+      createdAt: new Date(),
+    }
+    const result = await collection.insertOne(toDocument(newEvent as PaymentEvent))
+    return { ...newEvent, id: result.insertedId.toString() } as PaymentEvent
   }
 
   // Learning note methods

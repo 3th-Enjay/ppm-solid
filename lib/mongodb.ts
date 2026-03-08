@@ -13,6 +13,7 @@ type GlobalMongo = typeof globalThis & {
 const globalWithMongo = global as GlobalMongo
 
 let clientPromise: Promise<MongoClient>
+let indexesEnsuredPromise: Promise<void> | null = null
 
 if (uri && !globalWithMongo._mongoClientPromise) {
   const client = new MongoClient(uri)
@@ -31,12 +32,41 @@ export async function getDatabase() {
     globalWithMongo._mongoClientPromise = clientPromise
   }
   const client = await clientPromise
-  return client.db(dbName)
+  const db = client.db(dbName)
+  if (!indexesEnsuredPromise) {
+    indexesEnsuredPromise = ensureIndexes(db).catch((error) => {
+      console.error("Failed to ensure MongoDB indexes:", error)
+    })
+  }
+  await indexesEnsuredPromise
+  return db
 }
 
 export async function getCollection<T extends Document>(name: string) {
   const db = await getDatabase()
   return db.collection<T>(name)
+}
+
+async function ensureIndexes(db: any) {
+  try {
+    await db.collection("payments").createIndex({ reference: 1 }, { unique: true, name: "uniq_payments_reference" })
+  } catch (error) {
+    console.error("payments.reference unique index was not applied automatically.", error)
+  }
+
+  try {
+    await db
+      .collection("enrollments")
+      .createIndex({ userId: 1, courseId: 1 }, { unique: true, name: "uniq_enrollments_user_course" })
+  } catch (error) {
+    console.error("enrollments (userId, courseId) unique index was not applied automatically.", error)
+  }
+
+  try {
+    await db.collection("payment_events").createIndex({ reference: 1, createdAt: -1 }, { name: "idx_payment_events_ref_created" })
+  } catch (error) {
+    console.error("payment_events index was not applied automatically.", error)
+  }
 }
 
 

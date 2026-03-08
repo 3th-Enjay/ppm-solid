@@ -10,6 +10,7 @@ import type {
   AdminLog,
   Category,
   LearningNote,
+  PaymentEvent,
 } from "./types"
 
 // Seeded Users
@@ -347,6 +348,7 @@ class MockDatabase {
   assignments: Assignment[] = [...mockAssignments]
   adminLogs: AdminLog[] = []
   notes: LearningNote[] = []
+  paymentEvents: PaymentEvent[] = []
 
   // User methods
   async findUserByEmail(email: string): Promise<User | undefined> {
@@ -496,6 +498,11 @@ class MockDatabase {
   }
 
   async createEnrollment(enrollment: Omit<Enrollment, "id">): Promise<Enrollment> {
+    const existing = this.enrollments.find(
+      (item) => item.userId === enrollment.userId && item.courseId === enrollment.courseId,
+    )
+    if (existing) return existing
+
     const newEnrollment: Enrollment = {
       ...enrollment,
       id: `enrollment-${Date.now()}`,
@@ -543,6 +550,9 @@ class MockDatabase {
   }
 
   async createPayment(payment: Omit<Payment, "id">): Promise<Payment> {
+    const duplicate = this.payments.find((item) => item.reference === payment.reference)
+    if (duplicate) return duplicate
+
     const newPayment: Payment = {
       ...payment,
       id: `payment-${Date.now()}`,
@@ -560,6 +570,53 @@ class MockDatabase {
       ...updates,
     }
     return this.payments[paymentIndex]
+  }
+
+  async getStalePayments(params: { statuses: string[]; cutoff: Date; limit: number }): Promise<Payment[]> {
+    return this.payments
+      .filter((payment) => params.statuses.includes(payment.status))
+      .filter((payment) => new Date(payment.createdAt).getTime() <= params.cutoff.getTime())
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      .slice(0, params.limit)
+  }
+
+  async acquirePaymentVerificationLock(reference: string, maxAttempts = 5): Promise<Payment | undefined> {
+    const payment = this.payments.find((item) => item.reference === reference)
+    if (!payment) return undefined
+    if (!["pending", "processing"].includes(payment.status)) return undefined
+    if ((payment.verificationAttempts || 0) >= maxAttempts) return undefined
+
+    const now = new Date()
+    const lockExpiry = payment.verificationLockExpiresAt ? new Date(payment.verificationLockExpiresAt) : undefined
+    const lockExpired = lockExpiry ? lockExpiry.getTime() <= now.getTime() : true
+    if (payment.verificationLocked && !lockExpired) return undefined
+
+    payment.verificationLocked = true
+    payment.verificationAttempts = (payment.verificationAttempts || 0) + 1
+    payment.lastVerificationAt = now
+    payment.verificationLockToken = `lock-${Date.now()}`
+    payment.verificationLockExpiresAt = new Date(now.getTime() + 2 * 60 * 1000)
+    payment.status = "processing"
+    return payment
+  }
+
+  async releasePaymentVerificationLock(reference: string): Promise<Payment | undefined> {
+    const payment = this.payments.find((item) => item.reference === reference)
+    if (!payment) return undefined
+    payment.verificationLocked = false
+    delete payment.verificationLockToken
+    delete payment.verificationLockExpiresAt
+    return payment
+  }
+
+  async createPaymentEvent(event: Omit<PaymentEvent, "id" | "createdAt">): Promise<PaymentEvent> {
+    const newEvent: PaymentEvent = {
+      ...event,
+      id: `payment-event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: new Date(),
+    }
+    this.paymentEvents.unshift(newEvent)
+    return newEvent
   }
 
   // Certificate methods

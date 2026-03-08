@@ -22,6 +22,8 @@ export interface PaymentVerification {
   gatewayMessage?: string
   channel?: string
   customerEmail?: string
+  customerCode?: string
+  gatewayFee?: number
 }
 
 const PAYSTACK_BASE_URL = process.env.PAYSTACK_BASE_URL || "https://api.paystack.co"
@@ -59,7 +61,7 @@ function fromSubunit(amount: number, currency: Currency) {
 }
 
 function generateReference(currency: Currency) {
-  return `PC-${currency}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  return `PC-${currency}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`
 }
 
 async function paystackRequest<T>(path: string, options: RequestInit = {}) {
@@ -134,7 +136,9 @@ export const paystackService = {
         id?: string
         customer?: {
           email?: string
+          customer_code?: string
         }
+        fees?: number
       }
     }>(`/transaction/verify/${encodeURIComponent(reference)}`)
 
@@ -152,6 +156,8 @@ export const paystackService = {
       gatewayMessage: data.data.gateway_response || (verified ? "Payment successful" : "Payment failed"),
       channel: data.data.channel,
       customerEmail: data.data.customer?.email,
+      customerCode: data.data.customer?.customer_code,
+      gatewayFee: typeof data.data.fees === "number" ? fromSubunit(data.data.fees, data.data.currency) : undefined,
     }
   },
 

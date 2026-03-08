@@ -4,6 +4,7 @@ import { paystackService } from "@/lib/paystack"
 import { getDB } from "@/lib/db"
 import { paymentInitializeSchema } from "@/lib/validation"
 import type { Currency } from "@/lib/types"
+import { logPaymentEvent } from "@/lib/payments/runtime"
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +51,20 @@ export async function POST(request: NextRequest) {
       verificationAttempts: 0,
       verificationLocked: false,
       createdAt: new Date(),
+    })
+
+    await logPaymentEvent(db, {
+      reference: payment.reference,
+      paymentId: payment.id,
+      type: "initialize",
+      source: "api/payments/initialize",
+      status: payment.status,
+      metadata: {
+        userId,
+        courseIds: payment.courseIds,
+        amount: payment.amount,
+        currency: payment.currency,
+      },
     })
 
     return NextResponse.json({

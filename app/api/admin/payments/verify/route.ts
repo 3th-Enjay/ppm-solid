@@ -5,6 +5,7 @@ import { getDB } from "@/lib/db"
 import { getTokenFromRequest } from "@/lib/jwt"
 import { paystackService } from "@/lib/paystack"
 import { notifyManualReviewAlert } from "@/lib/payment-alerts"
+import { logPaymentEvent } from "@/lib/payments/runtime"
 import { evaluateVerification } from "@/lib/payments/verification"
 
 const verifyActionSchema = z.object({
@@ -93,6 +94,14 @@ export async function POST(request: Request) {
         targetEmail: payment.reference,
         targetName: "payment_rejected",
       })
+      await logPaymentEvent(db, {
+        reference: validated.reference,
+        paymentId: payment.id,
+        type: "manual_review",
+        source: "api/admin/payments/verify",
+        status: "failed",
+        message: validated.note || "Rejected by admin review.",
+      })
       return NextResponse.json({ success: true, payment: rejected, action: validated.action })
     }
 
@@ -132,6 +141,14 @@ export async function POST(request: Request) {
         targetUserId: payment.userId,
         targetEmail: payment.reference,
         targetName: "payment_flagged_fraud",
+      })
+      await logPaymentEvent(db, {
+        reference: validated.reference,
+        paymentId: payment.id,
+        type: "manual_review",
+        source: "api/admin/payments/verify",
+        status: "manual_review",
+        message: reason,
       })
       return NextResponse.json({ success: true, payment: flagged, action: validated.action })
     }
@@ -204,6 +221,14 @@ export async function POST(request: Request) {
     if (completed) {
       await grantAccessForPayment(db, completed, validated.reference)
     }
+    await logPaymentEvent(db, {
+      reference: validated.reference,
+      paymentId: payment.id,
+      type: "verify",
+      source: "api/admin/payments/verify",
+      status: "completed",
+      message: "Payment approved by admin after verification.",
+    })
     const actor = await db.findUserById(session.userId)
     await db.createAdminLog({
       actorId: session.userId,

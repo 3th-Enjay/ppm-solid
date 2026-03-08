@@ -2,7 +2,10 @@ import { type NextRequest, NextResponse } from "next/server"
 import { paystackService } from "@/lib/paystack"
 import { getDB } from "@/lib/db"
 import { notifyManualReviewAlert } from "@/lib/payment-alerts"
+import { expirePaymentIfStale, logPaymentEvent } from "@/lib/payments/runtime"
 import { evaluateVerification } from "@/lib/payments/verification"
+
+const MAX_VERIFICATION_ATTEMPTS = 5
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,13 +18,39 @@ export async function GET(request: NextRequest) {
 
     const db = getDB()
     // Get payment details first
-    const payment = await db.getPaymentByReference(reference)
+    let payment = await db.getPaymentByReference(reference)
 
     if (!payment) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 })
     }
 
+    payment = await expirePaymentIfStale(db, payment, "verify")
+    if (payment.status === "expired") {
+      await logPaymentEvent(db, {
+        reference,
+        paymentId: payment.id,
+        type: "verify",
+        source: "api/payments/verify",
+        status: "expired",
+        message: "Verification skipped because payment is expired.",
+      })
+      return NextResponse.json({
+        success: true,
+        verified: false,
+        paystackMessage: payment.gatewayMessage,
+        payment,
+      })
+    }
+
     if (payment.status === "completed" || payment.status === "success") {
+      await logPaymentEvent(db, {
+        reference,
+        paymentId: payment.id,
+        type: "verify",
+        source: "api/payments/verify",
+        status: payment.status,
+        message: "Verification skipped because payment is already completed.",
+      })
       return NextResponse.json({
         success: true,
         verified: true,
@@ -30,24 +59,103 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    if (payment.verificationLocked) {
+    if ((payment.verificationAttempts || 0) >= MAX_VERIFICATION_ATTEMPTS) {
+      const reason = "Verification attempts exceeded safe limit."
+      const flagged = await db.updatePaymentByReference(reference, {
+        status: "manual_review",
+        verificationLocked: false,
+        gatewayMessage: reason,
+        manualReviewReason: reason,
+        manualReviewSource: "verify",
+        manualReviewCreatedAt: payment.manualReviewCreatedAt || new Date(),
+        manualReviewUpdatedAt: new Date(),
+        reviewedAt: new Date(),
+      })
+      await logPaymentEvent(db, {
+        reference,
+        paymentId: payment.id,
+        type: "manual_review",
+        source: "api/payments/verify",
+        status: "manual_review",
+        message: reason,
+      })
       return NextResponse.json(
         {
           success: true,
-          verified: payment.status === "completed" || payment.status === "success",
+          verified: false,
+          paystackMessage: "Payment flagged for manual review.",
+          payment: flagged || payment,
+        },
+        { status: 409 },
+      )
+    }
+
+    let lockedPayment: any = undefined
+    if (typeof db.acquirePaymentVerificationLock === "function") {
+      lockedPayment = await db.acquirePaymentVerificationLock(reference, MAX_VERIFICATION_ATTEMPTS)
+    } else {
+      if (payment.verificationLocked) {
+        lockedPayment = undefined
+      } else {
+        lockedPayment = await db.updatePaymentByReference(reference, {
+          verificationLocked: true,
+          verificationAttempts: (payment.verificationAttempts || 0) + 1,
+          lastVerificationAt: new Date(),
+          status: payment.status === "pending" ? "processing" : payment.status,
+        })
+      }
+    }
+
+    if (!lockedPayment) {
+      const latest = await db.getPaymentByReference(reference)
+      if (latest && (latest.status === "completed" || latest.status === "success")) {
+        return NextResponse.json({
+          success: true,
+          verified: true,
+          paystackMessage: latest.gatewayMessage,
+          payment: latest,
+        })
+      }
+      if (latest && (latest.verificationAttempts || 0) >= MAX_VERIFICATION_ATTEMPTS) {
+        const reason = "Verification attempts exceeded safe limit."
+        const flagged = await db.updatePaymentByReference(reference, {
+          status: "manual_review",
+          verificationLocked: false,
+          gatewayMessage: reason,
+          manualReviewReason: reason,
+          manualReviewSource: "verify",
+          manualReviewCreatedAt: latest.manualReviewCreatedAt || new Date(),
+          manualReviewUpdatedAt: new Date(),
+          reviewedAt: new Date(),
+        })
+        await logPaymentEvent(db, {
+          reference,
+          paymentId: latest.id,
+          type: "manual_review",
+          source: "api/payments/verify",
+          status: "manual_review",
+          message: reason,
+        })
+        return NextResponse.json(
+          {
+            success: true,
+            verified: false,
+            paystackMessage: "Payment flagged for manual review.",
+            payment: flagged || latest,
+          },
+          { status: 409 },
+        )
+      }
+      return NextResponse.json(
+        {
+          success: true,
+          verified: false,
           message: "Payment verification is already in progress.",
-          payment,
+          payment: latest || payment,
         },
         { status: 202 },
       )
     }
-
-    await db.updatePaymentByReference(reference, {
-      verificationLocked: true,
-      verificationAttempts: (payment.verificationAttempts || 0) + 1,
-      lastVerificationAt: new Date(),
-      status: payment.status === "pending" ? "processing" : payment.status,
-    })
 
     // Verify payment with Paystack
     const verification = await paystackService.verifyPayment(reference)
@@ -73,10 +181,15 @@ export async function GET(request: NextRequest) {
         await db.updatePaymentByReference(reference, {
           status: "manual_review",
           verificationLocked: false,
+          verificationLockToken: undefined,
+          verificationLockExpiresAt: undefined,
           gatewayStatus: verification.gatewayStatus || "success",
           gatewayMessage: reason,
           transactionId: verification.transactionId,
           gatewayChannel: verification.channel,
+          gatewayFee: verification.gatewayFee,
+          customerEmail: verification.customerEmail,
+          customerCode: verification.customerCode,
           manualReviewReason: reason,
           manualReviewSource: "verify",
           manualReviewCreatedAt: payment.manualReviewCreatedAt || new Date(),
@@ -91,6 +204,15 @@ export async function GET(request: NextRequest) {
           userEmail: paymentUser?.email,
           source: "verify",
           reason,
+        })
+        await logPaymentEvent(db, {
+          reference,
+          paymentId: payment.id,
+          type: "manual_review",
+          source: "api/payments/verify",
+          status: "manual_review",
+          message: reason,
+          metadata: { mismatches: evaluation.mismatches },
         })
 
         const flaggedPayment = await db.getPaymentByReference(reference)
@@ -108,6 +230,8 @@ export async function GET(request: NextRequest) {
       await db.updatePaymentByReference(reference, {
         status: "completed",
         verificationLocked: false,
+        verificationLockToken: undefined,
+        verificationLockExpiresAt: undefined,
         completedAt: new Date(),
         amount: verification.amount,
         currency: verification.currency,
@@ -116,6 +240,9 @@ export async function GET(request: NextRequest) {
         gatewayStatus: verification.gatewayStatus || "success",
         gatewayMessage: verification.gatewayMessage || "Payment verified successfully.",
         gatewayChannel: verification.channel,
+        gatewayFee: verification.gatewayFee,
+        customerEmail: verification.customerEmail,
+        customerCode: verification.customerCode,
       })
 
       const isOnsiteRegistration = payment.paymentType === "onsite_registration"
@@ -157,14 +284,35 @@ export async function GET(request: NextRequest) {
             : {}),
         })
       }
+      await logPaymentEvent(db, {
+        reference,
+        paymentId: payment.id,
+        type: "verify",
+        source: "api/payments/verify",
+        status: "completed",
+        message: "Payment verified and completed successfully.",
+      })
     } else {
       await db.updatePaymentByReference(reference, {
         status: "failed",
         verificationLocked: false,
+        verificationLockToken: undefined,
+        verificationLockExpiresAt: undefined,
         gatewayStatus: verification.gatewayStatus || "failed",
         gatewayMessage: verification.gatewayMessage || "Payment verification failed.",
         transactionId: verification.transactionId,
         gatewayChannel: verification.channel,
+        gatewayFee: verification.gatewayFee,
+        customerEmail: verification.customerEmail,
+        customerCode: verification.customerCode,
+      })
+      await logPaymentEvent(db, {
+        reference,
+        paymentId: payment.id,
+        type: "verify",
+        source: "api/payments/verify",
+        status: "failed",
+        message: verification.gatewayMessage || "Payment verification failed.",
       })
     }
 
@@ -181,10 +329,23 @@ export async function GET(request: NextRequest) {
       const reference = request.nextUrl.searchParams.get("reference")
       if (reference) {
         const db = getDB()
-        await db.updatePaymentByReference(reference, {
-          verificationLocked: false,
-          status: "pending",
-          gatewayMessage: "Verification failed unexpectedly. Please retry.",
+        if (typeof db.releasePaymentVerificationLock === "function") {
+          await db.releasePaymentVerificationLock(reference)
+        } else {
+          await db.updatePaymentByReference(reference, {
+            verificationLocked: false,
+            verificationLockToken: undefined,
+            verificationLockExpiresAt: undefined,
+            status: "pending",
+            gatewayMessage: "Verification failed unexpectedly. Please retry.",
+          })
+        }
+        await logPaymentEvent(db, {
+          reference,
+          type: "verify",
+          source: "api/payments/verify",
+          status: "error",
+          message: "Verification failed unexpectedly.",
         })
       }
     } catch {

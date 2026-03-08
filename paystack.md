@@ -22,7 +22,7 @@ Onsite registration now initializes a real Paystack transaction and stores onsit
 
 ### How to obtain required env values
 
-- `PAYMENT_RECONCILE_SECRET`: Generate a long random secret (32+ chars). Use a password manager or a generator, then set it in hosting (Vercel/Render/etc.) and in `.env.local` for local testing.
+- `PAYMENT_RECONCILE_SECRET`: Generate a long random secret (32+ chars). Use a password manager or a generator, then set it in hosting and in `.env.local` for local testing.
 - `CRON_SECRET`: Optional alternative to `PAYMENT_RECONCILE_SECRET` for scheduler auth. You can reuse the same value as `PAYMENT_RECONCILE_SECRET` or generate a separate one.
 - `NEXT_PUBLIC_ONSITE_TRAINING_PAYMENT_URL`: Set this to your public payment link (Paystack payment page or Flutterwave payment link). If you don’t have one yet, leave it empty and the UI will route users to the contact form.
 - `PAYMENT_ALERT_EMAIL`: Email address that should receive manual-review/alert notifications (e.g., a finance or admin inbox).
@@ -284,7 +284,8 @@ Progress:
   - `failed`
   - `manual_review`
 - [x] Reconciliation also grants course access for successful results (including onsite payment sync).
-- [x] Added Vercel cron schedule (`vercel.json`) for every 10 minutes.
+- [x] Added external scheduler support (cron-job.org) to ping `/api/payments/reconcile`.
+- [x] Added query-key auth support for scheduler calls: `/api/payments/reconcile?key=YOUR_SECRET`.
 - [ ] Deployment secrets for cron authentication still need to be configured.
 
 ### 5.5 Transaction Receipt UX (Target)
