@@ -16,6 +16,18 @@ This document describes how Paystack-related payment flows currently work in thi
 
 Onsite registration now initializes a real Paystack transaction and stores onsite fee payment as a `Payment` record (`paymentType = onsite_registration`).
 
+### Environment requirement
+
+- `NEXT_PUBLIC_ONSITE_TRAINING_PAYMENT_URL` is **optional**. If set, it overrides the onsite training `paymentLink` shown in the registration UI; otherwise it falls back to `/contact?subject=Onsite%20Training%20Payment%20Link`.
+
+### How to obtain required env values
+
+- `PAYMENT_RECONCILE_SECRET`: Generate a long random secret (32+ chars). Use a password manager or a generator, then set it in hosting (Vercel/Render/etc.) and in `.env.local` for local testing.
+- `CRON_SECRET`: Optional alternative to `PAYMENT_RECONCILE_SECRET` for scheduler auth. You can reuse the same value as `PAYMENT_RECONCILE_SECRET` or generate a separate one.
+- `NEXT_PUBLIC_ONSITE_TRAINING_PAYMENT_URL`: Set this to your public payment link (Paystack payment page or Flutterwave payment link). If you don’t have one yet, leave it empty and the UI will route users to the contact form.
+- `PAYMENT_ALERT_EMAIL`: Email address that should receive manual-review/alert notifications (e.g., a finance or admin inbox).
+- `SUPPORT_EMAIL`: Public support email. Used as a fallback for alerts when `PAYMENT_ALERT_EMAIL` isn’t set.
+
 ### UI flow
 
 1. User chooses `Onsite Student Registration` at `/register`.

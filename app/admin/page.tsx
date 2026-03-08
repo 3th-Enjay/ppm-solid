@@ -59,6 +59,9 @@ export default function AdminDashboardPage() {
     password: "",
   })
   const [showCreatePassword, setShowCreatePassword] = useState(false)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
   const [createError, setCreateError] = useState("")
   const [createSuccess, setCreateSuccess] = useState("")
@@ -517,34 +520,67 @@ export default function AdminDashboardPage() {
 
             <div className="space-y-2">
               <Label htmlFor="admin-current-password">Current Password</Label>
-              <Input
-                id="admin-current-password"
-                type="password"
-                value={passwordForm.currentPassword}
-                onChange={(e) =>
-                  setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
-                }
-              />
+              <div className="relative">
+                <Input
+                  id="admin-current-password"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={passwordForm.currentPassword}
+                  onChange={(e) =>
+                    setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
+                  }
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                  onClick={() => setShowCurrentPassword((prev) => !prev)}
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="admin-new-password">New Password</Label>
-              <Input
-                id="admin-new-password"
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-              />
+              <div className="relative">
+                <Input
+                  id="admin-new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                  onClick={() => setShowNewPassword((prev) => !prev)}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="admin-confirm-password">Confirm New Password</Label>
-              <Input
-                id="admin-confirm-password"
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={(e) =>
-                  setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
-                }
-              />
+              <div className="relative">
+                <Input
+                  id="admin-confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                  }
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <Button onClick={handlePasswordUpdate} className="w-full" disabled={passwordLoading}>
               {passwordLoading ? "Updating..." : "Update Password"}

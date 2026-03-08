@@ -126,10 +126,10 @@ export async function POST(request: Request) {
         }
       }
 
-      const user = await db.findUserById(payment.userId)
-      if (user) {
-        const updatedCourses = Array.from(new Set([...(user.enrolledCourses || []), ...courseIds]))
-        const profile = user.studentProfile
+      const currentUser = await db.findUserById(payment.userId)
+      if (currentUser) {
+        const updatedCourses = Array.from(new Set([...(currentUser.enrolledCourses || []), ...courseIds]))
+        const profile = currentUser.studentProfile
         await db.updateUser(payment.userId, {
           enrolledCourses: updatedCourses,
           ...(isOnsiteRegistration && profile

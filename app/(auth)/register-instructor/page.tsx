@@ -5,7 +5,7 @@ import type React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,6 +21,8 @@ export default function RegisterInstructorPage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -106,11 +108,47 @@ export default function RegisterInstructorPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    disabled={loading}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} required />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    disabled={loading}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
