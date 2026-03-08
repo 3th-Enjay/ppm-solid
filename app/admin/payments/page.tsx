@@ -39,6 +39,7 @@ export default function AdminPaymentsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currencyFilter, setCurrencyFilter] = useState<string>("all")
+  const [reviewFilter, setReviewFilter] = useState<string>("all")
   const [refundTarget, setRefundTarget] = useState<EnrichedPayment | null>(null)
   const [pendingRefundId, setPendingRefundId] = useState<string | null>(null)
 
@@ -48,7 +49,7 @@ export default function AdminPaymentsPage() {
 
   useEffect(() => {
     filterPayments()
-  }, [payments, searchQuery, statusFilter, currencyFilter])
+  }, [payments, searchQuery, statusFilter, currencyFilter, reviewFilter])
 
   const loadPayments = async () => {
     try {
@@ -71,6 +72,9 @@ export default function AdminPaymentsPage() {
         p.userId.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.manualReviewReason?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.manualReviewSource?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.fraudReason?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.courses?.some((course) => course.title.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     }
@@ -88,6 +92,14 @@ export default function AdminPaymentsPage() {
       filtered = filtered.filter((p) => p.currency === currencyFilter)
     }
 
+    if (reviewFilter === "manual_review") {
+      filtered = filtered.filter((p) => p.status === "manual_review")
+    } else if (reviewFilter === "fraud_flagged") {
+      filtered = filtered.filter((p) => Boolean(p.fraudFlagged))
+    } else if (reviewFilter === "needs_attention") {
+      filtered = filtered.filter((p) => p.status === "manual_review" || Boolean(p.fraudFlagged))
+    }
+
     filtered.sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime()
       const dateB = new Date(b.createdAt).getTime()
@@ -102,12 +114,16 @@ export default function AdminPaymentsPage() {
     const pending = payments.filter((p) => p.status === "pending")
     const failed = payments.filter((p) => p.status === "failed")
     const refunded = payments.filter((p) => p.status === "refunded")
+    const manualReview = payments.filter((p) => p.status === "manual_review")
+    const fraudFlagged = payments.filter((p) => Boolean(p.fraudFlagged))
 
     return {
       completed: completed.length,
       pending: pending.length,
       failed: failed.length,
       refunded: refunded.length,
+      manualReview: manualReview.length,
+      fraudFlagged: fraudFlagged.length,
       total: payments.length,
     }
   }, [payments])
@@ -121,6 +137,8 @@ export default function AdminPaymentsPage() {
         return <Clock className="h-4 w-4 text-yellow-500" />
       case "failed":
         return <XCircle className="h-4 w-4 text-red-500" />
+      case "manual_review":
+        return <Clock className="h-4 w-4 text-amber-500" />
       case "refunded":
         return <RotateCcw className="h-4 w-4 text-blue-500" />
       default:
@@ -137,6 +155,8 @@ export default function AdminPaymentsPage() {
         return <Badge variant="secondary">Pending</Badge>
       case "failed":
         return <Badge variant="destructive">Failed</Badge>
+      case "manual_review":
+        return <Badge className="bg-amber-500">Manual Review</Badge>
       case "refunded":
         return <Badge className="bg-blue-500">Refunded</Badge>
       default:
@@ -178,6 +198,11 @@ export default function AdminPaymentsPage() {
       </div>
 
       <div className="mb-6">
+        <div className="mb-3 flex justify-end">
+          <Button asChild variant="outline">
+            <Link href="/admin/payments/verify">Manual Verify</Link>
+          </Button>
+        </div>
         <h1 className="text-3xl font-bold">Payment Management</h1>
         <p className="text-muted-foreground mt-2">Review payments, manage refunds, and monitor status</p>
       </div>
@@ -188,6 +213,8 @@ export default function AdminPaymentsPage() {
             { key: "total", label: "Total Payments", value: totals.total, icon: CreditCard },
             { key: "completed", label: "Completed", value: totals.completed, icon: CheckCircle2 },
             { key: "pending", label: "Pending", value: totals.pending, icon: Clock },
+            { key: "manual-review", label: "Manual Review", value: totals.manualReview, icon: Clock },
+            { key: "fraud-flagged", label: "Fraud Flagged", value: totals.fraudFlagged, icon: XCircle },
             { key: "refunded", label: "Refunded", value: totals.refunded, icon: RotateCcw },
           ]}
         />
@@ -201,9 +228,10 @@ export default function AdminPaymentsPage() {
             setSearchQuery("")
             setStatusFilter("all")
             setCurrencyFilter("all")
+            setReviewFilter("all")
           }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -234,6 +262,17 @@ export default function AdminPaymentsPage() {
                 <SelectItem value="NGN">NGN</SelectItem>
                 <SelectItem value="USD">USD</SelectItem>
                 <SelectItem value="GBP">GBP</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={reviewFilter} onValueChange={setReviewFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Review state" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Review States</SelectItem>
+                <SelectItem value="needs_attention">Needs Attention</SelectItem>
+                <SelectItem value="manual_review">Manual Review</SelectItem>
+                <SelectItem value="fraud_flagged">Fraud Flagged</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex items-center text-xs text-muted-foreground">
@@ -271,6 +310,7 @@ export default function AdminPaymentsPage() {
                     <th className="text-left p-3 font-semibold">Amount</th>
                     <th className="text-left p-3 font-semibold">Currency</th>
                     <th className="text-left p-3 font-semibold">Status</th>
+                    <th className="text-left p-3 font-semibold">Review</th>
                     <th className="text-left p-3 font-semibold">Date</th>
                     <th className="text-left p-3 font-semibold">Actions</th>
                   </tr>
@@ -310,6 +350,23 @@ export default function AdminPaymentsPage() {
                           {getStatusBadge(payment.status)}
                         </div>
                       </td>
+                      <td className="p-3">
+                        <div className="space-y-1">
+                          {payment.fraudFlagged ? (
+                            <Badge variant="destructive" className="text-xs">Fraud Flagged</Badge>
+                          ) : null}
+                          {payment.manualReviewSource ? (
+                            <Badge variant="outline" className="text-xs">
+                              {payment.manualReviewSource}
+                            </Badge>
+                          ) : null}
+                          {payment.manualReviewReason ? (
+                            <p className="max-w-[220px] truncate text-xs text-muted-foreground">
+                              {payment.manualReviewReason}
+                            </p>
+                          ) : null}
+                        </div>
+                      </td>
                       <td className="p-3 text-muted-foreground">
                         {new Date(payment.createdAt).toLocaleDateString("en-US", {
                           year: "numeric",
@@ -339,7 +396,7 @@ export default function AdminPaymentsPage() {
                             </Button>
                           )}
                           <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/admin/payments/${payment.id}`}>View Transaction</Link>
+                            <Link href={`/admin/payments/${payment.reference}`}>View Transaction</Link>
                           </Button>
                         </div>
                       </td>

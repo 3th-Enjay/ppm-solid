@@ -375,7 +375,7 @@ export default function FinanceTransactionsPage() {
                       </td>
                       <td className="p-3">
                         <Button size="sm" variant="outline" asChild>
-                          <Link href={`/finance/transactions/${payment.id}`}>View Transaction</Link>
+                          <Link href={`/finance/transactions/${payment.reference}`}>View Transaction</Link>
                         </Button>
                       </td>
                     </tr>

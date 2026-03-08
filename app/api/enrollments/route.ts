@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
       enrollments = await db.getAllEnrollments()
     } else if (userId) {
       enrollments = await db.getEnrollmentsByUserId(userId)
-      // Keep onsite students automatically enrolled in all approved courses.
+      // Keep onsite students automatically enrolled in all approved courses
+      // only after verified onsite payment completion.
       const user = await db.findUserById(userId)
       if (
         user?.role === "student" &&
@@ -27,29 +28,37 @@ export async function GET(request: NextRequest) {
         (user.studentProfile.trainingMode === "onsite" ||
           (!user.studentProfile.trainingMode && (user.studentProfile.registrationFeeNgn || 0) > 0))
       ) {
-        const allCourses = await db.getAllCourses()
-        const existingCourseIds = new Set(enrollments.map((item: any) => item.courseId))
-        let created = false
+        const payments = await db.getPaymentsByUserId(userId)
+        const hasCompletedOnsitePayment = (payments || []).some(
+          (payment: any) =>
+            payment.paymentType === "onsite_registration" &&
+            (payment.status === "completed" || payment.status === "success"),
+        )
+        if (hasCompletedOnsitePayment) {
+          const allCourses = await db.getAllCourses()
+          const existingCourseIds = new Set(enrollments.map((item: any) => item.courseId))
+          let created = false
 
-        for (const course of allCourses || []) {
-          if (existingCourseIds.has(course.id)) continue
-          const enrollment = await db.createEnrollment({
-            userId,
-            courseId: course.id,
-            progress: 0,
-            completedLessons: [],
-            status: "active",
-            enrolledAt: new Date(),
-          })
-          enrollments.push(enrollment)
-          existingCourseIds.add(course.id)
-          created = true
-        }
+          for (const course of allCourses || []) {
+            if (existingCourseIds.has(course.id)) continue
+            const enrollment = await db.createEnrollment({
+              userId,
+              courseId: course.id,
+              progress: 0,
+              completedLessons: [],
+              status: "active",
+              enrolledAt: new Date(),
+            })
+            enrollments.push(enrollment)
+            existingCourseIds.add(course.id)
+            created = true
+          }
 
-        if (created) {
-          await db.updateUser(userId, {
-            enrolledCourses: Array.from(existingCourseIds),
-          })
+          if (created) {
+            await db.updateUser(userId, {
+              enrolledCourses: Array.from(existingCourseIds),
+            })
+          }
         }
       }
     } else if (courseId || courseIds) {

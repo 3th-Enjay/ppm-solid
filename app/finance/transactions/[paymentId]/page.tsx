@@ -9,7 +9,7 @@ export default function FinanceTransactionDetailPage() {
 
   return (
     <TransactionDetailView
-      paymentId={paymentId}
+      paymentIdentifier={paymentId}
       role="finance"
       backHref="/finance/transactions"
       backLabel="Back to Transactions"

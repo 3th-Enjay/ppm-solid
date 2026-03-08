@@ -30,8 +30,6 @@ export const onsiteRegisterSchema = registerBaseSchema
     currentRoleOrField: z.string().min(2, "Current role or field is required"),
     preferredLocation: z.enum(["enugu", "abuja"]),
     trainingInterest: z.string().min(10, "Tell us why you are interested in this training"),
-    paymentStatus: z.enum(["yes", "no"]),
-    paymentReference: z.string().optional(),
     agreedSlotSecured: z.boolean(),
     agreedDetailsCorrect: z.boolean(),
   })
@@ -46,10 +44,6 @@ export const onsiteRegisterSchema = registerBaseSchema
   .refine((data) => data.agreedDetailsCorrect, {
     message: "Please confirm your details are correct",
     path: ["agreedDetailsCorrect"],
-  })
-  .refine((data) => data.paymentStatus === "yes", {
-    message: "Onsite students must confirm payment before registration.",
-    path: ["paymentStatus"],
   })
 
 export const onlineRegisterSchema = registerBaseSchema

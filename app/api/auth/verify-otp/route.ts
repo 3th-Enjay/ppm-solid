@@ -23,20 +23,33 @@ export async function POST(request: Request) {
       console.error("Failed to send welcome email:", err)
     }
 
-    // Onsite students should get free access to all courses and materials.
+    // Onsite students get full access only after completed onsite payment.
     let responseUser = result.user
-    if (
+    const isOnsiteProfile =
       result.user.role === "student" &&
       result.user.studentProfile &&
       (result.user.studentProfile.trainingMode === "onsite" ||
         (!result.user.studentProfile.trainingMode && (result.user.studentProfile.registrationFeeNgn || 0) > 0))
+    if (
+      isOnsiteProfile
     ) {
       try {
         const db = getDB()
-        const [allCourses, existingEnrollments] = await Promise.all([
-          db.getAllCourses(),
-          db.getEnrollmentsByUserId(result.user.id),
-        ])
+        const payments = await db.getPaymentsByUserId(result.user.id)
+        const hasCompletedOnsitePayment = (payments || []).some(
+          (payment: any) =>
+            payment.paymentType === "onsite_registration" &&
+            (payment.status === "completed" || payment.status === "success"),
+        )
+        if (!hasCompletedOnsitePayment) {
+          return NextResponse.json({
+            success: true,
+            user: responseUser,
+            token: result.token,
+          })
+        }
+
+        const [allCourses, existingEnrollments] = await Promise.all([db.getAllCourses(), db.getEnrollmentsByUserId(result.user.id)])
 
         const enrolledCourseIds = new Set((existingEnrollments || []).map((item: any) => item.courseId))
         for (const course of allCourses || []) {

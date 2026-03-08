@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     // Create payment record in database
     const payment = await db.createPayment({
       userId,
+      paymentType: "course_purchase",
       courseId: Array.isArray(courseIds) ? courseIds[0] : courseIds,
       courseIds: Array.isArray(courseIds) ? courseIds : [courseIds],
       amount,
@@ -46,6 +47,8 @@ export async function POST(request: NextRequest) {
       paymentMethod: "paystack",
       gatewayStatus: "pending",
       gatewayMessage: "Awaiting payment authorization on Paystack.",
+      verificationAttempts: 0,
+      verificationLocked: false,
       createdAt: new Date(),
     })
 

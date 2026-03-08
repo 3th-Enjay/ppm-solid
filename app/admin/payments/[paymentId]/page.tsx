@@ -9,7 +9,7 @@ export default function AdminTransactionDetailPage() {
 
   return (
     <TransactionDetailView
-      paymentId={paymentId}
+      paymentIdentifier={paymentId}
       role="admin"
       backHref="/admin/payments"
       backLabel="Back to Payments"

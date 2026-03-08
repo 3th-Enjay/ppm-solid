@@ -36,8 +36,6 @@ type FormData = {
   currentRoleOrField: string
   preferredLocation: "enugu" | "abuja"
   trainingInterest: string
-  paymentStatus: "yes" | "no"
-  paymentReference: string
   agreedSlotSecured: boolean
   agreedDetailsCorrect: boolean
   acceptTerms: boolean
@@ -65,8 +63,6 @@ export function StudentRegistrationForm({ mode }: { mode: RegistrationMode }) {
     currentRoleOrField: "",
     preferredLocation: "enugu",
     trainingInterest: "",
-    paymentStatus: mode === "onsite" ? "no" : "yes",
-    paymentReference: "",
     agreedSlotSecured: mode === "online",
     agreedDetailsCorrect: false,
     acceptTerms: false,
@@ -76,13 +72,27 @@ export function StudentRegistrationForm({ mode }: { mode: RegistrationMode }) {
     setLoading(true)
     setError("")
     try {
-      const res = await fetch("/api/auth/register", {
+      const endpoint = mode === "onsite" ? "/api/payments/initialize-onsite" : "/api/auth/register"
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
       const result = await res.json()
-      if (!res.ok || !result?.user) {
+      if (!res.ok) {
+        throw new Error(result?.error || "Registration failed")
+      }
+      if (mode === "onsite") {
+        if (!result?.authorization_url) {
+          throw new Error("Unable to initialize onsite payment.")
+        }
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("pending-otp-email", formData.email)
+          window.location.href = result.authorization_url
+        }
+        return
+      }
+      if (!result?.user) {
         throw new Error(result?.error || "Registration failed")
       }
       toast({
@@ -231,18 +241,6 @@ export function StudentRegistrationForm({ mode }: { mode: RegistrationMode }) {
                   </SelectContent>
                 </Select>
               </div>
-              {mode === "onsite" ? (
-                <div className="space-y-2">
-                  <Label htmlFor="paymentStatus">Have you made payment?</Label>
-                  <Select value={formData.paymentStatus} onValueChange={(value) => setFormData({ ...formData, paymentStatus: value as "yes" | "no" })} disabled={loading}>
-                    <SelectTrigger id="paymentStatus"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="yes">Yes</SelectItem>
-                      <SelectItem value="no">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -252,15 +250,9 @@ export function StudentRegistrationForm({ mode }: { mode: RegistrationMode }) {
 
             {mode === "onsite" ? (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="paymentReference">Payment Reference (Optional)</Label>
-                  <Input id="paymentReference" value={formData.paymentReference} onChange={(e) => setFormData({ ...formData, paymentReference: e.target.value })} placeholder="e.g. PSTK_123456789" disabled={loading} />
-                </div>
                 <div className="rounded-lg border border-dashed border-primary/35 p-4 text-sm">
                   <p>Registration Fee: <span className="font-semibold">NGN {ONSITE_TRAINING.registrationFeeNgn.toLocaleString("en-NG")}</span></p>
-                  <a href={ONSITE_TRAINING.paymentLink} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-primary underline-offset-4 hover:underline">
-                    Open {ONSITE_TRAINING.paymentProviderHint} Payment Link
-                  </a>
+                  <p className="mt-2 text-muted-foreground">You will be redirected to secure Paystack checkout after registration.</p>
                 </div>
                 <div className="flex items-start gap-2">
                   <Checkbox id="agreedSlotSecured" checked={formData.agreedSlotSecured} onCheckedChange={(checked) => setFormData({ ...formData, agreedSlotSecured: checked === true })} />
@@ -300,7 +292,7 @@ export function StudentRegistrationForm({ mode }: { mode: RegistrationMode }) {
             <Button type="submit" variant="cta" disabled={loading} className="w-full">
               {loading ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</>
-              ) : mode === "onsite" ? "Complete Onsite Registration" : "Complete Online Registration"}
+              ) : mode === "onsite" ? "Continue to Paystack Checkout" : "Complete Online Registration"}
             </Button>
           </form>
         </CardContent>

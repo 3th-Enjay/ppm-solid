@@ -9,7 +9,7 @@ export default function StudentTransactionDetailPage() {
 
   return (
     <TransactionDetailView
-      paymentId={paymentId}
+      paymentIdentifier={paymentId}
       role="student"
       backHref="/dashboard/payments"
       backLabel="Back to Payment History"

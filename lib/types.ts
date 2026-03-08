@@ -161,12 +161,23 @@ export interface Enrollment {
   completedAt?: Date
 }
 
-export type PaymentStatus = "pending" | "completed" | "failed" | "refunded" | "success"
+export type PaymentStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "refunded"
+  | "expired"
+  | "manual_review"
+  | "success"
 export type Currency = "NGN" | "USD" | "EUR" | "GBP"
+export type PaymentType = "course_purchase" | "onsite_registration"
+export type PaymentReviewSource = "verify" | "webhook" | "reconcile" | "admin"
 
 export interface Payment {
   id: string
   userId: string
+  paymentType?: PaymentType
   courseId: string
   courseIds?: string[]
   invoiceNumber?: string
@@ -179,6 +190,20 @@ export interface Payment {
   gatewayStatus?: string
   gatewayMessage?: string
   gatewayChannel?: string
+  verificationAttempts?: number
+  verificationLocked?: boolean
+  lastVerificationAt?: Date
+  manualReviewReason?: string
+  manualReviewSource?: PaymentReviewSource
+  manualReviewCreatedAt?: Date
+  manualReviewUpdatedAt?: Date
+  fraudFlagged?: boolean
+  fraudReason?: string
+  fraudFlaggedAt?: Date
+  fraudFlaggedBy?: string
+  reviewedBy?: string
+  reviewedAt?: Date
+  reviewNote?: string
   paidAt?: Date
   refundReason?: string
   refundedBy?: string

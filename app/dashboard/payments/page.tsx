@@ -68,7 +68,7 @@ export default function PaymentsPage() {
                       <div className="text-2xl font-bold">{formatCurrency(payment.amount, payment.currency)}</div>
                       <p className="text-sm text-muted-foreground">{payment.paymentMethod}</p>
                       <Button asChild size="sm" variant="outline">
-                        <Link href={`/dashboard/payments/${payment.id}`}>View Transaction</Link>
+                        <Link href={`/dashboard/payments/${payment.reference}`}>View Transaction</Link>
                       </Button>
                     </div>
                   </div>

@@ -100,9 +100,9 @@ function CheckoutFailedContent() {
               <Download className="h-4 w-4 mr-2" />
               Save as PDF
             </Button>
-            {payment?.id ? (
+            {payment?.reference ? (
               <Button variant="outline" asChild>
-                <Link href={`/dashboard/payments/${payment.id}`}>View Transaction</Link>
+                <Link href={`/dashboard/payments/${payment.reference}`}>View Transaction</Link>
               </Button>
             ) : null}
             <Button asChild>

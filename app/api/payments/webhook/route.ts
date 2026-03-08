@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
 import { paystackService } from "@/lib/paystack"
+import { notifyManualReviewAlert } from "@/lib/payment-alerts"
+import { evaluateVerification } from "@/lib/payments/verification"
 
 export async function POST(request: Request) {
   const rawBody = await request.text()
@@ -34,26 +36,82 @@ export async function POST(request: Request) {
 
   switch (event?.event) {
     case "charge.success": {
+      if (payment.status === "completed" || payment.status === "success") {
+        return NextResponse.json({ received: true })
+      }
+
       const amount = event?.data?.amount
       const currency = event?.data?.currency || payment.currency
       const paidAt = event?.data?.paid_at || event?.data?.paidAt
       const gatewayMessage = event?.data?.gateway_response || "Payment successful"
       const transactionId = event?.data?.id ? String(event.data.id) : undefined
       const channel = event?.data?.channel
+      const amountInMajorUnit =
+        typeof amount === "number" ? paystackService.fromSubunit(amount, currency) : payment.amount
+
+      const paystackEmail = event?.data?.customer?.email
+      const user = await db.findUserById(payment.userId)
+      const evaluation = evaluateVerification({
+        verification: {
+          status: "success",
+          amount: amountInMajorUnit,
+          currency,
+          customerEmail: paystackEmail ? String(paystackEmail) : undefined,
+        },
+        payment: {
+          amount: payment.amount,
+          currency: payment.currency,
+        },
+        userEmail: user?.email,
+        source: "webhook",
+      })
+
+      if (evaluation.targetStatus === "manual_review") {
+        const reason = evaluation.reason || "Webhook mismatch."
+        await updatePayment({
+          status: "manual_review",
+          verificationLocked: false,
+          gatewayStatus: "success",
+          gatewayMessage: reason,
+          transactionId,
+          gatewayChannel: channel,
+          manualReviewReason: reason,
+          manualReviewSource: "webhook",
+          manualReviewCreatedAt: payment.manualReviewCreatedAt || new Date(),
+          manualReviewUpdatedAt: new Date(),
+          reviewedAt: new Date(),
+        })
+        await notifyManualReviewAlert({
+          reference,
+          paymentType: payment.paymentType,
+          amount: payment.amount,
+          currency: payment.currency,
+          userEmail: user?.email,
+          source: "webhook",
+          reason,
+        })
+        return NextResponse.json({ received: true })
+      }
 
       await updatePayment({
         status: "completed",
         completedAt: paidAt ? new Date(paidAt) : new Date(),
-        amount: typeof amount === "number" ? paystackService.fromSubunit(amount, currency) : payment.amount,
+        amount: amountInMajorUnit,
         currency,
         paidAt: paidAt ? new Date(paidAt) : new Date(),
         gatewayStatus: "success",
         gatewayMessage,
         transactionId,
         gatewayChannel: channel,
+        verificationLocked: false,
       })
 
-      const courseIds = payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
+      const isOnsiteRegistration = payment.paymentType === "onsite_registration"
+      let courseIds = payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
+      if (isOnsiteRegistration) {
+        const allCourses = await db.getAllCourses()
+        courseIds = (allCourses || []).map((course: any) => course.id)
+      }
       for (const courseId of courseIds) {
         const existing = await db.getEnrollment(payment.userId, courseId)
         if (!existing) {
@@ -71,7 +129,19 @@ export async function POST(request: Request) {
       const user = await db.findUserById(payment.userId)
       if (user) {
         const updatedCourses = Array.from(new Set([...(user.enrolledCourses || []), ...courseIds]))
-        await db.updateUser(payment.userId, { enrolledCourses: updatedCourses })
+        const profile = user.studentProfile
+        await db.updateUser(payment.userId, {
+          enrolledCourses: updatedCourses,
+          ...(isOnsiteRegistration && profile
+            ? {
+                studentProfile: {
+                  ...profile,
+                  paymentStatus: "yes",
+                  paymentReference: reference,
+                },
+              }
+            : {}),
+        })
       }
       break
     }
@@ -82,6 +152,7 @@ export async function POST(request: Request) {
         gatewayMessage: event?.data?.gateway_response || "Payment failed",
         transactionId: event?.data?.id ? String(event.data.id) : undefined,
         gatewayChannel: event?.data?.channel,
+        verificationLocked: false,
       })
       break
     }

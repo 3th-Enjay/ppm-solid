@@ -292,7 +292,7 @@ function CheckoutSuccessContent() {
               Save PDF
             </Button>
             <Button asChild>
-              <Link href={payment.id ? `/dashboard/payments/${payment.id}` : "/dashboard/payments"}>
+              <Link href={payment.reference ? `/dashboard/payments/${payment.reference}` : "/dashboard/payments"}>
                 View Transaction
               </Link>
             </Button>

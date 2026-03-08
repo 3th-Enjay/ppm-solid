@@ -10,7 +10,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format"
 import { getCourseDetailPathForRole } from "@/lib/role-routing"
 
 interface TransactionDetailViewProps {
-  paymentId: string
+  paymentIdentifier: string
   role: "student" | "finance" | "admin"
   backHref: string
   backLabel: string
@@ -55,7 +55,7 @@ function getStatusVariant(status: string) {
   return "outline" as const
 }
 
-export function TransactionDetailView({ paymentId, role, backHref, backLabel }: TransactionDetailViewProps) {
+export function TransactionDetailView({ paymentIdentifier, role, backHref, backLabel }: TransactionDetailViewProps) {
   const [payment, setPayment] = useState<EnrichedPayment | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -63,9 +63,19 @@ export function TransactionDetailView({ paymentId, role, backHref, backLabel }: 
     const loadDetails = async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/payments?id=${encodeURIComponent(paymentId)}&includeDetails=true`)
-        const data = await res.json()
-        setPayment((data.payments || [])[0] || null)
+        const byIdRes = await fetch(`/api/payments?id=${encodeURIComponent(paymentIdentifier)}&includeDetails=true`)
+        const byIdData = await byIdRes.json()
+        const byIdPayment = (byIdData.payments || [])[0] || null
+        if (byIdPayment) {
+          setPayment(byIdPayment)
+          return
+        }
+
+        const byReferenceRes = await fetch(
+          `/api/payments?reference=${encodeURIComponent(paymentIdentifier)}&includeDetails=true`,
+        )
+        const byReferenceData = await byReferenceRes.json()
+        setPayment((byReferenceData.payments || [])[0] || null)
       } catch (error) {
         console.error("Failed to load transaction details:", error)
         setPayment(null)
@@ -75,7 +85,7 @@ export function TransactionDetailView({ paymentId, role, backHref, backLabel }: 
     }
 
     void loadDetails()
-  }, [paymentId])
+  }, [paymentIdentifier])
 
   const resolvedCourses = useMemo(() => payment?.courses || [], [payment])
 

@@ -7,7 +7,8 @@
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",
-    "docs:optimize-ui": "node scripts/optimize-ui-doc.mjs"
+    "docs:optimize-ui": "node scripts/optimize-ui-doc.mjs",
+    "test:payments": "tsx --test tests/payments/**/*.test.ts"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",
@@ -79,6 +80,7 @@
     "baseline-browser-mapping": "^2.9.19",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
+    "tsx": "^4.20.6",
     "tw-animate-css": "1.3.3",
     "typescript": "^5"
   }

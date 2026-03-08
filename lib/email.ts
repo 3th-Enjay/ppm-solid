@@ -231,3 +231,62 @@ export async function sendPasswordResetEmail(params: { to: string; name: string;
     throw error
   }
 }
+
+export async function sendPaymentManualReviewAlert(params: {
+  to: string
+  reference: string
+  paymentType?: string
+  amount: number
+  currency: string
+  userEmail?: string
+  source: string
+  reason: string
+}) {
+  const key = getResendKey()
+
+  if (key === "dev-key") {
+    console.log("=".repeat(50))
+    console.log("MANUAL REVIEW ALERT (Development Mode - RESEND_API_KEY not set)")
+    console.log("To:", params.to)
+    console.log("Reference:", params.reference)
+    console.log("Reason:", params.reason)
+    console.log("Source:", params.source)
+    console.log("=".repeat(50))
+    return
+  }
+
+  const payload = {
+    from: getFromEmail(),
+    to: [params.to],
+    subject: `[Payment Alert] Manual Review Required - ${params.reference}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2>Manual Payment Review Required</h2>
+        <p>A payment has been flagged for manual review.</p>
+        <ul>
+          <li><strong>Reference:</strong> ${params.reference}</li>
+          <li><strong>Type:</strong> ${params.paymentType || "N/A"}</li>
+          <li><strong>Amount:</strong> ${params.amount} ${params.currency}</li>
+          <li><strong>User Email:</strong> ${params.userEmail || "N/A"}</li>
+          <li><strong>Source:</strong> ${params.source}</li>
+          <li><strong>Reason:</strong> ${params.reason}</li>
+        </ul>
+        <p>Use the admin payment verification page to review and take action.</p>
+      </div>
+    `,
+  }
+
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Resend error: ${text}`)
+  }
+}

@@ -21,6 +21,7 @@ export interface PaymentVerification {
   gatewayStatus?: string
   gatewayMessage?: string
   channel?: string
+  customerEmail?: string
 }
 
 const PAYSTACK_BASE_URL = process.env.PAYSTACK_BASE_URL || "https://api.paystack.co"
@@ -131,6 +132,9 @@ export const paystackService = {
         paid_at?: string
         paidAt?: string
         id?: string
+        customer?: {
+          email?: string
+        }
       }
     }>(`/transaction/verify/${encodeURIComponent(reference)}`)
 
@@ -147,6 +151,7 @@ export const paystackService = {
       gatewayStatus: data.data.status,
       gatewayMessage: data.data.gateway_response || (verified ? "Payment successful" : "Payment failed"),
       channel: data.data.channel,
+      customerEmail: data.data.customer?.email,
     }
   },
 
