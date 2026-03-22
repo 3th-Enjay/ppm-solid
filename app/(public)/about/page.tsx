@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import Image, { type StaticImageData } from "next/image"
-import { motion, useInView, useScroll, useTransform } from "framer-motion"
+import { AnimatePresence, motion, useInView, useScroll, useTransform } from "framer-motion"
 import { HeartHandshake, ShieldCheck, Anchor, Sparkles, Stethoscope } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,15 +18,19 @@ import {
   slowZoom,
   useReducedMotionSafe,
 } from "@/lib/motion"
-import ceoImage from "@/public/ceo-promptcare.jpeg"
+import ceoImage from "@/public/promprcare-ceo-new.jpeg"
+import storyImage from "@/public/ceo-promptcare.jpeg"
 import directorImage from "@/public/dr-amara-okoye-director.jpeg"
 import euniceImage from "@/public/eunice-tutor-promptcare.jpeg"
-import chineduImage from "@/public/Chinedu-Amadi-tutor.jpeg"
+import chineduImage from "@/public/new-chinedu-promptcare.jpeg"
+import ngoziImage from "@/public/ngozi-nworah-tutor-promptcare.jpeg"
 
 type TeamMember = {
   name: string
   role: string
   image: StaticImageData
+  imagePositionClassName?: string
+  imageInsetClassName?: string
 }
 
 type ImpactStat = {
@@ -81,6 +85,7 @@ export default function AboutPage() {
   const shouldReduceMotion = useReducedMotionSafe()
   const storyRef = useRef<HTMLDivElement | null>(null)
   const teamRef = useRef<HTMLDivElement | null>(null)
+  const [storyExpanded, setStoryExpanded] = useState(false)
   const { scrollYProgress: storyScroll } = useScroll({
     target: storyRef,
     offset: ["start end", "end start"],
@@ -94,10 +99,22 @@ export default function AboutPage() {
   const teamAccentY = useTransform(teamScroll, [0, 1], [10, -10])
 
   const team: TeamMember[] = [
-    { name: "Dr Ikechukwu Okoye", role: "Founder & CEO", image: ceoImage },
+    {
+      name: "Dr Ikechukwu Okoye",
+      role: "Founder & CEO",
+      image: ceoImage,
+      imagePositionClassName: "object-[center_30%]",
+    },
     { name: "Dr Amara Okoye", role: "Director", image: directorImage },
     { name: "Eunice", role: "Tutor", image: euniceImage },
     { name: "Chinedu Amadi", role: "Tutor", image: chineduImage },
+    {
+      name: "Ngozi Nworah",
+      role: "Tutor",
+      image: ngoziImage,
+      imagePositionClassName: "object-[center_16%]",
+      imageInsetClassName: "inset-4",
+    },
   ]
 
   const values = useMemo(
@@ -149,7 +166,6 @@ export default function AboutPage() {
         backgroundImageAlt="Clinical learning environment with instructor-led training"
         className="text-white"
       >
-        {/* Placeholder media intent: real classroom/clinical instruction with warm natural light. */}
         <motion.div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
@@ -202,43 +218,76 @@ export default function AboutPage() {
               precision and compassion were inseparable.
             </motion.p>
             <motion.p variants={fadeUp} className="max-w-xl text-muted-foreground">
-              In 2009, he returned to Nigeria to care for his father through Alzheimer’s and discovered a major gap:
+              In 2009, he returned to Nigeria to care for his father through Alzheimer&apos;s and discovered a major gap:
               families needed skilled caregivers, but access to practical training was limited.
             </motion.p>
             <motion.p variants={fadeUp} className="max-w-xl text-muted-foreground">
               Prompt Care Academy was created to close that gap at scale and produce professionals prepared for real
               patient needs.
             </motion.p>
+            <AnimatePresence initial={false}>
+              {storyExpanded ? (
+                <motion.div
+                  initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  className="space-y-5 overflow-hidden"
+                >
+                  <p className="max-w-xl text-muted-foreground">
+                    That experience shaped a training model rooted in patient safety, communication, emotional
+                    intelligence, and practical caregiving discipline rather than classroom theory alone.
+                  </p>
+                  <p className="max-w-xl text-muted-foreground">
+                    What began as a response to one family&apos;s need has grown into a wider mission: raising a new
+                    generation of caregivers who can serve homes, hospitals, and care facilities with confidence,
+                    skill, and empathy.
+                  </p>
+                  <p className="max-w-xl text-muted-foreground">
+                    Today, Prompt Care Academy continues to bridge global clinical standards with local healthcare
+                    realities so learners are trained for the situations they will actually face in real care
+                    environments.
+                  </p>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+            <motion.div variants={fadeUp}>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-accent/40 text-foreground hover:border-accent hover:bg-accent hover:text-accent-foreground"
+                onClick={() => setStoryExpanded((prev) => !prev)}
+                aria-expanded={storyExpanded}
+              >
+                {storyExpanded ? "Read less" : "Read more"}
+              </Button>
+            </motion.div>
           </motion.div>
 
-          <div className="relative grid gap-4 sm:grid-cols-2">
-            {/* Placeholder media intent: early stage training, small group learning, and hands-on care practice. */}
-            {[
-              "/prompt-heroimg1.jpeg",
-              "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80",
-              "/prompt-heroimg3.jpeg",
-            ].map((img, index) => (
-              <motion.div
-                key={img}
-                variants={fadeUp}
-                initial="initial"
-                whileInView="animate"
-                viewport={{ once: true }}
-                style={shouldReduceMotion ? undefined : { y: storyImageY }}
-                className={index === 2 ? "sm:col-span-2" : ""}
-              >
-                <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft transition-all duration-200 hover:shadow-lifted">
-                  <img
-                    src={img}
-                    alt={`Training session scene ${index + 1}`}
-                    className="h-52 w-full object-cover transition-transform duration-200 hover:scale-[1.03]"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          <motion.div
+            variants={fadeUp}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            style={shouldReduceMotion ? undefined : { y: storyImageY }}
+            className="group"
+          >
+            <div className="relative min-h-[460px] overflow-hidden rounded-[28px] border border-border/80 bg-card shadow-soft lg:min-h-[560px]">
+              <Image
+                src={storyImage}
+                alt="Dr Ike M. Okoye, founder of Prompt Care Academy"
+                fill
+                className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
+                sizes="(max-width: 1024px) 100vw, 42vw"
+                priority
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/95 via-background/20 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 space-y-2 p-6 md:p-8">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Founder</p>
+                <h3 className="text-2xl font-semibold text-foreground">Dr Ike M. Okoye</h3>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </SectionShell>
 
@@ -251,7 +300,7 @@ export default function AboutPage() {
             },
             {
               title: "Our Vision",
-              text: "Become Africa’s most trusted caregiver training authority for technical mastery, ethical leadership, and human-centered care.",
+              text: "Become Africa&apos;s most trusted caregiver training authority for technical mastery, ethical leadership, and human-centered care.",
             },
           ].map((block) => (
             <motion.div key={block.title} variants={fadeUp} className="rounded-2xl border border-border/80 bg-card/80 p-6 shadow-soft">
@@ -300,30 +349,53 @@ export default function AboutPage() {
             <p className="text-muted-foreground">Experienced professionals committed to building healthcare confidence at scale.</p>
           </motion.div>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {team.map((member, index) => (
+            {team.map((member) => (
               <motion.article
                 key={member.name}
                 variants={fadeUp}
                 initial="initial"
                 whileInView="animate"
                 viewport={{ once: true }}
-                className="group overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft"
+                className="group overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-lifted"
               >
                 <div className="relative h-80 overflow-hidden bg-muted">
-                  <Image
-                    src={member.image}
-                    alt={`${member.name} portrait`}
-                    fill
-                    className="object-cover object-top grayscale transition-all duration-200 group-hover:scale-[1.02] group-hover:grayscale-0"
-                    sizes="(max-width: 1024px) 100vw, 33vw"
-                  />
+                  {member.imageInsetClassName ? (
+                    <>
+                      <Image
+                        src={member.image}
+                        alt=""
+                        aria-hidden="true"
+                        fill
+                        className={`object-cover ${member.imagePositionClassName || "object-top"} scale-[1.08] blur-[2px] brightness-90`}
+                        sizes="(max-width: 1024px) 100vw, 33vw"
+                      />
+                      <div className={`absolute ${member.imageInsetClassName}`}>
+                        <Image
+                          src={member.image}
+                          alt={`${member.name} portrait`}
+                          fill
+                          className={`object-cover ${member.imagePositionClassName || "object-top"} transition-transform duration-300 group-hover:scale-[1.05]`}
+                          sizes="(max-width: 1024px) 100vw, 33vw"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <Image
+                      src={member.image}
+                      alt={`${member.name} portrait`}
+                      fill
+                      className={`object-cover ${member.imagePositionClassName || "object-top"} transition-transform duration-300 group-hover:scale-[1.05]`}
+                      sizes="(max-width: 1024px) 100vw, 33vw"
+                    />
+                  )}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-emerald-950/35 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </div>
                 <div className="space-y-2 p-5">
                   <h3 className="inline-block text-xl font-semibold">
                     {member.name}
-                    <span className="mt-1 block h-[2px] w-0 bg-accent transition-all duration-200 group-hover:w-full" />
+                    <span className="mt-1 block h-[2px] w-0 bg-accent transition-all duration-300 group-hover:w-full" />
                   </h3>
-                  <p className="text-sm text-muted-foreground">{member.role}</p>
+                  <p className="text-sm text-muted-foreground transition-colors duration-300 group-hover:text-foreground">{member.role}</p>
                 </div>
               </motion.article>
             ))}
@@ -386,4 +458,3 @@ export default function AboutPage() {
     </div>
   )
 }
-

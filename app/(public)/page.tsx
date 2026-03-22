@@ -72,22 +72,22 @@ export default function HomePage() {
     {
       title: "Start with the Fundamentals",
       text: "They start with curiosity and build confidence through practical caregiver foundations.",
-      image: "https://images.unsplash.com/photo-1580281657527-47f249e8f4df?auto=format&fit=crop&w=1400&q=80",
+      image: "/fundamentals-promptcare.jpeg",
     },
     {
       title: "Learn in Realistic Clinical Contexts",
       text: "Guided modules and hands-on simulations help them apply what matters in real care scenarios.",
-      image: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&w=1400&q=80",
+      image: "/clinical-situatuion-promptcare.jpeg",
     },
     {
       title: "Practice Communication and Compassion",
       text: "They practice patient-first communication, safety habits, and professional bedside confidence.",
-      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1400&q=80",
+      image: "/practice-communication-promptcare.jpeg",
     },
     {
       title: "Become Career-Ready Caregivers",
       text: "They become ready to support families and healthcare teams with competence, empathy, and integrity.",
-      image: "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=1400&q=80",
+      image: "/become-career-ready.jpeg",
     },
   ]
 
