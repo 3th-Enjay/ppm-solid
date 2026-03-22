@@ -56,7 +56,11 @@ export default function AdminUsersPage() {
               Authorization: `Bearer ${token || ""}`,
             },
           }),
-          fetch("/api/enrollments?all=true"),
+          fetch("/api/enrollments?all=true", {
+            headers: {
+              Authorization: `Bearer ${token || ""}`,
+            },
+          }),
         ])
         const usersData = await usersRes.json()
         const enrollmentsData = await enrollmentsRes.json()

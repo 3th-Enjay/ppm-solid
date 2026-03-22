@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -34,6 +34,7 @@ export default function AdminPaymentsPage() {
     courses?: Array<{ id: string; title: string }>
     user?: { id: string; name: string; email: string; role: string }
   }
+
   const [payments, setPayments] = useState<EnrichedPayment[]>([])
   const [filteredPayments, setFilteredPayments] = useState<EnrichedPayment[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -62,6 +63,27 @@ export default function AdminPaymentsPage() {
     }
   }
 
+  const getCustomerLabel = (payment: EnrichedPayment) => {
+    if (payment.user) {
+      return {
+        title: payment.user.name,
+        subtitle: payment.user.email,
+      }
+    }
+
+    if (payment.customerEmail) {
+      return {
+        title: "Pending verification",
+        subtitle: payment.customerEmail,
+      }
+    }
+
+    return {
+      title: payment.userId,
+      subtitle: "",
+    }
+  }
+
   const filterPayments = () => {
     let filtered = [...payments]
 
@@ -70,6 +92,7 @@ export default function AdminPaymentsPage() {
         p.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.userId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.manualReviewReason?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -316,92 +339,95 @@ export default function AdminPaymentsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPayments.map((payment) => (
-                    <tr key={payment.id} className="border-b hover:bg-accent/50 transition-colors">
-                      <td className="p-3">
-                        <code className="text-xs bg-muted px-2 py-1 rounded">
-                          {payment.reference}
-                        </code>
-                      </td>
-                      <td className="p-3 font-medium">
-                        {payment.user ? (
+                  {filteredPayments.map((payment) => {
+                    const customer = getCustomerLabel(payment)
+
+                    return (
+                      <tr key={payment.id} className="border-b hover:bg-accent/50 transition-colors">
+                        <td className="p-3">
+                          <code className="text-xs bg-muted px-2 py-1 rounded">
+                            {payment.reference}
+                          </code>
+                        </td>
+                        <td className="p-3 font-medium">
                           <div>
-                            <p>{payment.user.name}</p>
-                            <p className="text-xs text-muted-foreground">{payment.user.email}</p>
+                            <p>{customer.title}</p>
+                            {customer.subtitle ? <p className="text-xs text-muted-foreground">{customer.subtitle}</p> : null}
                           </div>
-                        ) : (
-                          payment.userId
-                        )}
-                      </td>
-                      <td className="p-3">
-                        <p className="line-clamp-2 text-xs">
-                          {payment.courses?.length ? payment.courses.map((c) => c.title).join(", ") : payment.courseId}
-                        </p>
-                      </td>
-                      <td className="p-3 font-semibold">
-                        {formatCurrency(payment.amount, payment.currency)}
-                      </td>
-                      <td className="p-3">
-                        <Badge variant="outline">{payment.currency}</Badge>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(payment.status)}
-                          {getStatusBadge(payment.status)}
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="space-y-1">
-                          {payment.fraudFlagged ? (
-                            <Badge variant="destructive" className="text-xs">Fraud Flagged</Badge>
-                          ) : null}
-                          {payment.manualReviewSource ? (
-                            <Badge variant="outline" className="text-xs">
-                              {payment.manualReviewSource}
-                            </Badge>
-                          ) : null}
-                          {payment.manualReviewReason ? (
-                            <p className="max-w-[220px] truncate text-xs text-muted-foreground">
-                              {payment.manualReviewReason}
-                            </p>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="p-3 text-muted-foreground">
-                        {new Date(payment.createdAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </td>
-                      <td className="p-3">
-                        <div className="flex gap-2">
-                          {(payment.status === "completed" || payment.status === "success") && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setRefundTarget(payment)}
-                              disabled={pendingRefundId === payment.id}
-                            >
-                              {pendingRefundId === payment.id ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Refunding...
-                                </>
-                              ) : (
-                                "Refund"
-                              )}
+                        </td>
+                        <td className="p-3">
+                          <p className="line-clamp-2 text-xs">
+                            {payment.courses?.length ? payment.courses.map((c) => c.title).join(", ") : payment.courseId}
+                          </p>
+                        </td>
+                        <td className="p-3 font-semibold">
+                          {formatCurrency(payment.amount, payment.currency)}
+                        </td>
+                        <td className="p-3">
+                          <Badge variant="outline">{payment.currency}</Badge>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(payment.status)}
+                            {getStatusBadge(payment.status)}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="space-y-1">
+                            {!payment.user && payment.customerEmail ? (
+                              <Badge variant="secondary" className="text-xs">Pending Registration</Badge>
+                            ) : null}
+                            {payment.fraudFlagged ? (
+                              <Badge variant="destructive" className="text-xs">Fraud Flagged</Badge>
+                            ) : null}
+                            {payment.manualReviewSource ? (
+                              <Badge variant="outline" className="text-xs">
+                                {payment.manualReviewSource}
+                              </Badge>
+                            ) : null}
+                            {payment.manualReviewReason ? (
+                              <p className="max-w-[220px] truncate text-xs text-muted-foreground">
+                                {payment.manualReviewReason}
+                              </p>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="p-3 text-muted-foreground">
+                          {new Date(payment.createdAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex gap-2">
+                            {(payment.status === "completed" || payment.status === "success") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setRefundTarget(payment)}
+                                disabled={pendingRefundId === payment.id}
+                              >
+                                {pendingRefundId === payment.id ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Refunding...
+                                  </>
+                                ) : (
+                                  "Refund"
+                                )}
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link href={`/admin/payments/${payment.reference}`}>View Transaction</Link>
                             </Button>
-                          )}
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/admin/payments/${payment.reference}`}>View Transaction</Link>
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

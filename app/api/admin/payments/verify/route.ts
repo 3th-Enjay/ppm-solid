@@ -15,6 +15,9 @@ const verifyActionSchema = z.object({
 })
 
 async function grantAccessForPayment(db: any, payment: any, reference: string) {
+  const user = await db.findUserById(payment.userId)
+  if (!user) return
+
   const isOnsiteRegistration = payment.paymentType === "onsite_registration"
   let courseIds = payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
   if (isOnsiteRegistration) {
@@ -35,9 +38,6 @@ async function grantAccessForPayment(db: any, payment: any, reference: string) {
       })
     }
   }
-
-  const user = await db.findUserById(payment.userId)
-  if (!user) return
 
   const updatedCourses = Array.from(new Set([...(user.enrolledCourses || []), ...courseIds]))
   const profile = user.studentProfile
@@ -74,6 +74,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 })
     }
     const paymentUser = await db.findUserById(payment.userId)
+    const expectedCustomerEmail = paymentUser?.email || payment.customerEmail
 
     if (validated.action === "reject") {
       const rejected = await db.updatePaymentByReference(validated.reference, {
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
         paymentType: payment.paymentType,
         amount: payment.amount,
         currency: payment.currency,
-        userEmail: paymentUser?.email,
+        userEmail: expectedCustomerEmail,
         source: "admin",
         reason,
       })
@@ -165,7 +166,7 @@ export async function POST(request: Request) {
         amount: payment.amount,
         currency: payment.currency,
       },
-      userEmail: paymentUser?.email,
+      userEmail: expectedCustomerEmail,
       source: "admin",
     })
 

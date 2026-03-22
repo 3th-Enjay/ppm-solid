@@ -94,7 +94,11 @@ export default function AdminDashboardPage() {
             Authorization: `Bearer ${token || ""}`,
           },
         }),
-        fetch("/api/enrollments?all=true"),
+        fetch("/api/enrollments?all=true", {
+            headers: {
+              Authorization: `Bearer ${token || ""}`,
+            },
+          }),
         fetch("/api/payments"),
         fetch("/api/courses?includeDrafts=true"),
       ])
@@ -351,7 +355,7 @@ export default function AdminDashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalStudents} students • {stats.totalInstructors} instructors
+              {stats.totalStudents} students - {stats.totalInstructors} instructors
             </p>
           </CardContent>
         </Card>
@@ -384,7 +388,7 @@ export default function AdminDashboardPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₦{stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">NGN {stats.totalRevenue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">{stats.pendingPayments} pending payments</p>
           </CardContent>
         </Card>
@@ -406,7 +410,7 @@ export default function AdminDashboardPage() {
                     <div>
                       <div className="text-sm font-semibold">{payment.reference}</div>
                       <div className="text-xs text-muted-foreground">
-                        {payment.userId} • {formatDate(payment.createdAt)}
+                        {payment.userId} - {formatDate(payment.createdAt)}
                       </div>
                     </div>
                     <div className="text-right">
@@ -485,7 +489,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {log.actorEmail}
-                        {log.targetEmail ? ` • ${log.targetEmail}` : ""}
+                        {log.targetEmail ? ` - ${log.targetEmail}` : ""}
                       </div>
                     </div>
                     <div className="text-xs text-muted-foreground">

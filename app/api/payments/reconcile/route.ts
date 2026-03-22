@@ -27,6 +27,9 @@ function canRunReconciliation(request: Request) {
 }
 
 async function grantAccessForPayment(db: any, payment: any, reference: string) {
+  const user = await db.findUserById(payment.userId)
+  if (!user) return
+
   const isOnsiteRegistration = payment.paymentType === "onsite_registration"
   let courseIds = payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
   if (isOnsiteRegistration) {
@@ -47,9 +50,6 @@ async function grantAccessForPayment(db: any, payment: any, reference: string) {
       })
     }
   }
-
-  const user = await db.findUserById(payment.userId)
-  if (!user) return
 
   const updatedCourses = Array.from(new Set([...(user.enrolledCourses || []), ...courseIds]))
   const profile = user.studentProfile
@@ -176,6 +176,7 @@ async function runReconciliation(request: Request) {
         }
 
         const user = await db.findUserById(payment.userId)
+        const expectedCustomerEmail = user?.email || payment.customerEmail
         const evaluation = evaluateVerification({
           verification: {
             status: verification.status,
@@ -187,7 +188,7 @@ async function runReconciliation(request: Request) {
             amount: payment.amount,
             currency: payment.currency,
           },
-          userEmail: user?.email,
+          userEmail: expectedCustomerEmail,
           source: "reconcile",
         })
 
@@ -216,7 +217,7 @@ async function runReconciliation(request: Request) {
             paymentType: payment.paymentType,
             amount: payment.amount,
             currency: payment.currency,
-            userEmail: user?.email,
+            userEmail: expectedCustomerEmail,
             source: "reconcile",
             reason,
           })

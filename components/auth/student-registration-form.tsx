@@ -94,7 +94,7 @@ export function StudentRegistrationForm({ mode }: { mode: RegistrationMode }) {
         }
         return
       }
-      if (!result?.user) {
+      if (!result?.pendingRegistration) {
         throw new Error(result?.error || "Registration failed")
       }
       toast({
@@ -364,7 +364,7 @@ export function StudentRegistrationForm({ mode }: { mode: RegistrationMode }) {
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-emerald-500" /> Registration Received
             </DialogTitle>
-            <DialogDescription>Your account was created and verification code has been sent.</DialogDescription>
+            <DialogDescription>Your registration is pending email verification. A verification code has been sent.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2 px-6 pb-1 text-sm">
             <p>Thank you for registering for Prompt Care Academy.</p>

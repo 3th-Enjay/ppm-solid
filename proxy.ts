@@ -20,6 +20,14 @@ const PUBLIC_PREFIXES = [
 
 const PUBLIC_FILE = /\.(?:png|jpg|jpeg|gif|svg|webp|ico|css|js|map|txt|xml|woff|woff2)$/
 
+function matchesPrefix(pathname: string, prefix: string) {
+  if (prefix === "/") {
+    return pathname === "/"
+  }
+
+  return pathname === prefix || pathname.startsWith(`${prefix}/`)
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -35,11 +43,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (PUBLIC_PREFIXES.some((prefix) => matchesPrefix(pathname, prefix))) {
     return NextResponse.next()
   }
 
-  if (PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  if (PROTECTED_PREFIXES.some((prefix) => matchesPrefix(pathname, prefix))) {
     const authToken = request.cookies.get("token")?.value
     if (!authToken) {
       const loginUrl = new URL("/login", request.url)

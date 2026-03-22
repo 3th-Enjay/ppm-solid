@@ -3,6 +3,7 @@ import { getDB } from "@/lib/db"
 import { adminCreateUserSchema } from "@/lib/validation"
 import { authService } from "@/lib/auth"
 import { getTokenFromRequest } from "@/lib/jwt"
+import { sendWelcomeEmail } from "@/lib/email"
 import { ZodError } from "zod"
 
 export async function POST(request: Request) {
@@ -44,6 +45,16 @@ export async function POST(request: Request) {
       targetEmail: created.user.email,
       targetRole: created.user.role,
     })
+
+    try {
+      await sendWelcomeEmail({
+        to: created.user.email,
+        name: created.user.name,
+        role: created.user.role,
+      })
+    } catch (emailError) {
+      console.error("Failed to send admin-created user onboarding email:", emailError)
+    }
 
     return NextResponse.json({ user: created.user }, { status: 201 })
   } catch (error) {

@@ -1,6 +1,6 @@
 // Authentication utilities with bcrypt and JWT
 import { getDB } from "./db"
-import type { StudentRegistrationProfile, User } from "./types"
+import type { PendingRegistration, StudentRegistrationProfile, User } from "./types"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import crypto from "crypto"
@@ -15,6 +15,19 @@ export interface SessionData {
 export type ResendOtpResult =
   | { ok: true }
   | { ok: false; reason: "not_found_or_verified" | "email_send_failed" }
+
+type PendingRegistrationInput = {
+  email: string
+  password: string
+  name: string
+  role: "student" | "instructor" | "admin" | "finance"
+  studentProfile?: Omit<StudentRegistrationProfile, "submittedAt">
+  extraUserFields?: Partial<Pick<User, "bio" | "avatar" | "instructorProfile">>
+}
+
+type PendingRegistrationResult = {
+  pendingRegistration: Omit<PendingRegistration, "password" | "otpHash">
+}
 
 const JWT_SECRET = (process.env.JWT_SECRET || "your-secret-key-change-in-production").trim()
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d").trim()
@@ -37,6 +50,11 @@ function generateOtpCode(): string {
   const buffer = crypto.randomBytes(3)
   const code = (buffer.readUIntBE(0, 3) % 1000000).toString().padStart(6, "0")
   return code
+}
+
+function sanitizePendingRegistration(registration: PendingRegistration): Omit<PendingRegistration, "password" | "otpHash"> {
+  const { password: _password, otpHash: _otpHash, ...safeRegistration } = registration
+  return safeRegistration
 }
 
 // Generate JWT token
@@ -198,7 +216,7 @@ export const authService = {
     role: "student" | "instructor" | "admin" | "finance" = "student",
     studentProfile?: Omit<StudentRegistrationProfile, "submittedAt">,
     extraUserFields?: Partial<Pick<User, "bio" | "avatar" | "instructorProfile">>
-  ): Promise<{ user: User }> {
+  ): Promise<PendingRegistrationResult> {
     const db = getDB()
     const normalizedEmail = email.trim().toLowerCase()
     const existingUser = await db.findUserByEmail(normalizedEmail)
@@ -207,12 +225,15 @@ export const authService = {
       throw new Error("User already exists")
     }
 
+    const existingPendingRegistration = await db.findPendingRegistrationByEmail(normalizedEmail)
     const hashedPassword = await hashPassword(password)
     const otp = generateOtpCode()
     const otpHash = await hashPassword(otp)
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRES_MINUTES * 60 * 1000)
 
-    const user = await db.createUser({
+    await sendOtpEmail({ to: normalizedEmail, name, otp })
+
+    const registrationPayload = {
       email: normalizedEmail,
       password: hashedPassword,
       name,
@@ -229,28 +250,65 @@ export const authService = {
       emailVerified: false,
       otpHash,
       otpExpiresAt,
-      enrolledCourses: [],
-    })
+    }
 
-    // Send OTP email in background so registration response is not delayed by email provider latency.
-    void sendOtpEmail({ to: normalizedEmail, name, otp }).catch((error) => {
-      console.error("Failed to send OTP email:", error)
-      if (process.env.NODE_ENV === "development") {
-        console.log("=".repeat(50))
-        console.log("REGISTRATION OTP (Email sending failed):")
-        console.log("Email:", email)
-        console.log("OTP Code:", otp)
-        console.log("=".repeat(50))
-      }
-    })
+    const pendingRegistration = existingPendingRegistration
+      ? await db.updatePendingRegistration(existingPendingRegistration.id, registrationPayload)
+      : await db.createPendingRegistration(registrationPayload)
 
-    const { password: _, ...userWithoutPassword } = user
-    return { user: userWithoutPassword as User }
+    if (!pendingRegistration) {
+      throw new Error("Failed to save pending registration")
+    }
+
+    return { pendingRegistration: sanitizePendingRegistration(pendingRegistration) }
   },
 
   async verifyOtp(email: string, otp: string): Promise<{ user: User; token: string } | null> {
     const db = getDB()
     const normalizedEmail = email.trim().toLowerCase()
+    const pendingRegistration = await db.findPendingRegistrationByEmail(normalizedEmail)
+
+    if (pendingRegistration) {
+      if (new Date(pendingRegistration.otpExpiresAt).getTime() < Date.now()) {
+        return null
+      }
+
+      const isValidPendingOtp = await verifyPassword(otp, pendingRegistration.otpHash)
+      if (!isValidPendingOtp) {
+        return null
+      }
+
+      const existingUser = await db.findUserByEmail(normalizedEmail)
+      if (existingUser) {
+        await db.deletePendingRegistration(pendingRegistration.id)
+        return null
+      }
+
+      const user = await db.createUser({
+        email: pendingRegistration.email,
+        password: pendingRegistration.password,
+        name: pendingRegistration.name,
+        role: pendingRegistration.role,
+        avatar: pendingRegistration.avatar,
+        bio: pendingRegistration.bio,
+        instructorProfile: pendingRegistration.instructorProfile,
+        studentProfile: pendingRegistration.studentProfile,
+        emailVerified: true,
+        enrolledCourses: [],
+      })
+
+      const pendingPayments = await db.getPaymentsByUserId(pendingRegistration.id)
+      for (const payment of pendingPayments) {
+        await db.updatePayment(payment.id, { userId: user.id })
+      }
+
+      await db.deletePendingRegistration(pendingRegistration.id)
+
+      const token = generateToken(user)
+      const { password: _password, ...userWithoutPassword } = user
+      return { user: userWithoutPassword as User, token }
+    }
+
     const user = await db.findUserByEmail(normalizedEmail)
 
     if (!user || !user.otpHash || !user.otpExpiresAt) {
@@ -282,6 +340,23 @@ export const authService = {
   async resendOtp(email: string): Promise<ResendOtpResult> {
     const db = getDB()
     const normalizedEmail = email.trim().toLowerCase()
+    const pendingRegistration = await db.findPendingRegistrationByEmail(normalizedEmail)
+
+    if (pendingRegistration) {
+      const otp = generateOtpCode()
+      const otpHash = await hashPassword(otp)
+      const otpExpiresAt = new Date(Date.now() + OTP_EXPIRES_MINUTES * 60 * 1000)
+
+      try {
+        await sendOtpEmail({ to: normalizedEmail, name: pendingRegistration.name, otp })
+        await db.updatePendingRegistration(pendingRegistration.id, { otpHash, otpExpiresAt })
+        return { ok: true }
+      } catch (error) {
+        console.error("Failed to resend OTP email:", error)
+        return { ok: false, reason: "email_send_failed" }
+      }
+    }
+
     const user = await db.findUserByEmail(normalizedEmail)
 
     if (!user || user.emailVerified) {

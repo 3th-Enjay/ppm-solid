@@ -10,8 +10,13 @@ export async function GET(request: NextRequest) {
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
     const session = authService.decodeToken(token)
-    if (!session || session.role !== "admin") {
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (session.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

@@ -52,6 +52,22 @@ export interface User {
   updatedAt: Date
 }
 
+export interface PendingRegistration {
+  id: string
+  email: string
+  password: string
+  name: string
+  role: UserRole
+  avatar?: string
+  bio?: string
+  otpHash: string
+  otpExpiresAt: Date
+  studentProfile?: StudentRegistrationProfile
+  instructorProfile?: InstructorProfile
+  createdAt: Date
+  updatedAt: Date
+}
+
 export type CourseCategory = string
 
 export type CourseLevel = "Beginner Courses" | "Intermediate Courses" | "Pro Courses"

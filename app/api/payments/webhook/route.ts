@@ -112,6 +112,7 @@ export async function POST(request: Request) {
 
         const paystackEmail = event?.data?.customer?.email
         const user = await db.findUserById(currentPayment.userId)
+        const expectedCustomerEmail = user?.email || currentPayment.customerEmail
         const evaluation = evaluateVerification({
           verification: {
             status: "success",
@@ -123,7 +124,7 @@ export async function POST(request: Request) {
             amount: currentPayment.amount,
             currency: currentPayment.currency,
           },
-          userEmail: user?.email,
+          userEmail: expectedCustomerEmail,
           source: "webhook",
         })
 
@@ -152,7 +153,7 @@ export async function POST(request: Request) {
             paymentType: currentPayment.paymentType,
             amount: currentPayment.amount,
             currency: currentPayment.currency,
-            userEmail: user?.email,
+            userEmail: expectedCustomerEmail,
             source: "webhook",
             reason,
           })
@@ -195,22 +196,22 @@ export async function POST(request: Request) {
           const allCourses = await db.getAllCourses()
           courseIds = (allCourses || []).map((course: any) => course.id)
         }
-        for (const courseId of courseIds) {
-          const existing = await db.getEnrollment(currentPayment.userId, courseId)
-          if (!existing) {
-            await db.createEnrollment({
-              userId: currentPayment.userId,
-              courseId,
-              progress: 0,
-              completedLessons: [],
-              status: "active",
-              enrolledAt: new Date(),
-            })
-          }
-        }
-
         const currentUser = await db.findUserById(currentPayment.userId)
         if (currentUser) {
+          for (const courseId of courseIds) {
+            const existing = await db.getEnrollment(currentPayment.userId, courseId)
+            if (!existing) {
+              await db.createEnrollment({
+                userId: currentPayment.userId,
+                courseId,
+                progress: 0,
+                completedLessons: [],
+                status: "active",
+                enrolledAt: new Date(),
+              })
+            }
+          }
+
           const updatedCourses = Array.from(new Set([...(currentUser.enrolledCourses || []), ...courseIds]))
           const profile = currentUser.studentProfile
           await db.updateUser(currentPayment.userId, {

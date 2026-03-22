@@ -28,7 +28,11 @@ export default function AdminAnalyticsPage() {
             headers: { Authorization: `Bearer ${token || ""}` },
           }),
           fetch("/api/courses?includeDrafts=true"),
-          fetch("/api/enrollments?all=true"),
+          fetch("/api/enrollments?all=true", {
+            headers: {
+              Authorization: `Bearer ${token || ""}`,
+            },
+          }),
           fetch("/api/payments"),
         ])
 

@@ -1,6 +1,7 @@
-﻿// Mock database with seeded data
+// Mock database with seeded data
 import type {
   User,
+  PendingRegistration,
   Course,
   Enrollment,
   Payment,
@@ -339,6 +340,7 @@ export const mockAssignments: Assignment[] = [
 // Mock Database Class
 class MockDatabase {
   users: User[] = [...mockUsers]
+  pendingRegistrations: PendingRegistration[] = []
   categories: Category[] = [...mockCategories]
   courses: Course[] = [...mockCourses]
   enrollments: Enrollment[] = [...mockEnrollments]
@@ -427,6 +429,54 @@ class MockDatabase {
     if (userIndex === -1) return false
     this.users.splice(userIndex, 1)
     return true
+  }
+
+  async findPendingRegistrationByEmail(email: string): Promise<PendingRegistration | undefined> {
+    return this.pendingRegistrations.find((item) => item.email === email)
+  }
+
+  async findPendingRegistrationById(id: string): Promise<PendingRegistration | undefined> {
+    return this.pendingRegistrations.find((item) => item.id === id)
+  }
+
+  async createPendingRegistration(
+    registration: Omit<PendingRegistration, "id" | "createdAt" | "updatedAt">
+  ): Promise<PendingRegistration> {
+    const newRegistration: PendingRegistration = {
+      ...registration,
+      id: `pending-registration-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    this.pendingRegistrations.push(newRegistration)
+    return newRegistration
+  }
+
+  async updatePendingRegistration(
+    id: string,
+    updates: Partial<PendingRegistration>
+  ): Promise<PendingRegistration | undefined> {
+    const index = this.pendingRegistrations.findIndex((item) => item.id === id)
+    if (index === -1) return undefined
+    this.pendingRegistrations[index] = {
+      ...this.pendingRegistrations[index],
+      ...updates,
+      updatedAt: new Date(),
+    }
+    return this.pendingRegistrations[index]
+  }
+
+  async deletePendingRegistration(id: string): Promise<boolean> {
+    const index = this.pendingRegistrations.findIndex((item) => item.id === id)
+    if (index === -1) return false
+    this.pendingRegistrations.splice(index, 1)
+    return true
+  }
+
+  async getExpiredPendingRegistrations(cutoff: Date): Promise<PendingRegistration[]> {
+    return this.pendingRegistrations
+      .filter((item) => new Date(item.otpExpiresAt).getTime() <= cutoff.getTime())
+      .sort((a, b) => new Date(a.otpExpiresAt).getTime() - new Date(b.otpExpiresAt).getTime())
   }
 
   // Course methods
@@ -696,6 +746,7 @@ export function getDB() {
 
 export const db = getDB()
 export const mockDB = db
+
 
 
 

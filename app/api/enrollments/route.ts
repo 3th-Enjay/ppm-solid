@@ -3,6 +3,8 @@ import { ZodError } from "zod"
 import { getDB } from "@/lib/db"
 import { enrollmentCreateSchema } from "@/lib/validation"
 import { maskCourseForUser } from "@/lib/utils/course-masking"
+import { getTokenFromRequest } from "@/lib/jwt"
+import { authService } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,11 +18,23 @@ export async function GET(request: NextRequest) {
     let enrollments: any[] = []
 
     if (all) {
+      const token = getTokenFromRequest(request)
+      if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
+      const session = authService.decodeToken(token)
+      if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
+      if (session.role !== "admin") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+
       enrollments = await db.getAllEnrollments()
     } else if (userId) {
       enrollments = await db.getEnrollmentsByUserId(userId)
-      // Keep onsite students automatically enrolled in all approved courses
-      // only after verified onsite payment completion.
       const user = await db.findUserById(userId)
       if (
         user?.role === "student" &&
@@ -69,15 +83,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Query parameters are required" }, { status: 400 })
     }
 
-    // Add course details to each enrollment and mask video URLs for non-privileged users
-    const authHeader = request.headers.get("authorization")
-    const token = authHeader?.replace("Bearer ", "")
+    const token = getTokenFromRequest(request)
     let user = null
     if (token) {
       try {
-        const { authService } = await import("@/lib/auth")
         user = await authService.getCurrentUser(token)
-      } catch (e) {
+      } catch {
         user = null
       }
     }
@@ -106,14 +117,12 @@ export async function POST(request: NextRequest) {
     const { userId, courseId } = enrollmentCreateSchema.parse(body)
 
     const db = getDB()
-    // Check if already enrolled
     const existing = await db.getEnrollment(userId, courseId)
 
     if (existing) {
       return NextResponse.json({ error: "Already enrolled in this course" }, { status: 400 })
     }
 
-    // Create enrollment
     const enrollment = await db.createEnrollment({
       userId,
       courseId,

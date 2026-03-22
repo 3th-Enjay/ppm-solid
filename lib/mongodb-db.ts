@@ -4,6 +4,7 @@
 import { getCollection } from './mongodb'
 import type {
   User,
+  PendingRegistration,
   Course,
   Enrollment,
   Payment,
@@ -167,6 +168,59 @@ export class MongoDBDatabase {
     const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id }
     const result = await collection.deleteOne(query)
     return result.deletedCount > 0
+  }
+
+  async findPendingRegistrationByEmail(email: string): Promise<PendingRegistration | undefined> {
+    const collection = await getCollection<PendingRegistration>('pending_registrations')
+    const doc = await collection.findOne({ email })
+    return doc ? toObject<PendingRegistration>(doc) : undefined
+  }
+
+  async findPendingRegistrationById(id: string): Promise<PendingRegistration | undefined> {
+    const collection = await getCollection<PendingRegistration>('pending_registrations')
+    const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id }
+    const doc = await collection.findOne(query)
+    return doc ? toObject<PendingRegistration>(doc) : undefined
+  }
+
+  async createPendingRegistration(
+    registration: Omit<PendingRegistration, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<PendingRegistration> {
+    const collection = await getCollection<PendingRegistration>('pending_registrations')
+    const newRegistration: Omit<PendingRegistration, 'id'> = {
+      ...registration,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    const result = await collection.insertOne(toDocument(newRegistration as PendingRegistration))
+    return { ...newRegistration, id: result.insertedId.toString() } as PendingRegistration
+  }
+
+  async updatePendingRegistration(
+    id: string,
+    updates: Partial<PendingRegistration>
+  ): Promise<PendingRegistration | undefined> {
+    const collection = await getCollection<PendingRegistration>('pending_registrations')
+    const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id }
+    const result = await collection.findOneAndUpdate(
+      query,
+      { $set: { ...updates, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    )
+    return result ? toObject<PendingRegistration>(result) : undefined
+  }
+
+  async deletePendingRegistration(id: string): Promise<boolean> {
+    const collection = await getCollection<PendingRegistration>('pending_registrations')
+    const query = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id }
+    const result = await collection.deleteOne(query)
+    return result.deletedCount > 0
+  }
+
+  async getExpiredPendingRegistrations(cutoff: Date): Promise<PendingRegistration[]> {
+    const collection = await getCollection<PendingRegistration>('pending_registrations')
+    const docs = await collection.find({ otpExpiresAt: { $lte: cutoff } }).sort({ otpExpiresAt: 1 }).toArray()
+    return docs.map(toObject<PendingRegistration>)
   }
 
   // Admin log methods
@@ -526,3 +580,4 @@ export function getDatabase(): MongoDBDatabase {
 
 // Export as db for backward compatibility
 export const db = getDatabase()
+

@@ -2,10 +2,11 @@ import "server-only"
 
 const RESEND_API_URL = "https://api.resend.com/emails"
 
+type WelcomeEmailRole = "student" | "instructor" | "admin" | "finance"
+
 function getResendKey() {
   const key = process.env.RESEND_API_KEY
   if (!key) {
-    // In development, log warning but don't throw to allow testing
     if (process.env.NODE_ENV === "development") {
       console.warn("RESEND_API_KEY is not set. Emails will not be sent.")
       return "dev-key"
@@ -19,10 +20,137 @@ function getFromEmail() {
   return process.env.RESEND_FROM || "Promptcare Academy <no-reply@promptcareacademy.com>"
 }
 
+function getAppBaseUrl() {
+  const publicUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
+  if (publicUrl) {
+    return publicUrl
+  }
+
+  const vercelUrl = process.env.VERCEL_URL?.trim()
+  if (vercelUrl) {
+    return vercelUrl.startsWith("http") ? vercelUrl : `https://${vercelUrl}`
+  }
+
+  return "http://localhost:3000"
+}
+
+function getWelcomeEmailContent(params: { name: string; role?: string }) {
+  const role: WelcomeEmailRole =
+    params.role === "instructor" ||
+    params.role === "admin" ||
+    params.role === "finance" ||
+    params.role === "student"
+      ? params.role
+      : "student"
+
+  const appUrl = getAppBaseUrl()
+
+  const content: Record<
+    WelcomeEmailRole,
+    {
+      subject: string
+      heading: string
+      intro: string
+      primaryActionLabel: string
+      primaryActionUrl: string
+      importantDetails: string[]
+      closing: string
+    }
+  > = {
+    student: {
+      subject: "Welcome to Promptcare Academy",
+      heading: "Welcome to Promptcare Academy",
+      intro: "Your account is verified and ready to use. You can now sign in, explore courses, and continue your learning journey.",
+      primaryActionLabel: "Open Student Dashboard",
+      primaryActionUrl: `${appUrl}/dashboard`,
+      importantDetails: [
+        "Browse available courses and complete checkout when you are ready to enroll.",
+        "If you selected onsite training, your full access depends on successful payment verification.",
+        "Keep your email and profile details current so you do not miss updates about your learning account.",
+      ],
+      closing: "If you need help with enrollment, payment, or access, reply to this email and our team will assist you.",
+    },
+    instructor: {
+      subject: "Welcome to the Promptcare instructor portal",
+      heading: "Your instructor workspace is ready",
+      intro: "Your instructor account is active. This is your teaching workspace for building courses, uploading lessons, and preparing content for review and publishing.",
+      primaryActionLabel: "Open Instructor Workspace",
+      primaryActionUrl: `${appUrl}/instructor`,
+      importantDetails: [
+        "Start by completing your bio, professional headline, and specialties so students can clearly understand your teaching profile.",
+        "Create your course structure, upload lessons, and review your materials carefully before submitting them for approval.",
+        "Course and lesson changes may require admin review before they become visible to students on the platform.",
+        "Monitor your dashboard for approval feedback, learner activity, and updates related to your published content.",
+      ],
+      closing: "If you want help setting up your first course or preparing content for approval, reply to this email and we will guide you.",
+    },
+    admin: {
+      subject: "Welcome to the Promptcare admin dashboard",
+      heading: "Welcome to the admin team",
+      intro: "Your admin account is ready. You now have access to the tools used to manage platform operations, users, courses, and payment oversight.",
+      primaryActionLabel: "Open Admin Dashboard",
+      primaryActionUrl: `${appUrl}/admin`,
+      importantDetails: [
+        "Review users, courses, payments, and activity logs from the admin dashboard before making live changes.",
+        "Use suspend, delete, approval, and payment verification actions carefully because they affect real accounts and platform access.",
+        "If this account was provisioned for you by the team, sign in with the credentials you were given and change your password immediately.",
+        "Coordinate with finance and instructors when a change affects payments, publishing, or learner access.",
+      ],
+      closing: "If anything about your access looks wrong, reply to this email before making changes in production.",
+    },
+    finance: {
+      subject: "Welcome to the Promptcare finance dashboard",
+      heading: "Welcome to the finance team",
+      intro: "Your finance account is active. You can now review transactions, investigate payment issues, and support reconciliation work from the finance dashboard.",
+      primaryActionLabel: "Open Finance Dashboard",
+      primaryActionUrl: `${appUrl}/finance`,
+      importantDetails: [
+        "Use the finance dashboard to track transactions, review payment status, and investigate mismatches or pending cases.",
+        "Before approving or escalating any payment, confirm the reference, amount, currency, and customer email match the payment record.",
+        "Work closely with admin when a payment decision could change course access, onsite registration, or account activation.",
+        "If this account was provisioned for you by the team, change the temporary password after your first sign-in.",
+      ],
+      closing: "If you need support with reconciliation or transaction review, reply to this email and we will help.",
+    },
+  }
+
+  const selected = content[role]
+  const detailsHtml = selected.importantDetails
+    .map((item) => `<li style="margin-bottom: 8px;">${item}</li>`)
+    .join("")
+
+  return {
+    subject: selected.subject,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 640px; margin: 0 auto; color: #1f2937;">
+        <div style="background: linear-gradient(135deg, #0f766e 0%, #10b981 100%); padding: 28px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; color: #ffffff;">${selected.heading}</h1>
+        </div>
+        <div style="border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px; background: #ffffff; padding: 28px;">
+          <p style="margin-top: 0; font-size: 16px;">Hi ${params.name},</p>
+          <p style="font-size: 16px;">${selected.intro}</p>
+          <div style="margin: 28px 0; text-align: center;">
+            <a href="${selected.primaryActionUrl}" style="display: inline-block; background: #0f766e; color: #ffffff; text-decoration: none; padding: 14px 22px; border-radius: 8px; font-weight: 600;">
+              ${selected.primaryActionLabel}
+            </a>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+            <h2 style="margin: 0 0 12px 0; font-size: 18px; color: #111827;">Important details</h2>
+            <ul style="padding-left: 20px; margin: 0; color: #374151;">
+              ${detailsHtml}
+            </ul>
+          </div>
+          <p style="font-size: 15px;">${selected.closing}</p>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 0;">- Promptcare Academy</p>
+        </div>
+      </div>
+    `,
+  }
+}
+
 export async function sendOtpEmail(params: { to: string; name: string; otp: string }) {
   const key = getResendKey()
-  
-  // In development without API key, log the OTP instead
+
   if (key === "dev-key") {
     console.log("=".repeat(50))
     console.log("OTP EMAIL (Development Mode - RESEND_API_KEY not set)")
@@ -44,7 +172,7 @@ export async function sendOtpEmail(params: { to: string; name: string; otp: stri
         <p>Your one-time password (OTP) is:</p>
         <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">${params.otp}</div>
         <p>This code expires in ${process.env.OTP_EXPIRES_MINUTES || 15} minutes. If you did not request this, you can ignore this email.</p>
-        <p>— Promptcare Academy</p>
+        <p>- Promptcare Academy</p>
       </div>
     `,
   }
@@ -71,26 +199,28 @@ export async function sendOtpEmail(params: { to: string; name: string; otp: stri
 }
 
 export async function sendWelcomeEmail(params: { to: string; name: string; role?: string }) {
+  const key = getResendKey()
   const payload = {
     from: getFromEmail(),
     to: [params.to],
-    subject: "Welcome to Promptcare Academy",
-    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>Welcome to Promptcare Academy</h2>
-        <p>Hi ${params.name},</p>
-        <p>Welcome to Promptcare Academy! Your account has been successfully verified and activated.</p>
-        <p>You can now explore courses, enroll, and start learning. If you selected a preferred currency during signup, prices will display accordingly. You can change the currency anytime during checkout.</p>
-        <p>If you have any questions, reply to this email and we'll help.</p>
-        <p>— Promptcare Academy</p>
-      </div>
-    `,
+    ...getWelcomeEmailContent({ name: params.name, role: params.role }),
+  }
+
+  if (key === "dev-key") {
+    console.log("=".repeat(50))
+    console.log("WELCOME EMAIL (Development Mode - RESEND_API_KEY not set)")
+    console.log("To:", params.to)
+    console.log("Name:", params.name)
+    console.log("Role:", params.role || "student")
+    console.log("Subject:", payload.subject)
+    console.log("=".repeat(50))
+    return
   }
 
   const res = await fetch(RESEND_API_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${getResendKey()}`,
+      Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
@@ -114,7 +244,7 @@ export async function sendLessonRejectedEmail(params: { to: string; name: string
         <p>Your lesson <strong>${params.lessonTitle}</strong> in <strong>${params.courseTitle}</strong> was reviewed and <strong>rejected</strong> by the admin team.</p>
         <p><strong>Reason:</strong> ${params.note || "No reason provided."}</p>
         <p>Please update the lesson and resubmit it for review.</p>
-        <p>— Promptcare Academy</p>
+        <p>- Promptcare Academy</p>
       </div>
     `,
   }
@@ -143,8 +273,8 @@ export async function sendLessonApprovedEmail(params: { to: string; name: string
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
         <h2>Lesson approved</h2>
         <p>Hi ${params.name},</p>
-        <p>Good news — your lesson <strong>${params.lessonTitle}</strong> in <strong>${params.courseTitle}</strong> has been <strong>approved</strong> and is now available to students.</p>
-        <p>— Promptcare Academy</p>
+        <p>Good news - your lesson <strong>${params.lessonTitle}</strong> in <strong>${params.courseTitle}</strong> has been <strong>approved</strong> and is now available to students.</p>
+        <p>- Promptcare Academy</p>
       </div>
     `,
   }
@@ -166,8 +296,7 @@ export async function sendLessonApprovedEmail(params: { to: string; name: string
 
 export async function sendPasswordResetEmail(params: { to: string; name: string; resetUrl: string; token: string }) {
   const key = getResendKey()
-  
-  // In development without API key, log the reset info instead
+
   if (key === "dev-key") {
     console.log("=".repeat(50))
     console.log("PASSWORD RESET EMAIL (Development Mode - RESEND_API_KEY not set)")
@@ -205,7 +334,7 @@ export async function sendPasswordResetEmail(params: { to: string; name: string;
           </div>
           <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">This link will expire in <strong>1 hour</strong>. If you did not request this password reset, you can safely ignore this email.</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-          <p style="font-size: 12px; color: #9ca3af; margin: 0;">— Promptcare Academy</p>
+          <p style="font-size: 12px; color: #9ca3af; margin: 0;">- Promptcare Academy</p>
         </div>
       </div>
     `,

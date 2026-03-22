@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { BarChart3, BookOpen, CreditCard, Settings, Users } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
@@ -22,20 +22,80 @@ const adminNavItems: DashboardNavItem[] = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, clearAuth, hydrated } = useAuthStore()
+  const { user, token, setAuth, clearAuth, hydrated } = useAuthStore()
   const logoutGuard = useMemo(() => makeLogoutGuard(), [])
+  const [accessVerified, setAccessVerified] = useState(false)
 
   useEffect(() => {
     if (logoutGuard.isLoggingOut()) return
     if (!hydrated) return
-    if (!user) {
-      router.replace("/login?redirect=/admin")
-    } else if (user.role !== "admin") {
-      router.replace(getRoleHomePath(user.role))
-    }
-  }, [user, hydrated, router, logoutGuard])
 
-  if (!hydrated || !user || user.role !== "admin") return null
+    let cancelled = false
+
+    const redirectToLogin = () => {
+      clearAuth()
+      router.replace("/login?redirect=/admin")
+    }
+
+    const verifyAccess = async () => {
+      setAccessVerified(false)
+
+      if (!token) {
+        redirectToLogin()
+        return
+      }
+
+      try {
+        const res = await fetch("/api/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!res.ok) {
+          if (!cancelled) {
+            redirectToLogin()
+          }
+          return
+        }
+
+        const data = await res.json()
+        const currentUser = data?.user
+
+        if (!currentUser) {
+          if (!cancelled) {
+            redirectToLogin()
+          }
+          return
+        }
+
+        setAuth(currentUser, token)
+
+        if (currentUser.role !== "admin") {
+          if (!cancelled) {
+            router.replace(getRoleHomePath(currentUser.role))
+          }
+          return
+        }
+
+        if (!cancelled) {
+          setAccessVerified(true)
+        }
+      } catch {
+        if (!cancelled) {
+          redirectToLogin()
+        }
+      }
+    }
+
+    void verifyAccess()
+
+    return () => {
+      cancelled = true
+    }
+  }, [hydrated, token, setAuth, clearAuth, router, logoutGuard])
+
+  if (!hydrated || !user || user.role !== "admin" || !accessVerified) return null
 
   const handleLogout = async () => {
     logoutGuard.start()
@@ -57,4 +117,3 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </RoleDashboardShell>
   )
 }
-

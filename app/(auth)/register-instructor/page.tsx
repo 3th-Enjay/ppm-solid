@@ -55,7 +55,7 @@ export default function RegisterInstructorPage() {
       })
       const result = await res.json()
 
-      if (!res.ok || !result?.user) {
+       if (!res.ok || !result?.pendingRegistration) {
         throw new Error(result?.error || "Registration failed")
       }
 

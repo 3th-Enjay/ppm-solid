@@ -38,7 +38,11 @@ export default function AdminStudentsPage() {
               Authorization: `Bearer ${token || ""}`,
             },
           }),
-          fetch("/api/enrollments?all=true"),
+          fetch("/api/enrollments?all=true", {
+            headers: {
+              Authorization: `Bearer ${token || ""}`,
+            },
+          }),
           fetch("/api/courses?includeDrafts=true"),
         ])
 
@@ -373,7 +377,7 @@ export default function AdminStudentsPage() {
                 <div className="rounded-md border p-3">
                   <p className="text-muted-foreground">Registration Fee</p>
                   <p className="font-medium">
-                    ₦{selectedStudent.studentProfile.registrationFeeNgn.toLocaleString("en-NG")}
+                    NGN {selectedStudent.studentProfile.registrationFeeNgn.toLocaleString("en-NG")}
                   </p>
                 </div>
               </div>

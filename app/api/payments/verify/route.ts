@@ -161,6 +161,7 @@ export async function GET(request: NextRequest) {
     const verification = await paystackService.verifyPayment(reference)
 
     const paymentUser = await db.findUserById(payment.userId)
+    const expectedCustomerEmail = paymentUser?.email || payment.customerEmail
     const evaluation = evaluateVerification({
       verification: {
         status: verification.status,
@@ -172,7 +173,7 @@ export async function GET(request: NextRequest) {
         amount: payment.amount,
         currency: payment.currency,
       },
-      userEmail: paymentUser?.email,
+      userEmail: expectedCustomerEmail,
       source: "verify",
     })
 
@@ -201,7 +202,7 @@ export async function GET(request: NextRequest) {
           paymentType: payment.paymentType,
           amount: payment.amount,
           currency: payment.currency,
-          userEmail: paymentUser?.email,
+          userEmail: expectedCustomerEmail,
           source: "verify",
           reason,
         })
@@ -253,22 +254,22 @@ export async function GET(request: NextRequest) {
         courseIds = (allCourses || []).map((course: any) => course.id)
       }
 
-      for (const courseId of courseIds) {
-        const enrollment = await db.getEnrollment(payment.userId, courseId)
-        if (!enrollment) {
-          await db.createEnrollment({
-            userId: payment.userId,
-            courseId,
-            progress: 0,
-            completedLessons: [],
-            status: "active",
-            enrolledAt: new Date(),
-          })
-        }
-      }
-
       const enrolledUser = paymentUser || (await db.findUserById(payment.userId))
       if (enrolledUser) {
+        for (const courseId of courseIds) {
+          const enrollment = await db.getEnrollment(payment.userId, courseId)
+          if (!enrollment) {
+            await db.createEnrollment({
+              userId: payment.userId,
+              courseId,
+              progress: 0,
+              completedLessons: [],
+              status: "active",
+              enrolledAt: new Date(),
+            })
+          }
+        }
+
         const updatedCourses = Array.from(new Set([...(enrolledUser.enrolledCourses || []), ...courseIds]))
         const profile = enrolledUser.studentProfile
         await db.updateUser(payment.userId, {

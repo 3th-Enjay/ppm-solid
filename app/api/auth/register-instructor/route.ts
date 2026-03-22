@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      user: result.user,
+      pendingRegistration: result.pendingRegistration,
       message: "OTP sent to email",
     })
   } catch (error) {
@@ -41,8 +41,14 @@ export async function POST(request: Request) {
     if (error instanceof Error && error.message === "User already exists") {
       return NextResponse.json({ error: "User already exists" }, { status: 409 })
     }
+    if (error instanceof Error && error.message === "Failed to save pending registration") {
+      return NextResponse.json({ error: "Registration failed after OTP dispatch. Please try again." }, { status: 500 })
+    }
     if (error instanceof ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+    if (error instanceof Error && /send/i.test(error.message) && /otp|email/i.test(error.message)) {
+      return NextResponse.json({ error: "Unable to send OTP email. No account was created." }, { status: 502 })
     }
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

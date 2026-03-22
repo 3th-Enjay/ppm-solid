@@ -38,6 +38,7 @@ type EnrichedPayment = {
     email: string
     role: string
   }
+  customerEmail?: string
   courses?: Array<{
     id: string
     title: string
@@ -176,6 +177,11 @@ export function TransactionDetailView({ paymentIdentifier, role, backHref, backL
                 {payment.user.name} ({payment.user.email})
               </span>
             </div>
+          ) : payment.customerEmail ? (
+            <div className="flex justify-between gap-3 rounded border p-3 md:col-span-2">
+              <span className="text-muted-foreground">Customer</span>
+              <span>Pending verification ({payment.customerEmail})</span>
+            </div>
           ) : null}
         </CardContent>
       </Card>
@@ -196,7 +202,7 @@ export function TransactionDetailView({ paymentIdentifier, role, backHref, backL
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{course.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {course.category || "Course"}{course.level ? ` • ${course.level}` : ""}
+                    {course.category || "Course"}{course.level ? ` - ${course.level}` : ""}
                   </p>
                 </div>
                 <span className="flex items-center text-sm text-primary">

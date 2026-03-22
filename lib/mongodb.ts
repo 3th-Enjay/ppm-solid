@@ -67,6 +67,14 @@ async function ensureIndexes(db: any) {
   } catch (error) {
     console.error("payment_events index was not applied automatically.", error)
   }
+
+  try {
+    await db
+      .collection("pending_registrations")
+      .createIndex({ email: 1 }, { unique: true, name: "uniq_pending_registrations_email" })
+  } catch (error) {
+    console.error("pending_registrations.email unique index was not applied automatically.", error)
+  }
 }
 
 

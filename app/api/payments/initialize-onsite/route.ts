@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       amount: ONSITE_TRAINING.registrationFeeNgn,
       currency: "NGN",
       metadata: {
-        userId: registration.user.id,
+        pendingRegistrationId: registration.pendingRegistration.id,
         paymentType: "onsite_registration",
         registrationType: "onsite",
         preferredLocation: validated.preferredLocation,
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     })
 
     const payment = await db.createPayment({
-      userId: registration.user.id,
+      userId: registration.pendingRegistration.id,
       paymentType: "onsite_registration",
       courseId: allCourseIds[0] || "onsite-registration-fee",
       courseIds: allCourseIds,
@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       paymentMethod: "paystack",
       gatewayStatus: "pending",
       gatewayMessage: "Awaiting onsite registration payment authorization on Paystack.",
+      customerEmail: validated.email.trim().toLowerCase(),
       verificationAttempts: 0,
       verificationLocked: false,
       createdAt: new Date(),
@@ -84,18 +85,24 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      user: registration.user,
+      pendingRegistration: registration.pendingRegistration,
       payment,
       authorization_url: paymentInit.authorizationUrl,
-      message: "Registration saved. Complete Paystack payment to activate onsite access.",
+      message: "OTP sent to email. Complete Paystack payment to activate onsite access.",
     })
   } catch (error) {
     console.error("Initialize onsite payment error:", error)
     if (error instanceof Error && error.message === "User already exists") {
       return NextResponse.json({ error: "User already exists" }, { status: 409 })
     }
+    if (error instanceof Error && error.message === "Failed to save pending registration") {
+      return NextResponse.json({ error: "Registration failed after OTP dispatch. Please try again." }, { status: 500 })
+    }
     if (error instanceof ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+    if (error instanceof Error && /send/i.test(error.message) && /otp|email/i.test(error.message)) {
+      return NextResponse.json({ error: "Unable to send OTP email. No account was created." }, { status: 502 })
     }
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
