@@ -23,7 +23,8 @@ import storyImage from "@/public/ceo-promptcare.jpeg"
 import directorImage from "@/public/dr-amara-okoye-director.jpeg"
 import euniceImage from "@/public/eunice-tutor-promptcare.jpeg"
 import chineduImage from "@/public/new-chinedu-promptcare.jpeg"
-import ngoziImage from "@/public/ngozi-nworah-tutor-promptcare.jpeg"
+import ngoziImage from "@/public/ngozi-nworah-new.jpeg"
+import iyaboImage from "@/public/iyabo-promptcare.jpeg"
 
 type TeamMember = {
   name: string
@@ -113,7 +114,11 @@ export default function AboutPage() {
       role: "Tutor",
       image: ngoziImage,
       imagePositionClassName: "object-[center_16%]",
-      imageInsetClassName: "inset-4",
+    },
+     {
+      name: "Iyabo Rosemary Ilegbusi",
+      role: "Tutor",
+      image: iyaboImage,
     },
   ]
 
@@ -458,3 +463,4 @@ export default function AboutPage() {
     </div>
   )
 }
+
