@@ -12,6 +12,7 @@ import type {
   Category,
   LearningNote,
   PaymentEvent,
+  OnboardingEvent,
 } from "./types"
 
 // Seeded Users
@@ -351,6 +352,7 @@ class MockDatabase {
   adminLogs: AdminLog[] = []
   notes: LearningNote[] = []
   paymentEvents: PaymentEvent[] = []
+  onboardingEvents: OnboardingEvent[] = []
 
   // User methods
   async findUserByEmail(email: string): Promise<User | undefined> {
@@ -669,6 +671,20 @@ class MockDatabase {
     return newEvent
   }
 
+  async createOnboardingEvent(event: Omit<OnboardingEvent, "id" | "createdAt">): Promise<OnboardingEvent> {
+    const newEvent: OnboardingEvent = {
+      ...event,
+      id: `onboarding-event-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: new Date(),
+    }
+    this.onboardingEvents.unshift(newEvent)
+    return newEvent
+  }
+
+  async getOnboardingEvents(limit = 500): Promise<OnboardingEvent[]> {
+    return this.onboardingEvents.slice(0, limit)
+  }
+
   // Certificate methods
   async getCertificatesByUserId(userId: string): Promise<Certificate[]> {
     return this.certificates.filter((c) => c.userId === userId)
@@ -746,6 +762,9 @@ export function getDB() {
 
 export const db = getDB()
 export const mockDB = db
+
+
+
 
 
 

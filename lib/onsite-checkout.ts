@@ -1,8 +1,8 @@
-﻿import { z } from "zod"
+import { z } from "zod"
 import { getDB } from "@/lib/db"
 import { paystackService } from "@/lib/paystack"
 import type { User } from "@/lib/types"
-import { getTrainingLocationStartDate, ONSITE_TRAINING } from "@/lib/student-registration"
+import { getOnsiteTrainingConfig } from "@/lib/onsite-training-config"
 
 export const onsiteDashboardInitSchema = z.object({
   preferredLocation: z.enum(["enugu", "abuja"]),
@@ -15,6 +15,8 @@ export async function initializeAuthenticatedOnsiteCheckout(user: User, input: z
   }
 
   const db = getDB()
+  const onsiteConfig = await getOnsiteTrainingConfig()
+  const selectedLocation = onsiteConfig.locations[input.preferredLocation]
   const existingPayments = await db.getPaymentsByUserId(user.id)
   const completedOnsitePayment = existingPayments.find(
     (payment: any) =>
@@ -40,7 +42,7 @@ export async function initializeAuthenticatedOnsiteCheckout(user: User, input: z
 
   const paymentInit = await paystackService.initializePayment({
     email: user.email,
-    amount: ONSITE_TRAINING.registrationFeeNgn,
+    amount: onsiteConfig.registrationFeeNgn,
     currency: "NGN",
     metadata: {
       userId: user.id,
@@ -56,7 +58,7 @@ export async function initializeAuthenticatedOnsiteCheckout(user: User, input: z
   await db.updateUser(user.id, {
     studentProfile: {
       trainingMode: "onsite",
-      formTitle: ONSITE_TRAINING.formTitle,
+      formTitle: onsiteConfig.formTitle,
       phoneNumber: profile?.phoneNumber || "",
       whatsappNumber: profile?.whatsappNumber || profile?.phoneNumber || "",
       gender: profile?.gender || "prefer_not_to_say",
@@ -65,9 +67,9 @@ export async function initializeAuthenticatedOnsiteCheckout(user: User, input: z
       isHealthcareProfessional: profile?.isHealthcareProfessional || false,
       currentRoleOrField: profile?.currentRoleOrField || "",
       preferredLocation: input.preferredLocation,
-      preferredLocationStartDate: getTrainingLocationStartDate(input.preferredLocation),
+      preferredLocationStartDate: selectedLocation.startsOn,
       trainingInterest: profile?.trainingInterest || "",
-      registrationFeeNgn: ONSITE_TRAINING.registrationFeeNgn,
+      registrationFeeNgn: onsiteConfig.registrationFeeNgn,
       paymentStatus: "no",
       paymentReference: paymentInit.reference,
       paymentLink: "/dashboard/onsite-training",
@@ -88,7 +90,7 @@ export async function initializeAuthenticatedOnsiteCheckout(user: User, input: z
     paymentType: "onsite_registration",
     courseId: allCourseIds[0] || "onsite-registration-fee",
     courseIds: allCourseIds,
-    amount: ONSITE_TRAINING.registrationFeeNgn,
+    amount: onsiteConfig.registrationFeeNgn,
     currency: "NGN",
     status: "pending",
     reference: paymentInit.reference,

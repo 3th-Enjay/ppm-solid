@@ -1,6 +1,7 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { ZodError } from "zod"
 import { authService } from "@/lib/auth"
+import { recordOnboardingEvent } from "@/lib/onboarding-event-log"
 import { buildVerifyOtpRoute, getOtpResendCooldownSeconds } from "@/lib/onboarding-flow"
 import { instructorRegisterSchema } from "@/lib/validation"
 
@@ -31,6 +32,13 @@ export async function POST(request: Request) {
     )
 
     const otpResendCooldownSeconds = getOtpResendCooldownSeconds()
+    await recordOnboardingEvent({
+      name: "signup_submitted",
+      role: "instructor",
+      mode: "online",
+      source: "signup",
+      status: "pending_otp",
+    })
 
     return NextResponse.json({
       success: true,
@@ -49,7 +57,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Instructor register error:", error)
     if (error instanceof Error && error.message === "User already exists") {
-      return NextResponse.json({ error: "User already exists" }, { status: 409 })
+      return NextResponse.json(
+        { error: "An account with this email already exists. Sign in or reset your password instead." },
+        { status: 409 },
+      )
     }
     if (error instanceof Error && error.message === "Failed to save pending registration") {
       return NextResponse.json({ error: "Registration failed after OTP dispatch. Please try again." }, { status: 500 })

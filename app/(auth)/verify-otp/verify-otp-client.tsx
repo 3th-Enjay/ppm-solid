@@ -149,6 +149,13 @@ export default function VerifyOtpClient() {
       })
       const data = await res.json()
       if (!res.ok) {
+        if (res.status === 409) {
+          throw new Error(data.error || "This email is already verified. Sign in instead.")
+        }
+        if (res.status === 410) {
+          setCooldown(0)
+          throw new Error(data.error || "This OTP has expired. Request a new code.")
+        }
         throw new Error(data.error || "Invalid OTP")
       }
       setAuth(data.user, data.token)
@@ -173,6 +180,7 @@ export default function VerifyOtpClient() {
         mode: mode || "none",
         source: source || "signup",
       })
+      setOtp("")
       setError(err.message || "Verification failed")
     } finally {
       setLoading(false)
@@ -193,6 +201,15 @@ export default function VerifyOtpClient() {
       const data = await res.json()
       if (!res.ok) {
         throw new Error(data.error || "Failed to resend OTP")
+      }
+
+      if (typeof data?.message === "string" && /already verified/i.test(data.message)) {
+        toast({
+          title: "Email already verified",
+          description: data.message,
+        })
+        router.push("/login")
+        return
       }
 
       const nextCooldown = Number(data.otpResendCooldownSeconds) || getOtpResendCooldownSeconds()

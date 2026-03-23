@@ -31,7 +31,7 @@ type PendingRegistrationResult = {
 
 const JWT_SECRET = (process.env.JWT_SECRET || "your-secret-key-change-in-production").trim()
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d").trim()
-const OTP_EXPIRES_MINUTES = Number(process.env.OTP_EXPIRES_MINUTES || 15)
+const OTP_EXPIRES_MINUTES = Number(process.env.OTP_EXPIRES_MINUTES || 5)
 const ADMIN_ACCOUNTS_EMAIL = (process.env.ADMIN_ACCOUNTS_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL)?.trim()
 const ADMIN_ACCOUNTS_PASSWORD = (process.env.ADMIN_ACCOUNTS_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD)?.trim()
 
@@ -496,3 +496,5 @@ export const authService = {
     return verifyToken(token)
   },
 }
+
+

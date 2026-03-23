@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -15,6 +15,7 @@ export interface DashboardNavItem {
 export const studentNavItems: DashboardNavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "My Courses", href: "/dashboard/courses", icon: BookOpen },
+  { name: "Onsite Training", href: "/dashboard/onsite-training", icon: MapPinned },
   { name: "Certificates", href: "/dashboard/certificates", icon: Award },
   { name: "Payments", href: "/dashboard/payments", icon: CreditCard },
   { name: "Profile", href: "/dashboard/profile", icon: User },
@@ -62,4 +63,3 @@ export function DashboardNav({
     </nav>
   )
 }
-

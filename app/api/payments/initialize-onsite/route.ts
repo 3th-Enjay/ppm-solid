@@ -1,7 +1,8 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { z } from "zod"
 import { authService } from "@/lib/auth"
 import { getTokenFromRequest } from "@/lib/jwt"
+import { recordOnboardingEvent } from "@/lib/onboarding-event-log"
 import { initializeAuthenticatedOnsiteCheckout, onsiteDashboardInitSchema } from "@/lib/onsite-checkout"
 
 export async function POST(request: Request) {
@@ -24,6 +25,17 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validated = onsiteDashboardInitSchema.parse(body)
     const result = await initializeAuthenticatedOnsiteCheckout(user, validated)
+
+    await recordOnboardingEvent({
+      name: "onsite_checkout_started",
+      role: user.role,
+      mode: "onsite",
+      source: "dashboard",
+      status: "initialized",
+      reference: result.payment?.reference,
+      metadata: { preferredLocation: validated.preferredLocation },
+    })
+
     return NextResponse.json(result)
   } catch (error) {
     if (error instanceof z.ZodError) {

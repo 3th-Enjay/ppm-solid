@@ -1,4 +1,4 @@
-﻿// Core type definitions for the Prompt Care Academy platform
+// Core type definitions for the Prompt Care Academy platform
 
 export type UserRole = "student" | "instructor" | "admin" | "finance"
 export type StudentGender = "male" | "female" | "other" | "prefer_not_to_say"
@@ -257,6 +257,20 @@ export interface PaymentEvent {
   createdAt: Date
 }
 
+export interface OnboardingEvent {
+  id: string
+  name: string
+  role?: UserRole
+  mode?: string
+  source?: string
+  step?: string
+  stepIndex?: number
+  status?: string
+  reference?: string
+  metadata?: Record<string, unknown>
+  createdAt: Date
+}
+
 export interface Certificate {
   id: string
   userId: string
@@ -292,6 +306,7 @@ export interface LearningNote {
   createdAt: Date
   updatedAt: Date
 }
+
 
 
 

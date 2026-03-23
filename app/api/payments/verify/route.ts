@@ -1,11 +1,23 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { paystackService } from "@/lib/paystack"
 import { getDB } from "@/lib/db"
+import { recordOnboardingEvent } from "@/lib/onboarding-event-log"
 import { notifyManualReviewAlert } from "@/lib/payment-alerts"
 import { expirePaymentIfStale, logPaymentEvent } from "@/lib/payments/runtime"
 import { evaluateVerification } from "@/lib/payments/verification"
+import { paystackService } from "@/lib/paystack"
 
 const MAX_VERIFICATION_ATTEMPTS = 5
+
+async function recordOnsitePaymentOutcome(reference: string, status: "completed" | "failed" | "manual_review") {
+  await recordOnboardingEvent({
+    name: "onsite_payment_outcome",
+    role: "student",
+    mode: "onsite",
+    source: "payment_verify",
+    status,
+    reference,
+  })
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +29,6 @@ export async function GET(request: NextRequest) {
     }
 
     const db = getDB()
-    // Get payment details first
     let payment = await db.getPaymentByReference(reference)
 
     if (!payment) {
@@ -79,6 +90,9 @@ export async function GET(request: NextRequest) {
         status: "manual_review",
         message: reason,
       })
+      if (payment.paymentType === "onsite_registration") {
+        await recordOnsitePaymentOutcome(reference, "manual_review")
+      }
       return NextResponse.json(
         {
           success: true,
@@ -136,6 +150,9 @@ export async function GET(request: NextRequest) {
           status: "manual_review",
           message: reason,
         })
+        if (latest.paymentType === "onsite_registration") {
+          await recordOnsitePaymentOutcome(reference, "manual_review")
+        }
         return NextResponse.json(
           {
             success: true,
@@ -157,7 +174,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Verify payment with Paystack
     const verification = await paystackService.verifyPayment(reference)
 
     const paymentUser = await db.findUserById(payment.userId)
@@ -178,56 +194,60 @@ export async function GET(request: NextRequest) {
     })
 
     if (evaluation.targetStatus === "manual_review") {
-        const reason = evaluation.reason || "Verification mismatch."
-        await db.updatePaymentByReference(reference, {
-          status: "manual_review",
-          verificationLocked: false,
-          verificationLockToken: undefined,
-          verificationLockExpiresAt: undefined,
-          gatewayStatus: verification.gatewayStatus || "success",
-          gatewayMessage: reason,
-          transactionId: verification.transactionId,
-          gatewayChannel: verification.channel,
-          gatewayFee: verification.gatewayFee,
-          customerEmail: verification.customerEmail,
-          customerCode: verification.customerCode,
-          manualReviewReason: reason,
-          manualReviewSource: "verify",
-          manualReviewCreatedAt: payment.manualReviewCreatedAt || new Date(),
-          manualReviewUpdatedAt: new Date(),
-          reviewedAt: new Date(),
-        })
-        await notifyManualReviewAlert({
-          reference,
-          paymentType: payment.paymentType,
-          amount: payment.amount,
-          currency: payment.currency,
-          userEmail: expectedCustomerEmail,
-          source: "verify",
-          reason,
-        })
-        await logPaymentEvent(db, {
-          reference,
-          paymentId: payment.id,
-          type: "manual_review",
-          source: "api/payments/verify",
-          status: "manual_review",
-          message: reason,
-          metadata: { mismatches: evaluation.mismatches },
-        })
+      const reason = evaluation.reason || "Verification mismatch."
+      await db.updatePaymentByReference(reference, {
+        status: "manual_review",
+        verificationLocked: false,
+        verificationLockToken: undefined,
+        verificationLockExpiresAt: undefined,
+        gatewayStatus: verification.gatewayStatus || "success",
+        gatewayMessage: reason,
+        transactionId: verification.transactionId,
+        gatewayChannel: verification.channel,
+        gatewayFee: verification.gatewayFee,
+        customerEmail: verification.customerEmail,
+        customerCode: verification.customerCode,
+        manualReviewReason: reason,
+        manualReviewSource: "verify",
+        manualReviewCreatedAt: payment.manualReviewCreatedAt || new Date(),
+        manualReviewUpdatedAt: new Date(),
+        reviewedAt: new Date(),
+      })
+      await notifyManualReviewAlert({
+        reference,
+        paymentType: payment.paymentType,
+        amount: payment.amount,
+        currency: payment.currency,
+        userEmail: expectedCustomerEmail,
+        source: "verify",
+        reason,
+      })
+      await logPaymentEvent(db, {
+        reference,
+        paymentId: payment.id,
+        type: "manual_review",
+        source: "api/payments/verify",
+        status: "manual_review",
+        message: reason,
+        metadata: { mismatches: evaluation.mismatches },
+      })
+      if (payment.paymentType === "onsite_registration") {
+        await recordOnsitePaymentOutcome(reference, "manual_review")
+      }
 
-        const flaggedPayment = await db.getPaymentByReference(reference)
-        return NextResponse.json(
-          {
-            success: true,
-            verified: false,
-            paystackMessage: "Payment flagged for manual review.",
-            payment: flaggedPayment,
-          },
-          { status: 409 },
-        )
-    } else if (evaluation.targetStatus === "completed") {
-      // Update payment status
+      const flaggedPayment = await db.getPaymentByReference(reference)
+      return NextResponse.json(
+        {
+          success: true,
+          verified: false,
+          paystackMessage: "Payment flagged for manual review.",
+          payment: flaggedPayment,
+        },
+        { status: 409 },
+      )
+    }
+
+    if (evaluation.targetStatus === "completed") {
       await db.updatePaymentByReference(reference, {
         status: "completed",
         verificationLocked: false,
@@ -247,8 +267,7 @@ export async function GET(request: NextRequest) {
       })
 
       const isOnsiteRegistration = payment.paymentType === "onsite_registration"
-      let courseIds =
-        payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
+      let courseIds = payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
       if (isOnsiteRegistration) {
         const allCourses = await db.getAllCourses()
         courseIds = (allCourses || []).map((course: any) => course.id)
@@ -293,6 +312,9 @@ export async function GET(request: NextRequest) {
         status: "completed",
         message: "Payment verified and completed successfully.",
       })
+      if (payment.paymentType === "onsite_registration") {
+        await recordOnsitePaymentOutcome(reference, "completed")
+      }
     } else {
       await db.updatePaymentByReference(reference, {
         status: "failed",
@@ -315,6 +337,9 @@ export async function GET(request: NextRequest) {
         status: "failed",
         message: verification.gatewayMessage || "Payment verification failed.",
       })
+      if (payment.paymentType === "onsite_registration") {
+        await recordOnsitePaymentOutcome(reference, "failed")
+      }
     }
 
     const updatedPayment = await db.getPaymentByReference(reference)

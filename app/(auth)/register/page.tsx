@@ -1,9 +1,9 @@
-﻿import Link from "next/link"
+import Link from "next/link"
 import { StudentRegistrationForm } from "@/components/auth/student-registration-form"
 
 export default function RegisterPage() {
   return (
-    <div className="w-full">
+    <div className="flex w-full flex-col items-center">
       <StudentRegistrationForm />
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Want to teach instead?{" "}

@@ -15,6 +15,7 @@ import type {
   Category,
   LearningNote,
   PaymentEvent,
+  OnboardingEvent,
 } from './types'
 import { ObjectId } from 'mongodb'
 
@@ -542,6 +543,22 @@ export class MongoDBDatabase {
     return { ...newEvent, id: result.insertedId.toString() } as PaymentEvent
   }
 
+  async createOnboardingEvent(event: Omit<OnboardingEvent, 'id' | 'createdAt'>): Promise<OnboardingEvent> {
+    const collection = await getCollection<OnboardingEvent>('onboarding_events')
+    const newEvent: Omit<OnboardingEvent, 'id'> = {
+      ...event,
+      createdAt: new Date(),
+    }
+    const result = await collection.insertOne(toDocument(newEvent as OnboardingEvent))
+    return { ...newEvent, id: result.insertedId.toString() } as OnboardingEvent
+  }
+
+  async getOnboardingEvents(limit = 500): Promise<OnboardingEvent[]> {
+    const collection = await getCollection<OnboardingEvent>('onboarding_events')
+    const docs = await collection.find({}).sort({ createdAt: -1 }).limit(limit).toArray()
+    return docs.map(toObject<OnboardingEvent>)
+  }
+
   // Learning note methods
   async getNotesByUserId(userId: string): Promise<LearningNote[]> {
     const collection = await getCollection<LearningNote>('notes')
@@ -580,4 +597,7 @@ export function getDatabase(): MongoDBDatabase {
 
 // Export as db for backward compatibility
 export const db = getDatabase()
+
+
+
 

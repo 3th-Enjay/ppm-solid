@@ -1,9 +1,10 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
-import { CalendarDays, CreditCard, Eye, EyeOff, Save, ShieldCheck, UserIcon } from "lucide-react"
+import { CalendarDays, CheckCircle2, CreditCard, Eye, EyeOff, Save, ShieldCheck, UserIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,11 +23,21 @@ import { useAuthStore } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
 import { getTrainingLocationLabel, ONSITE_TRAINING } from "@/lib/student-registration"
 
+type SuccessState = {
+  title: string
+  description: string
+  ctaLabel: string
+  ctaHref: string
+}
+
 export default function ProfilePage() {
+  const searchParams = useSearchParams()
   const { user, token, setAuth } = useAuthStore()
   const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState("training")
   const [savingProfile, setSavingProfile] = useState(false)
   const [showTrainingModal, setShowTrainingModal] = useState(false)
+  const [successState, setSuccessState] = useState<SuccessState | null>(null)
   const [profile, setProfile] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -41,6 +52,18 @@ export default function ProfilePage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get("setup") === "complete") {
+      setActiveTab("training")
+      setSuccessState({
+        title: "Profile setup completed",
+        description: "Your deferred learner details were saved successfully. Review your training profile below or return to the dashboard for your next step.",
+        ctaLabel: "Return to dashboard",
+        ctaHref: "/dashboard",
+      })
+    }
+  }, [searchParams])
 
   const studentProfile = user?.studentProfile
   const isOnsiteProfile = Boolean(
@@ -70,10 +93,13 @@ export default function ProfilePage() {
       }
 
       setAuth(data.user, token)
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+      setSuccessState({
+        title: "Profile saved",
+        description: "Your account details are updated. You can continue exploring your dashboard or keep refining your learner profile.",
+        ctaLabel: "Open dashboard",
+        ctaHref: "/dashboard",
       })
+      setActiveTab("general")
     } catch (error: any) {
       toast({
         title: "Update failed",
@@ -112,11 +138,14 @@ export default function ProfilePage() {
         throw new Error(data.error || "Failed to update password")
       }
 
-      toast({
-        title: "Password updated",
-        description: "Your password was updated successfully.",
-      })
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" })
+      setSuccessState({
+        title: "Password updated",
+        description: "Your new password is active. Keep it somewhere safe and continue using your account normally.",
+        ctaLabel: "Go to learning dashboard",
+        ctaHref: "/dashboard",
+      })
+      setActiveTab("security")
     } catch (error: any) {
       toast({
         title: "Update failed",
@@ -139,7 +168,42 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      <Tabs defaultValue="training" className="max-w-4xl">
+      {successState ? (
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
+          <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <p className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                <CheckCircle2 className="h-4 w-4" /> Success state
+              </p>
+              <h2 className="text-xl font-semibold">{successState.title}</h2>
+              <p className="text-sm text-muted-foreground">{successState.description}</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild variant="cta">
+                <Link href={successState.ctaHref}>{successState.ctaLabel}</Link>
+              </Button>
+              <Button variant="outline" onClick={() => setSuccessState(null)}>
+                Stay here
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Profile setup</p>
+            <h2 className="text-xl font-semibold">Complete your learner profile</h2>
+            <p className="text-sm text-muted-foreground">Finish the guided setup to complete your training details.</p>
+          </div>
+          <Button asChild variant="cta">
+            <Link href="/dashboard/profile/setup">Continue setup</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="training">Training Profile</TabsTrigger>
           <TabsTrigger value="general">General</TabsTrigger>
@@ -182,7 +246,7 @@ export default function ProfilePage() {
                     <div className="rounded-lg border p-3">
                       <p className="text-muted-foreground">Preferred Location</p>
                       <p className="font-medium">
-                        {getTrainingLocationLabel(studentProfile.preferredLocation)} -{" "}
+                        {getTrainingLocationLabel(studentProfile.preferredLocation)} - {" "}
                         {studentProfile.preferredLocationStartDate}
                       </p>
                     </div>
@@ -410,5 +474,3 @@ export default function ProfilePage() {
     </motion.div>
   )
 }
-
-

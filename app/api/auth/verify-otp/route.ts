@@ -4,17 +4,61 @@ import { authService } from "@/lib/auth"
 import { getDB } from "@/lib/db"
 import { sendWelcomeEmail } from "@/lib/email"
 import { getPostVerificationRoute } from "@/lib/onboarding-flow"
+import { recordOnboardingEvent } from "@/lib/onboarding-event-log"
 import { otpVerifySchema } from "@/lib/validation"
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const validated = otpVerifySchema.parse(body)
+    const normalizedEmail = validated.email.trim().toLowerCase()
+    const db = getDB() as any
 
-    const result = await authService.verifyOtp(validated.email, validated.otp)
+    const pendingRegistration = typeof db.findPendingRegistrationByEmail === "function"
+      ? await db.findPendingRegistrationByEmail(normalizedEmail)
+      : undefined
+    const existingUser = typeof db.findUserByEmail === "function" ? await db.findUserByEmail(normalizedEmail) : undefined
+    const otpOwner = pendingRegistration || existingUser
+
+    if (!otpOwner) {
+      return NextResponse.json(
+        { error: "No pending verification was found for this email. Start again or request a fresh code." },
+        { status: 404 },
+      )
+    }
+
+    if (existingUser?.emailVerified) {
+      return NextResponse.json(
+        { error: "This email is already verified. Sign in instead of requesting another OTP." },
+        { status: 409 },
+      )
+    }
+
+    if (!otpOwner.otpExpiresAt || new Date(otpOwner.otpExpiresAt).getTime() < Date.now()) {
+      await recordOnboardingEvent({
+        name: "otp_verify_failed",
+        role: otpOwner.role,
+        source: "signup",
+        status: "expired",
+        metadata: { email: normalizedEmail },
+      })
+      return NextResponse.json(
+        { error: "This verification code has expired. Request a new OTP and try again." },
+        { status: 410 },
+      )
+    }
+
+    const result = await authService.verifyOtp(normalizedEmail, validated.otp)
 
     if (!result) {
-      return NextResponse.json({ error: "Invalid or expired OTP" }, { status: 400 })
+      await recordOnboardingEvent({
+        name: "otp_verify_failed",
+        role: otpOwner.role,
+        source: "signup",
+        status: "invalid",
+        metadata: { email: normalizedEmail },
+      })
+      return NextResponse.json({ error: "Invalid OTP. Check the code and try again." }, { status: 400 })
     }
 
     try {
@@ -32,7 +76,6 @@ export async function POST(request: Request) {
 
     if (isOnsiteProfile) {
       try {
-        const db = getDB()
         const payments = await db.getPaymentsByUserId(result.user.id)
         const hasCompletedOnsitePayment = (payments || []).some(
           (payment: any) =>
@@ -41,6 +84,13 @@ export async function POST(request: Request) {
         )
 
         if (!hasCompletedOnsitePayment) {
+          await recordOnboardingEvent({
+            name: "otp_verify_succeeded",
+            role: responseUser.role,
+            mode: "onsite",
+            source: "signup",
+            status: "verified_pending_payment",
+          })
           return NextResponse.json({
             success: true,
             user: responseUser,
@@ -82,6 +132,14 @@ export async function POST(request: Request) {
       }
     }
 
+    await recordOnboardingEvent({
+      name: "otp_verify_succeeded",
+      role: responseUser.role,
+      mode: isOnsiteProfile ? "onsite" : "online",
+      source: "signup",
+      status: "verified",
+    })
+
     return NextResponse.json({
       success: true,
       user: responseUser,
@@ -101,3 +159,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to verify OTP" }, { status: 500 })
   }
 }
+

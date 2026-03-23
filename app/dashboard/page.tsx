@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -42,7 +42,7 @@ type HistoryItem = {
 const DASHBOARD_FEED_PAGE_SIZE = 8
 
 export default function DashboardPage() {
-  const { user } = useAuthStore()
+  const { user, token } = useAuthStore()
   const [enrollments, setEnrollments] = useState<EnrollmentWithCourse[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([])
@@ -62,6 +62,29 @@ export default function DashboardPage() {
     completed: 0,
     totalHours: 0,
   })
+
+  
+  const [profileCompletion, setProfileCompletion] = useState<number | null>(null)
+  const [profileLoading, setProfileLoading] = useState(false)
+
+  const loadProfileCompletion = async () => {
+    if (!token || !user || user.role !== "student") return
+    setProfileLoading(true)
+    try {
+      const res = await fetch("/api/onboarding/state", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      if (typeof data?.profileCompletionPercent === "number") {
+        setProfileCompletion(data.profileCompletionPercent)
+      }
+    } catch {
+      // no-op
+    } finally {
+      setProfileLoading(false)
+    }
+  }
 
   const loadDashboardBase = async () => {
     if (!user) return
@@ -112,6 +135,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) return
     void loadDashboardBase()
+    void loadProfileCompletion()
   }, [user])
 
   useEffect(() => {
@@ -244,6 +268,22 @@ export default function DashboardPage() {
       </motion.div>
 
       <OnsiteTrainingBanner />
+      {!profileLoading && profileCompletion !== null && profileCompletion < 100 ? (
+        <motion.div variants={fadeUp(0.05)} initial="hidden" animate="visible">
+          <Card variant="elevated" className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/10">
+            <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Profile completion</p>
+                <h2 className="text-xl font-semibold">Complete your learner profile</h2>
+                <p className="text-sm text-muted-foreground">Your profile is {profileCompletion}% complete. Finish it to unlock tailored recommendations and a fully guided learner setup.</p>
+              </div>
+              <Button asChild variant="cta">
+                <Link href="/dashboard/profile/setup">Complete profile</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="Total Courses" value={stats.totalCourses} icon={BookOpen} toneClass="text-primary" />
@@ -525,5 +565,16 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
