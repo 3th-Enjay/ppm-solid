@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { authService } from "@/lib/auth"
-import { loginSchema } from "@/lib/validation"
 import { getDB } from "@/lib/db"
+import { buildVerifyOtpRoute } from "@/lib/onboarding-flow"
+import { loginSchema } from "@/lib/validation"
 
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 
@@ -30,17 +31,29 @@ export async function POST(request: Request) {
 
     const validated = parsed.data
 
-    // Attempt login (this handles both env admin and regular users)
     const result = await authService.login(validated.email, validated.password)
 
     if (!result) {
-      // Only report verification required when credentials are valid.
       const status = await authService.validateCredentials(validated.email, validated.password)
       if (status === "unverified") {
-        return NextResponse.json({ 
-          error: "Email not verified. Please check your email for the verification code.",
-          requiresVerification: true 
-        }, { status: 403 })
+        const db = getDB()
+        const user = await db.findUserByEmail(validated.email.trim().toLowerCase())
+        const role = user?.role || "student"
+
+        return NextResponse.json(
+          {
+            error: "Email not verified. Please check your email for the verification code.",
+            requiresVerification: true,
+            email: validated.email.trim().toLowerCase(),
+            role,
+            nextRoute: buildVerifyOtpRoute({
+              email: validated.email,
+              role,
+              source: "login",
+            }),
+          },
+          { status: 403 },
+        )
       }
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -98,7 +98,7 @@ export default function InstructorSettingsPage() {
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Instructor Settings</h1>
-        <p className="text-muted-foreground mt-2">Update your public profile details</p>
+        <p className="text-muted-foreground mt-2">Finish the public profile details that were deferred until after verification.</p>
       </div>
 
       {successMessage && (
@@ -118,7 +118,7 @@ export default function InstructorSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle>
-          <CardDescription>These details appear on your instructor profile.</CardDescription>
+          <CardDescription>These details appear on your instructor profile and complete the post-verification onboarding flow.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2">
@@ -192,3 +192,4 @@ export default function InstructorSettingsPage() {
     </div>
   )
 }
+

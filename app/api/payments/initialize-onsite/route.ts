@@ -1,108 +1,39 @@
-import { NextResponse } from "next/server"
-import { ZodError } from "zod"
+﻿import { NextResponse } from "next/server"
+import { z } from "zod"
 import { authService } from "@/lib/auth"
-import { getDB } from "@/lib/db"
-import { paystackService } from "@/lib/paystack"
-import { ONSITE_TRAINING, getTrainingLocationStartDate } from "@/lib/student-registration"
-import { onsiteRegisterSchema } from "@/lib/validation"
+import { getTokenFromRequest } from "@/lib/jwt"
+import { initializeAuthenticatedOnsiteCheckout, onsiteDashboardInitSchema } from "@/lib/onsite-checkout"
 
 export async function POST(request: Request) {
   try {
+    const token = getTokenFromRequest(request)
+    if (!token) {
+      return NextResponse.json(
+        {
+          error: "Onsite training payment now starts inside your student dashboard. Sign in and continue from /dashboard/onsite-training.",
+        },
+        { status: 401 },
+      )
+    }
+
+    const user = await authService.getCurrentUser(token)
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
-    const validated = onsiteRegisterSchema.parse(body)
-    const role = "student"
-
-    const registration = await authService.registerWithOtp(
-      validated.email,
-      validated.password,
-      validated.name,
-      role,
-      {
-        trainingMode: "onsite",
-        formTitle: ONSITE_TRAINING.formTitle,
-        phoneNumber: validated.phoneNumber,
-        whatsappNumber: validated.whatsappNumber,
-        gender: validated.gender,
-        dateOfBirth: validated.dateOfBirth,
-        currentAddress: validated.currentAddress,
-        isHealthcareProfessional: validated.isHealthcareProfessional === "yes",
-        currentRoleOrField: validated.currentRoleOrField,
-        preferredLocation: validated.preferredLocation,
-        preferredLocationStartDate: getTrainingLocationStartDate(validated.preferredLocation),
-        trainingInterest: validated.trainingInterest,
-        registrationFeeNgn: ONSITE_TRAINING.registrationFeeNgn,
-        paymentStatus: "no",
-        paymentReference: undefined,
-        paymentLink: ONSITE_TRAINING.paymentLink,
-        agreedSlotSecured: validated.agreedSlotSecured,
-        agreedDetailsCorrect: validated.agreedDetailsCorrect,
-      },
-    )
-
-    const db = getDB()
-    const allCourses = await db.getAllCourses()
-    const allCourseIds = (allCourses || []).map((course: any) => course.id)
-    const callbackUrl = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/register-onsite/success`
-      : undefined
-    const invoiceNumber = `ONSITE-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random()
-      .toString(36)
-      .slice(2, 8)
-      .toUpperCase()}`
-
-    const paymentInit = await paystackService.initializePayment({
-      email: validated.email,
-      amount: ONSITE_TRAINING.registrationFeeNgn,
-      currency: "NGN",
-      metadata: {
-        pendingRegistrationId: registration.pendingRegistration.id,
-        paymentType: "onsite_registration",
-        registrationType: "onsite",
-        preferredLocation: validated.preferredLocation,
-        invoiceNumber,
-      },
-      callbackUrl,
-    })
-
-    const payment = await db.createPayment({
-      userId: registration.pendingRegistration.id,
-      paymentType: "onsite_registration",
-      courseId: allCourseIds[0] || "onsite-registration-fee",
-      courseIds: allCourseIds,
-      amount: ONSITE_TRAINING.registrationFeeNgn,
-      currency: "NGN",
-      status: "pending",
-      reference: paymentInit.reference,
-      invoiceNumber,
-      paymentMethod: "paystack",
-      gatewayStatus: "pending",
-      gatewayMessage: "Awaiting onsite registration payment authorization on Paystack.",
-      customerEmail: validated.email.trim().toLowerCase(),
-      verificationAttempts: 0,
-      verificationLocked: false,
-      createdAt: new Date(),
-    })
-
-    return NextResponse.json({
-      success: true,
-      pendingRegistration: registration.pendingRegistration,
-      payment,
-      authorization_url: paymentInit.authorizationUrl,
-      message: "OTP sent to email. Complete Paystack payment to activate onsite access.",
-    })
+    const validated = onsiteDashboardInitSchema.parse(body)
+    const result = await initializeAuthenticatedOnsiteCheckout(user, validated)
+    return NextResponse.json(result)
   } catch (error) {
-    console.error("Initialize onsite payment error:", error)
-    if (error instanceof Error && error.message === "User already exists") {
-      return NextResponse.json({ error: "User already exists" }, { status: 409 })
-    }
-    if (error instanceof Error && error.message === "Failed to save pending registration") {
-      return NextResponse.json({ error: "Registration failed after OTP dispatch. Please try again." }, { status: 500 })
-    }
-    if (error instanceof ZodError) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
-    if (error instanceof Error && /send/i.test(error.message) && /otp|email/i.test(error.message)) {
-      return NextResponse.json({ error: "Unable to send OTP email. No account was created." }, { status: 502 })
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+    if (error instanceof Error && (error as any).statusCode) {
+      return NextResponse.json({ error: error.message }, { status: (error as any).statusCode })
     }
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

@@ -2,21 +2,22 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { motion } from "framer-motion"
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react"
+import { useState } from "react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Checkbox } from "@/components/ui/checkbox"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { buildVerifyOtpRoute } from "@/lib/onboarding-flow"
+import { getSafeRedirectForRole } from "@/lib/role-routing"
 import { useAuthStore } from "@/lib/store"
 import { loginSchema } from "@/lib/validation"
-import { useToast } from "@/hooks/use-toast"
-import { getSafeRedirectForRole } from "@/lib/role-routing"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -38,13 +39,11 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // Validate input
       const validated = loginSchema.parse({
         email: formData.email,
         password: formData.password,
       })
 
-      // Attempt login
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,15 +51,18 @@ export default function LoginPage() {
       })
       const result = await res.json()
 
-      const requestedRedirect = typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("redirect")
-        : null
+      const requestedRedirect =
+        typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("redirect") : null
 
       if (!res.ok || !result?.user) {
         if (result?.requiresVerification) {
-          // Redirect to verify OTP page
-          const redirectParam = requestedRedirect ? `&redirect=${encodeURIComponent(requestedRedirect)}` : ""
-          router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}${redirectParam}`)
+          const verifyRoute = buildVerifyOtpRoute({
+            email: result?.email || formData.email,
+            role: result?.role || "student",
+            source: "login",
+            redirect: requestedRedirect,
+          })
+          router.push(verifyRoute)
           toast({
             title: "Email verification required",
             description: "Please verify your email to continue. Use the code from signup, or tap Resend on the verify page.",
@@ -73,7 +75,6 @@ export default function LoginPage() {
         return
       }
 
-      // Set auth state
       setAuth(result.user, result.token)
 
       toast({
@@ -82,8 +83,6 @@ export default function LoginPage() {
       })
 
       const destination = getSafeRedirectForRole(result.user.role, requestedRedirect)
-
-      // Use replace so login page isn't kept in browser history after auth
       router.replace(destination)
       router.refresh()
     } catch {
@@ -104,14 +103,14 @@ export default function LoginPage() {
             <div className="mb-4 rounded-lg border p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate">Continue as {lastLogin.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{lastLogin.email}</p>
+                  <p className="truncate text-sm font-semibold">Continue as {lastLogin.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{lastLogin.email}</p>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     type="button"
                     size="sm"
-                    onClick={() => setFormData((prev) => ({ ...prev, email: lastLogin.email }))}
+                    onClick={() => setFormData((previous) => ({ ...previous, email: lastLogin.email }))}
                   >
                     Use
                   </Button>
@@ -180,7 +179,7 @@ export default function LoginPage() {
                 checked={formData.remember}
                 onCheckedChange={(checked) => setFormData({ ...formData, remember: checked as boolean })}
               />
-              <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+              <Label htmlFor="remember" className="cursor-pointer text-sm font-normal">
                 Remember me for 30 days
               </Label>
             </div>
@@ -192,12 +191,12 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm">
-            Don't have an account?{" "}
-            <Link href="/register" className="text-primary hover:underline font-medium">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="font-medium text-primary hover:underline">
               Sign up as student
             </Link>{" "}
             or{" "}
-            <Link href="/register-instructor" className="text-primary hover:underline font-medium">
+            <Link href="/register-instructor" className="font-medium text-primary hover:underline">
               register as instructor
             </Link>
           </div>

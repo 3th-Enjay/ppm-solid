@@ -1,5 +1,5 @@
-import { StudentRegistrationForm } from "@/components/auth/student-registration-form"
+﻿import { redirect } from "next/navigation"
 
 export default function RegisterOnlinePage() {
-  return <StudentRegistrationForm mode="online" />
+  redirect("/register")
 }

@@ -1,4 +1,4 @@
-// Core type definitions for the Prompt Care Academy platform
+﻿// Core type definitions for the Prompt Care Academy platform
 
 export type UserRole = "student" | "instructor" | "admin" | "finance"
 export type StudentGender = "male" | "female" | "other" | "prefer_not_to_say"
@@ -33,6 +33,15 @@ export interface StudentRegistrationProfile {
   submittedAt: Date
 }
 
+export interface UserOnboardingState {
+  welcomeSeenAt?: Date
+  dismissedOnsiteBannerAt?: Date
+  viewedOnsiteTrainingAt?: Date
+  startedOnsiteCheckoutAt?: Date
+  reviewedPublishingGuidelinesAt?: Date
+  updatedAt?: Date
+}
+
 export interface User {
   id: string
   email: string
@@ -43,6 +52,7 @@ export interface User {
   bio?: string
   status?: "active" | "suspended"
   emailVerified?: boolean
+  onboardingState?: UserOnboardingState
   otpHash?: string
   otpExpiresAt?: Date
   studentProfile?: StudentRegistrationProfile
@@ -282,4 +292,8 @@ export interface LearningNote {
   createdAt: Date
   updatedAt: Date
 }
+
+
+
+
 

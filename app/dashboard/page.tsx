@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -16,6 +16,7 @@ import { formatDuration, formatRelativeTime } from "@/lib/utils/format"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getTrainingLocationLabel, ONSITE_TRAINING } from "@/lib/student-registration"
+import { OnsiteTrainingBanner } from "@/components/skillup/onsite-training-banner"
 
 type EnrollmentWithCourse = Enrollment & { course: Course | undefined }
 type LearningNote = {
@@ -241,6 +242,8 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold md:text-4xl">Welcome back, {user?.name}!</h1>
         <p className="text-muted-foreground">Track your performance, continue active courses, and monitor your growth.</p>
       </motion.div>
+
+      <OnsiteTrainingBanner />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="Total Courses" value={stats.totalCourses} icon={BookOpen} toneClass="text-primary" />
@@ -522,3 +525,5 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+

@@ -1,65 +1,52 @@
-import { NextResponse } from "next/server"
-import { authService } from "@/lib/auth"
-import { registerSchema } from "@/lib/validation"
+﻿import { NextResponse } from "next/server"
 import { ZodError } from "zod"
-import {
-  getTrainingLocationStartDate,
-  ONLINE_TRAINING,
-  ONSITE_TRAINING,
-} from "@/lib/student-registration"
+import { authService } from "@/lib/auth"
+import { buildVerifyOtpRoute, getOtpResendCooldownSeconds } from "@/lib/onboarding-flow"
+import { getTrainingLocationStartDate, ONLINE_TRAINING } from "@/lib/student-registration"
+import { studentRegisterSchema } from "@/lib/validation"
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const validated = registerSchema.parse(body)
+    const validated = studentRegisterSchema.parse(body)
     const role = "student"
 
-    const result =
-      validated.registrationType === "onsite"
-        ? await authService.registerWithOtp(validated.email, validated.password, validated.name, role, {
-            trainingMode: "onsite",
-            formTitle: ONSITE_TRAINING.formTitle,
-            phoneNumber: validated.phoneNumber,
-            whatsappNumber: validated.whatsappNumber,
-            gender: validated.gender,
-            dateOfBirth: validated.dateOfBirth,
-            currentAddress: validated.currentAddress,
-            isHealthcareProfessional: validated.isHealthcareProfessional === "yes",
-            currentRoleOrField: validated.currentRoleOrField,
-            preferredLocation: validated.preferredLocation,
-            preferredLocationStartDate: getTrainingLocationStartDate(validated.preferredLocation),
-            trainingInterest: validated.trainingInterest,
-            registrationFeeNgn: ONSITE_TRAINING.registrationFeeNgn,
-            paymentStatus: "no",
-            paymentReference: undefined,
-            paymentLink: ONSITE_TRAINING.paymentLink,
-            agreedSlotSecured: validated.agreedSlotSecured,
-            agreedDetailsCorrect: validated.agreedDetailsCorrect,
-          })
-        : await authService.registerWithOtp(validated.email, validated.password, validated.name, role, {
-            trainingMode: "online",
-            formTitle: ONLINE_TRAINING.formTitle,
-            phoneNumber: validated.phoneNumber,
-            whatsappNumber: validated.whatsappNumber,
-            gender: validated.gender,
-            dateOfBirth: validated.dateOfBirth,
-            currentAddress: validated.currentAddress,
-            isHealthcareProfessional: validated.isHealthcareProfessional === "yes",
-            currentRoleOrField: validated.currentRoleOrField,
-            preferredLocation: validated.preferredLocation,
-            preferredLocationStartDate: getTrainingLocationStartDate(validated.preferredLocation),
-            trainingInterest: validated.trainingInterest,
-            registrationFeeNgn: 0,
-            paymentStatus: "no",
-            paymentLink: "",
-            agreedSlotSecured: false,
-            agreedDetailsCorrect: validated.agreedDetailsCorrect,
-          })
+    const result = await authService.registerWithOtp(validated.email, validated.password, validated.name, role, {
+      trainingMode: "online",
+      formTitle: ONLINE_TRAINING.formTitle,
+      phoneNumber: validated.phoneNumber,
+      whatsappNumber: validated.whatsappNumber?.trim() || validated.phoneNumber,
+      gender: "prefer_not_to_say",
+      dateOfBirth: "",
+      currentAddress: "",
+      isHealthcareProfessional: false,
+      currentRoleOrField: "",
+      preferredLocation: "enugu",
+      preferredLocationStartDate: getTrainingLocationStartDate("enugu"),
+      trainingInterest: "",
+      registrationFeeNgn: 0,
+      paymentStatus: "no",
+      paymentLink: "",
+      agreedSlotSecured: false,
+      agreedDetailsCorrect: true,
+    })
+
+    const otpResendCooldownSeconds = getOtpResendCooldownSeconds()
 
     return NextResponse.json({
       success: true,
       pendingRegistration: result.pendingRegistration,
       message: "OTP sent to email",
+      email: validated.email.trim().toLowerCase(),
+      role,
+      mode: "online",
+      nextRoute: buildVerifyOtpRoute({
+        email: validated.email,
+        role,
+        source: "signup",
+        cooldownSeconds: otpResendCooldownSeconds,
+      }),
+      otpResendCooldownSeconds,
     })
   } catch (error) {
     console.error("Register error:", error)

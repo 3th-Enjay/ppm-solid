@@ -1,5 +1,6 @@
-"use client"
+﻿"use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { CalendarDays, CreditCard, Eye, EyeOff, Save, ShieldCheck, UserIcon } from "lucide-react"
@@ -242,10 +243,10 @@ export default function ProfilePage() {
                     </Button>
                     {isOnsiteProfile && studentProfile.paymentLink ? (
                       <Button asChild variant="cta">
-                        <a href={studentProfile.paymentLink} target="_blank" rel="noreferrer">
+                        <Link href="/dashboard/onsite-training">
                           <CreditCard className="mr-2 h-4 w-4" />
                           Open Payment Link
-                        </a>
+                        </Link>
                       </Button>
                     ) : null}
                   </div>
@@ -409,3 +410,5 @@ export default function ProfilePage() {
     </motion.div>
   )
 }
+
+

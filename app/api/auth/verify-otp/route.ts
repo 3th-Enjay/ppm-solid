@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
-import { authService } from "@/lib/auth"
-import { otpVerifySchema } from "@/lib/validation"
 import { ZodError } from "zod"
-import { sendWelcomeEmail } from "@/lib/email"
+import { authService } from "@/lib/auth"
 import { getDB } from "@/lib/db"
+import { sendWelcomeEmail } from "@/lib/email"
+import { getPostVerificationRoute } from "@/lib/onboarding-flow"
+import { otpVerifySchema } from "@/lib/validation"
 
 export async function POST(request: Request) {
   try {
@@ -16,23 +17,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid or expired OTP" }, { status: 400 })
     }
 
-    // Send welcome email (non-blocking if it fails)
     try {
       await sendWelcomeEmail({ to: result.user.email, name: result.user.name, role: result.user.role })
     } catch (err) {
       console.error("Failed to send welcome email:", err)
     }
 
-    // Onsite students get full access only after completed onsite payment.
     let responseUser = result.user
     const isOnsiteProfile =
       result.user.role === "student" &&
       result.user.studentProfile &&
       (result.user.studentProfile.trainingMode === "onsite" ||
         (!result.user.studentProfile.trainingMode && (result.user.studentProfile.registrationFeeNgn || 0) > 0))
-    if (
-      isOnsiteProfile
-    ) {
+
+    if (isOnsiteProfile) {
       try {
         const db = getDB()
         const payments = await db.getPaymentsByUserId(result.user.id)
@@ -41,15 +39,22 @@ export async function POST(request: Request) {
             payment.paymentType === "onsite_registration" &&
             (payment.status === "completed" || payment.status === "success"),
         )
+
         if (!hasCompletedOnsitePayment) {
           return NextResponse.json({
             success: true,
             user: responseUser,
             token: result.token,
+            role: responseUser.role,
+            nextRoute: getPostVerificationRoute(responseUser.role),
+            isFirstLogin: true,
           })
         }
 
-        const [allCourses, existingEnrollments] = await Promise.all([db.getAllCourses(), db.getEnrollmentsByUserId(result.user.id)])
+        const [allCourses, existingEnrollments] = await Promise.all([
+          db.getAllCourses(),
+          db.getEnrollmentsByUserId(result.user.id),
+        ])
 
         const enrolledCourseIds = new Set((existingEnrollments || []).map((item: any) => item.courseId))
         for (const course of allCourses || []) {
@@ -81,6 +86,9 @@ export async function POST(request: Request) {
       success: true,
       user: responseUser,
       token: result.token,
+      role: responseUser.role,
+      nextRoute: getPostVerificationRoute(responseUser.role),
+      isFirstLogin: true,
     })
   } catch (error) {
     console.error("Verify OTP error:", error)

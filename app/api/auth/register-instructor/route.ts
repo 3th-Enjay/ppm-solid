@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { ZodError } from "zod"
 import { authService } from "@/lib/auth"
+import { buildVerifyOtpRoute, getOtpResendCooldownSeconds } from "@/lib/onboarding-flow"
 import { instructorRegisterSchema } from "@/lib/validation"
 
 export async function POST(request: Request) {
@@ -20,8 +21,6 @@ export async function POST(request: Request) {
       "instructor",
       undefined,
       {
-        bio: validated.bio,
-        avatar: validated.avatar?.trim() || undefined,
         instructorProfile: {
           phoneNumber: validated.phoneNumber,
           professionalHeadline: validated.professionalHeadline,
@@ -31,10 +30,21 @@ export async function POST(request: Request) {
       },
     )
 
+    const otpResendCooldownSeconds = getOtpResendCooldownSeconds()
+
     return NextResponse.json({
       success: true,
       pendingRegistration: result.pendingRegistration,
       message: "OTP sent to email",
+      email: validated.email.trim().toLowerCase(),
+      role: "instructor",
+      nextRoute: buildVerifyOtpRoute({
+        email: validated.email,
+        role: "instructor",
+        source: "signup",
+        cooldownSeconds: otpResendCooldownSeconds,
+      }),
+      otpResendCooldownSeconds,
     })
   } catch (error) {
     console.error("Instructor register error:", error)
