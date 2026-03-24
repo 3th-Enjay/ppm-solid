@@ -1,4 +1,5 @@
 import type { User } from "@/lib/types"
+import { buildStudentMilestoneSummary, type StudentMilestoneSummary } from "@/lib/student-milestones"
 
 export type ProfileCompletionItem = {
   key: string
@@ -21,6 +22,7 @@ export type ResolvedOnboardingState = {
   profileCompletion: ProfileCompletionTracker
   checklist: Record<string, boolean>
   onboardingState: User["onboardingState"]
+  milestoneSummary?: StudentMilestoneSummary
 }
 
 function hasText(value: string | undefined | null) {
@@ -102,6 +104,12 @@ export async function resolveOnboardingState(db: any, user: User): Promise<Resol
   const profileCompletionPercent = profileCompletion.percent
 
   if (user.role === "student") {
+    const [enrollments, notes, certificates] = await Promise.all([
+      typeof db.getEnrollmentsByUserId === "function" ? db.getEnrollmentsByUserId(user.id) : Promise.resolve([]),
+      typeof db.getNotesByUserId === "function" ? db.getNotesByUserId(user.id) : Promise.resolve([]),
+      typeof db.getCertificatesByUserId === "function" ? db.getCertificatesByUserId(user.id) : Promise.resolve([]),
+    ])
+
     return {
       role: user.role,
       welcomeSeen: Boolean(onboardingState.welcomeSeenAt),
@@ -113,6 +121,11 @@ export async function resolveOnboardingState(db: any, user: User): Promise<Resol
         viewOnsiteTraining: Boolean(onboardingState.viewedOnsiteTrainingAt),
       },
       onboardingState,
+      milestoneSummary: buildStudentMilestoneSummary(user, {
+        enrollments: enrollments || [],
+        notes: notes || [],
+        certificates: certificates || [],
+      }),
     }
   }
 

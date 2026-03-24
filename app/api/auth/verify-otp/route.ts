@@ -5,6 +5,7 @@ import { getDB } from "@/lib/db"
 import { sendWelcomeEmail } from "@/lib/email"
 import { getPostVerificationRoute } from "@/lib/onboarding-flow"
 import { recordOnboardingEvent } from "@/lib/onboarding-event-log"
+import { syncStudentMilestones } from "@/lib/student-milestones"
 import { otpVerifySchema } from "@/lib/validation"
 
 export async function POST(request: Request) {
@@ -67,16 +68,16 @@ export async function POST(request: Request) {
       console.error("Failed to send welcome email:", err)
     }
 
-    let responseUser = result.user
+    let responseUser = result.user.role === "student" ? await syncStudentMilestones(db, result.user) : result.user
     const isOnsiteProfile =
-      result.user.role === "student" &&
-      result.user.studentProfile &&
-      (result.user.studentProfile.trainingMode === "onsite" ||
-        (!result.user.studentProfile.trainingMode && (result.user.studentProfile.registrationFeeNgn || 0) > 0))
+      responseUser.role === "student" &&
+      responseUser.studentProfile &&
+      (responseUser.studentProfile.trainingMode === "onsite" ||
+        (!responseUser.studentProfile.trainingMode && (responseUser.studentProfile.registrationFeeNgn || 0) > 0))
 
     if (isOnsiteProfile) {
       try {
-        const payments = await db.getPaymentsByUserId(result.user.id)
+        const payments = await db.getPaymentsByUserId(responseUser.id)
         const hasCompletedOnsitePayment = (payments || []).some(
           (payment: any) =>
             payment.paymentType === "onsite_registration" &&
@@ -103,14 +104,14 @@ export async function POST(request: Request) {
 
         const [allCourses, existingEnrollments] = await Promise.all([
           db.getAllCourses(),
-          db.getEnrollmentsByUserId(result.user.id),
+          db.getEnrollmentsByUserId(responseUser.id),
         ])
 
         const enrolledCourseIds = new Set((existingEnrollments || []).map((item: any) => item.courseId))
         for (const course of allCourses || []) {
           if (enrolledCourseIds.has(course.id)) continue
           await db.createEnrollment({
-            userId: result.user.id,
+            userId: responseUser.id,
             courseId: course.id,
             progress: 0,
             completedLessons: [],
@@ -120,11 +121,12 @@ export async function POST(request: Request) {
           enrolledCourseIds.add(course.id)
         }
 
-        const updatedUser = await db.updateUser(result.user.id, {
+        const updatedUser = await db.updateUser(responseUser.id, {
           enrolledCourses: Array.from(enrolledCourseIds),
         })
         if (updatedUser) {
-          const { password: _password, ...safeUser } = updatedUser as any
+          const syncedUser = await syncStudentMilestones(db, updatedUser)
+          const { password: _password, ...safeUser } = syncedUser as any
           responseUser = safeUser
         }
       } catch (enrollmentError) {
@@ -159,4 +161,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to verify OTP" }, { status: 500 })
   }
 }
-

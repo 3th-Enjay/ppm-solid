@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, CheckCircle2, Loader2, Sparkles, Target } from "lucide-react"
 import { OnboardingPreview, type OnboardingPreviewSection } from "@/components/auth/onboarding-preview"
 import { OnboardingShell, type OnboardingShellStep } from "@/components/auth/onboarding-shell"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { buildProfileRouteQuery } from "@/lib/profile-route-state"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -29,6 +30,7 @@ const LOCATION_OPTIONS: TrainingLocation[] = ["enugu", "abuja"]
 
 export default function ProfileSetupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, token, setAuth, hydrated } = useAuthStore()
   const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -38,6 +40,8 @@ export default function ProfileSetupPage() {
   const [profileTracker, setProfileTracker] = useState<ProfileCompletionTracker | null>(null)
 
   const [formData, setFormData] = useState({
+    phoneNumber: user?.studentProfile?.phoneNumber || "",
+    whatsappNumber: user?.studentProfile?.whatsappNumber || "",
     gender: (user?.studentProfile?.gender || "prefer_not_to_say") as StudentGender,
     dateOfBirth: user?.studentProfile?.dateOfBirth || "",
     currentAddress: user?.studentProfile?.currentAddress || "",
@@ -62,6 +66,8 @@ export default function ProfileSetupPage() {
   useEffect(() => {
     if (!user || initialized) return
     setFormData({
+      phoneNumber: user.studentProfile?.phoneNumber || "",
+      whatsappNumber: user.studentProfile?.whatsappNumber || "",
       gender: (user.studentProfile?.gender || "prefer_not_to_say") as StudentGender,
       dateOfBirth: user.studentProfile?.dateOfBirth || "",
       currentAddress: user.studentProfile?.currentAddress || "",
@@ -76,6 +82,15 @@ export default function ProfileSetupPage() {
 
   useEffect(() => {
     if (!token || !user || user.role !== "student") return
+
+    void fetch("/api/onboarding/state", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ markProfileSetupStarted: true }),
+    })
 
     const loadTracker = async () => {
       setTrackerLoading(true)
@@ -122,13 +137,28 @@ export default function ProfileSetupPage() {
     [],
   )
 
+  useEffect(() => {
+    const requestedStep = searchParams.get("step")
+    if (!requestedStep) return
+
+    const requestedIndex = steps.findIndex((step) => step.id === requestedStep)
+    if (requestedIndex >= 0 && requestedIndex !== currentStep) {
+      setCurrentStep(requestedIndex)
+    }
+  }, [currentStep, searchParams, steps])
+
   const validateStep = (stepIndex: number) => {
     setError("")
     const stepId = steps[stepIndex]?.id
 
     if (stepId === "personal") {
-      if (!formData.dateOfBirth || formData.currentAddress.trim().length < 5) {
-        setError("Please complete your date of birth and address.")
+      if (
+        formData.phoneNumber.trim().length < 7 ||
+        formData.whatsappNumber.trim().length < 7 ||
+        !formData.dateOfBirth ||
+        formData.currentAddress.trim().length < 5
+      ) {
+        setError("Please complete your phone, WhatsApp, date of birth, and address.")
         return false
       }
     }
@@ -173,7 +203,14 @@ export default function ProfileSetupPage() {
       }
 
       setAuth(data.user, token)
-      router.push("/dashboard/profile?setup=complete")
+      const returnQuery = buildProfileRouteQuery(undefined, {
+        setup: "complete",
+        success: "setup-complete",
+        tab: "training",
+        highlight: "training-profile",
+        updated: "identity-contact,training-mode,preferences,additional-info",
+      })
+      router.push(returnQuery ? `/dashboard/profile?${returnQuery}` : "/dashboard/profile")
     } catch (updateError: any) {
       setError(updateError?.message || "Unable to update profile")
     } finally {
@@ -188,6 +225,8 @@ export default function ProfileSetupPage() {
         title: "Personal info",
         onEdit: () => setCurrentStep(0),
         items: [
+          { label: "Phone number", value: formData.phoneNumber },
+          { label: "WhatsApp number", value: formData.whatsappNumber },
           { label: "Gender", value: formData.gender.replace(/_/g, " ") },
           { label: "Date of birth", value: formData.dateOfBirth },
           { label: "Address", value: formData.currentAddress },
@@ -223,16 +262,16 @@ export default function ProfileSetupPage() {
   return (
     <OnboardingShell
       badge="Profile Setup"
-      title="Complete your learner profile"
-      description="Finish the deferred fields from signup so your learning experience can be personalized."
+      title="Complete your learner record"
+      description="Finish the deferred fields from signup so your learner hub, training record, and milestone journey stay aligned across the dashboard."
       currentStep={currentStep}
       steps={steps}
       aside={
         <div className="space-y-4">
-          <Card className="border-primary/15">
+          <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
             <CardHeader>
               <CardTitle className="text-base">Completion tracker</CardTitle>
-              <CardDescription>See exactly what is left before your learner profile is fully complete.</CardDescription>
+              <CardDescription>See exactly what is left before your learner record is fully reflected in the profile hub.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2 rounded-2xl border bg-muted/30 p-4">
@@ -271,23 +310,23 @@ export default function ProfileSetupPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/15">
+          <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
             <CardHeader>
               <CardTitle className="text-base">Why this matters</CardTitle>
-              <CardDescription>Completing your profile helps us tailor your experience.</CardDescription>
+              <CardDescription>Completing your learner record helps the whole student experience stay relevant.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p className="inline-flex items-center gap-2 font-medium text-foreground">
                 <Sparkles className="h-4 w-4 text-primary" /> Better recommendations
               </p>
-              <p>We use these details to match you with the right courses, learning paths, and onsite cohorts.</p>
+              <p>We use these details to shape your learner hub, match you with the right courses, and keep onsite cohort guidance accurate.</p>
             </CardContent>
           </Card>
         </div>
       }
       footer={
         <p>
-          Prefer to finish later? <Link href="/dashboard">Return to dashboard</Link>
+          Prefer to finish later? <Link href="/dashboard/profile">Return to learner hub</Link>
         </p>
       }
     >
@@ -301,12 +340,34 @@ export default function ProfileSetupPage() {
       <div className="mb-6 rounded-2xl border bg-primary/5 p-4 text-sm">
         <p className="font-medium text-foreground">Profile setup funnel</p>
         <p className="mt-1 text-muted-foreground">
-          We kept these heavier questions out of signup so you could create your account faster. This setup flow finishes the rest in one guided pass.
+          We kept these heavier questions out of signup so you could create your account faster. This guided pass finishes the learner record and returns you to the profile hub to review the updated training details.
         </p>
       </div>
 
       {currentStep === 0 ? (
         <div className="space-y-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone number</Label>
+              <Input
+                id="phoneNumber"
+                inputMode="tel"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                placeholder="Enter your main phone number"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="whatsappNumber">WhatsApp number</Label>
+              <Input
+                id="whatsappNumber"
+                inputMode="tel"
+                value={formData.whatsappNumber}
+                onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                placeholder="Enter your WhatsApp number"
+              />
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="gender">Gender</Label>
             <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value as StudentGender })}>
@@ -446,3 +507,6 @@ export default function ProfileSetupPage() {
     </OnboardingShell>
   )
 }
+
+
+

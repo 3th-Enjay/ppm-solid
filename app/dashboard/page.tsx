@@ -139,6 +139,19 @@ export default function DashboardPage() {
   }, [user])
 
   useEffect(() => {
+    if (!token || !user || user.role !== "student") return
+
+    void fetch("/api/onboarding/state", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ markDashboardVisited: true }),
+    })
+  }, [token, user])
+
+  useEffect(() => {
     if (!user) return
     const loadNotes = async () => {
       try {
@@ -274,11 +287,11 @@ export default function DashboardPage() {
             <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary">Profile completion</p>
-                <h2 className="text-xl font-semibold">Complete your learner profile</h2>
-                <p className="text-sm text-muted-foreground">Your profile is {profileCompletion}% complete. Finish it to unlock tailored recommendations and a fully guided learner setup.</p>
+                <h2 className="text-xl font-semibold">Finish your learner record</h2>
+                <p className="text-sm text-muted-foreground">Your learner hub is {profileCompletion}% complete. Finish it to unlock tailored recommendations, cleaner profile review, and a fully aligned training record.</p>
               </div>
               <Button asChild variant="cta">
-                <Link href="/dashboard/profile/setup">Complete profile</Link>
+                <Link href="/dashboard/profile/setup">Continue guided setup</Link>
               </Button>
             </CardContent>
           </Card>
@@ -565,6 +578,8 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+
 
 
 

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { ZodError } from "zod"
 import { getDB } from "@/lib/db"
+import { syncStudentMilestones } from "@/lib/student-milestones"
 import { enrollmentProgressSchema } from "@/lib/validation"
 
 export async function PATCH(
@@ -14,18 +15,26 @@ export async function PATCH(
 
     const db = getDB()
     const enrollment = await db.getEnrollmentById(id)
-    
+
     if (!enrollment) {
       return NextResponse.json({ error: "Enrollment not found" }, { status: 404 })
     }
 
+    const nextStatus = progress >= 100 ? "completed" : enrollment.status === "completed" ? "completed" : "active"
     const updated = await db.updateEnrollment(id, {
       progress,
       completedLessons,
+      status: nextStatus,
+      ...(progress >= 100 ? { completedAt: enrollment.completedAt || new Date() } : {}),
     })
 
     if (!updated) {
       return NextResponse.json({ error: "Enrollment not found" }, { status: 404 })
+    }
+
+    const user = await db.findUserById(enrollment.userId)
+    if (user?.role === "student") {
+      await syncStudentMilestones(db, user)
     }
 
     return NextResponse.json({ enrollment: updated })

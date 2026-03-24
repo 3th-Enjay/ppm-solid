@@ -211,11 +211,11 @@ export default function ContactPage() {
         hasParallax
         hasFloatingAccent
         backgroundType="image"
-        backgroundImageUrl="https://images.pexels.com/photos/6303396/pexels-photo-6303396.jpeg?auto=compress&cs=tinysrgb&w=1800"
-        backgroundImageAlt="Admissions advisor speaking with a prospective learner"
+        backgroundImageUrl="/contact-medical-care-kit.svg"
+        backgroundImageAlt="Medical caregiver essentials including a clipboard, care cross, and stethoscope"
         className="text-white"
       >
-        {/* Placeholder intent: admissions advisor/student interaction in healthcare-learning context. */}
+        {/* Inanimate caregiver-themed contact hero artwork. */}
         <motion.div
           aria-hidden="true"
           variants={slowZoom}

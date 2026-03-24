@@ -1,8 +1,47 @@
-// Core type definitions for the Prompt Care Academy platform
+﻿// Core type definitions for the Prompt Care Academy platform
 
 export type UserRole = "student" | "instructor" | "admin" | "finance"
 export type StudentGender = "male" | "female" | "other" | "prefer_not_to_say"
 export type TrainingLocation = "enugu" | "abuja"
+
+export type StudentMilestoneKey =
+  | "student_activated"
+  | "welcome_aboard"
+  | "profile_starter"
+  | "profile_complete"
+  | "first_dashboard_visit"
+  | "onsite_interested"
+  | "onsite_learner"
+  | "first_enrollment"
+  | "course_finisher"
+  | "identity_confirmed"
+  | "course_explorer"
+  | "lesson_starter"
+  | "steady_learner"
+  | "focused_learner"
+  | "learning_streak"
+  | "note_taker"
+  | "progress_builder"
+  | "halfway_there"
+  | "almost_done"
+  | "certified_learner"
+
+export type StudentMilestoneCategory =
+  | "onboarding"
+  | "profile"
+  | "learning"
+  | "onsite"
+  | "completion"
+  | "consistency"
+  | "progress"
+
+export interface StudentMilestone {
+  key: StudentMilestoneKey
+  title: string
+  description?: string
+  category?: StudentMilestoneCategory
+  unlockedAt: Date
+}
 
 export interface InstructorProfile {
   phoneNumber: string
@@ -38,6 +77,8 @@ export interface UserOnboardingState {
   dismissedOnsiteBannerAt?: Date
   viewedOnsiteTrainingAt?: Date
   startedOnsiteCheckoutAt?: Date
+  dashboardVisitedAt?: Date
+  profileSetupStartedAt?: Date
   reviewedPublishingGuidelinesAt?: Date
   updatedAt?: Date
 }
@@ -53,6 +94,7 @@ export interface User {
   status?: "active" | "suspended"
   emailVerified?: boolean
   onboardingState?: UserOnboardingState
+  studentMilestones?: StudentMilestone[]
   otpHash?: string
   otpExpiresAt?: Date
   studentProfile?: StudentRegistrationProfile
@@ -306,6 +348,9 @@ export interface LearningNote {
   createdAt: Date
   updatedAt: Date
 }
+
+
+
 
 
 

@@ -1,15 +1,18 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { z } from "zod"
 import { authService } from "@/lib/auth"
 import { getDB } from "@/lib/db"
 import { getTokenFromRequest } from "@/lib/jwt"
 import { resolveOnboardingState } from "@/lib/onboarding-state"
+import { syncStudentMilestones } from "@/lib/student-milestones"
 
 const onboardingStatePatchSchema = z.object({
   markWelcomeSeen: z.boolean().optional(),
   dismissOnsiteBanner: z.boolean().optional(),
   markOnsiteViewed: z.boolean().optional(),
   markOnsiteCheckoutStarted: z.boolean().optional(),
+  markDashboardVisited: z.boolean().optional(),
+  markProfileSetupStarted: z.boolean().optional(),
   markPublishingGuidelinesReviewed: z.boolean().optional(),
 })
 
@@ -34,7 +37,8 @@ export async function GET(request: Request) {
   }
 
   const db = getDB()
-  const state = await resolveOnboardingState(db, auth.user)
+  const user = auth.user.role === "student" ? await syncStudentMilestones(db, auth.user) : auth.user
+  const state = await resolveOnboardingState(db, user)
   return NextResponse.json(state)
 }
 
@@ -56,6 +60,8 @@ export async function PATCH(request: Request) {
       ...(validated.dismissOnsiteBanner ? { dismissedOnsiteBannerAt: now } : {}),
       ...(validated.markOnsiteViewed ? { viewedOnsiteTrainingAt: existing.viewedOnsiteTrainingAt || now } : {}),
       ...(validated.markOnsiteCheckoutStarted ? { startedOnsiteCheckoutAt: existing.startedOnsiteCheckoutAt || now } : {}),
+      ...(validated.markDashboardVisited ? { dashboardVisitedAt: existing.dashboardVisitedAt || now } : {}),
+      ...(validated.markProfileSetupStarted ? { profileSetupStartedAt: existing.profileSetupStartedAt || now } : {}),
       ...(validated.markPublishingGuidelinesReviewed
         ? { reviewedPublishingGuidelinesAt: existing.reviewedPublishingGuidelinesAt || now }
         : {}),
@@ -68,7 +74,8 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Unable to update onboarding state" }, { status: 500 })
     }
 
-    const state = await resolveOnboardingState(db, updatedUser)
+    const syncedUser = updatedUser.role === "student" ? await syncStudentMilestones(db, updatedUser) : updatedUser
+    const state = await resolveOnboardingState(db, syncedUser)
     return NextResponse.json(state)
   } catch (error) {
     if (error instanceof z.ZodError) {

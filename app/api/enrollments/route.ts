@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { ZodError } from "zod"
 import { getDB } from "@/lib/db"
-import { enrollmentCreateSchema } from "@/lib/validation"
-import { maskCourseForUser } from "@/lib/utils/course-masking"
 import { getTokenFromRequest } from "@/lib/jwt"
 import { authService } from "@/lib/auth"
+import { syncStudentMilestones } from "@/lib/student-milestones"
+import { enrollmentCreateSchema } from "@/lib/validation"
+import { maskCourseForUser } from "@/lib/utils/course-masking"
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,9 +70,12 @@ export async function GET(request: NextRequest) {
           }
 
           if (created) {
-            await db.updateUser(userId, {
+            const updatedUser = await db.updateUser(userId, {
               enrolledCourses: Array.from(existingCourseIds),
             })
+            if (updatedUser?.role === "student") {
+              await syncStudentMilestones(db, updatedUser)
+            }
           }
         }
       }
@@ -135,7 +139,10 @@ export async function POST(request: NextRequest) {
     const user = await db.findUserById(userId)
     if (user) {
       const updatedCourses = Array.from(new Set([...(user.enrolledCourses || []), courseId]))
-      await db.updateUser(userId, { enrolledCourses: updatedCourses })
+      const updatedUser = await db.updateUser(userId, { enrolledCourses: updatedCourses })
+      if (updatedUser?.role === "student") {
+        await syncStudentMilestones(db, updatedUser)
+      }
     }
 
     return NextResponse.json({ enrollment }, { status: 201 })

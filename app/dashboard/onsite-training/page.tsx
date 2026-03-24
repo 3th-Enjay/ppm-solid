@@ -82,6 +82,10 @@ export default function DashboardOnsiteTrainingPage() {
   const selectedLocation = config.locations[preferredLocation]
   const locationSummary = useMemo(() => `${selectedLocation.label} - ${selectedLocation.startsOn}`, [selectedLocation])
   const countdownCopy = useMemo(() => getCountdownCopy(selectedLocation.startsOn), [selectedLocation])
+  const cohortStatusLabel = isPaid ? "Seat reserved" : `${selectedLocation.slotsLeft} seats left`
+  const learnerHubStatusCopy = isPaid
+    ? "Your learner hub now reflects a paid onsite path with cohort, seat, and payment visibility."
+    : "When you pay, your learner hub will reflect this cohort, your payment reference, and your onsite identity."
 
   const handleCheckout = async () => {
     if (!token) return
@@ -134,16 +138,21 @@ export default function DashboardOnsiteTrainingPage() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold md:text-4xl">Onsite Training</h1>
         <p className="max-w-3xl text-muted-foreground">
-          Upgrade from your student dashboard, complete payment with Paystack, and move into a premium hands-on training track with practical sessions, certification, and career support.
+          Upgrade from your student dashboard, complete payment with Paystack, and move into a premium hands-on training track that also updates your learner hub with onsite status, payment reference, and cohort details.
         </p>
       </div>
 
-      <Card variant="elevated" className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
+      <Card variant="elevated" className={`overflow-hidden transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-lg ${
+        isPaid
+          ? "border-amber-300/70 bg-gradient-to-br from-amber-100/80 via-background to-orange-100/70 dark:border-amber-800/70 dark:from-amber-950/35 dark:via-background dark:to-orange-950/20"
+          : "border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/10 dark:border-primary/25 dark:from-primary/15 dark:via-background dark:to-accent/15"
+      }`}>
         <CardContent className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:p-8">
           <div className="space-y-5">
             <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-              <span className="rounded-full border border-primary/20 bg-background/80 px-3 py-1.5">Premium cohort</span>
-              <span className="rounded-full border border-primary/20 bg-background/80 px-3 py-1.5">{countdownCopy}</span>
+              <span className="rounded-full border border-primary/20 bg-background/80 px-3 py-1.5 dark:border-primary/25 dark:bg-background/90">Premium cohort</span>
+              <span className="rounded-full border border-primary/20 bg-background/80 px-3 py-1.5 dark:border-primary/25 dark:bg-background/90">{countdownCopy}</span>
+              <span className="rounded-full border border-primary/20 bg-background/80 px-3 py-1.5 dark:border-primary/25 dark:bg-background/90">{cohortStatusLabel}</span>
             </div>
             <div className="space-y-3">
               <h2 className="text-3xl font-semibold leading-tight md:text-4xl">Become a job-ready caregiver with immersive, in-person training.</h2>
@@ -188,10 +197,10 @@ export default function DashboardOnsiteTrainingPage() {
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>
 
-          <Card className="border-primary/15 bg-background/80">
+          <Card className="border-primary/15 bg-background/80 dark:border-primary/25 dark:bg-background/90">
             <CardHeader>
               <CardTitle className="text-base">At a glance</CardTitle>
-              <CardDescription>Everything included when you switch to the onsite pathway.</CardDescription>
+              <CardDescription>Everything that becomes visible in your learner record when you switch to the onsite pathway.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <div className="flex items-start gap-3 rounded-2xl border bg-background p-3">
@@ -215,9 +224,14 @@ export default function DashboardOnsiteTrainingPage() {
                   <p>NGN {config.registrationFeeNgn.toLocaleString("en-NG")} via Paystack.</p>
                 </div>
               </div>
-              <div className="rounded-2xl border bg-primary/5 p-4">
+              <div className="rounded-2xl border bg-primary/5 p-4 dark:bg-primary/10">
                 <p className="text-xs font-semibold uppercase tracking-wide text-primary">Support line</p>
                 <p className="mt-2 font-medium text-foreground">{config.supportPhone}</p>
+              </div>
+              <div className="rounded-2xl border bg-background p-4 dark:bg-background/80">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Learner hub status</p>
+                <p className="mt-2 font-medium text-foreground">{isPaid ? "Premium onsite identity active" : "Learner hub will update after payment"}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{learnerHubStatusCopy}</p>
               </div>
             </CardContent>
           </Card>
@@ -226,10 +240,10 @@ export default function DashboardOnsiteTrainingPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <Card variant="elevated" className="border-primary/20">
+          <Card variant="elevated" className="border-primary/20 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-lg">
             <CardHeader>
               <CardTitle>{config.formTitle}</CardTitle>
-              <CardDescription>Choose a location and see why the onsite path is positioned as a premium upgrade.</CardDescription>
+              <CardDescription>Choose a location and see why the onsite path is positioned as a premium upgrade inside the student journey.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -295,7 +309,7 @@ export default function DashboardOnsiteTrainingPage() {
           </Card>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="border-primary/15">
+            <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
               <CardHeader>
                 <CardTitle className="text-base">Why learners upgrade</CardTitle>
               </CardHeader>
@@ -304,7 +318,7 @@ export default function DashboardOnsiteTrainingPage() {
                 <p>The curriculum is built for speed, confidence, and employability rather than passive watching alone.</p>
               </CardContent>
             </Card>
-            <Card className="border-primary/15">
+            <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
               <CardHeader>
                 <CardTitle className="text-base">Online vs onsite</CardTitle>
               </CardHeader>
@@ -321,7 +335,7 @@ export default function DashboardOnsiteTrainingPage() {
             </Card>
           </div>
 
-          <Card className="border-primary/15">
+          <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
             <CardHeader>
               <CardTitle className="text-base">Learner testimonials</CardTitle>
               <CardDescription>Proof points to support the upgrade decision.</CardDescription>
@@ -346,7 +360,7 @@ export default function DashboardOnsiteTrainingPage() {
         </div>
 
         <div className="space-y-4">
-          <Card className="border-primary/15">
+          <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
             <CardHeader>
               <CardTitle className="text-base">Access model</CardTitle>
             </CardHeader>
@@ -358,7 +372,7 @@ export default function DashboardOnsiteTrainingPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/15">
+          <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
             <CardHeader>
               <CardTitle className="text-base">Current status</CardTitle>
             </CardHeader>
@@ -371,10 +385,10 @@ export default function DashboardOnsiteTrainingPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/15 bg-primary/5">
+          <Card className="border-primary/15 bg-primary/5 dark:border-primary/25 dark:bg-primary/10">
             <CardHeader>
               <CardTitle className="text-base">Ready to secure your seat?</CardTitle>
-              <CardDescription>The checkout flow sends you to Paystack and returns you to your dashboard context.</CardDescription>
+              <CardDescription>The checkout flow sends you to Paystack and returns you to your dashboard context, where your learner hub can reflect the new onsite state.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button variant="cta" className="w-full" onClick={handleCheckout} disabled={loading || isPaid}>

@@ -1,12 +1,15 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { z } from "zod"
 import { authService } from "@/lib/auth"
 import { getDB } from "@/lib/db"
 import { getTokenFromRequest } from "@/lib/jwt"
 import { getTrainingLocationStartDate, ONLINE_TRAINING } from "@/lib/student-registration"
+import { syncStudentMilestones } from "@/lib/student-milestones"
 import type { StudentRegistrationProfile } from "@/lib/types"
 
 const profileSetupSchema = z.object({
+  phoneNumber: z.string().min(7, "Phone number is required"),
+  whatsappNumber: z.string().min(7, "WhatsApp number is required"),
   gender: z.enum(["male", "female", "other", "prefer_not_to_say"]),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   currentAddress: z.string().min(5, "Current address is required"),
@@ -40,8 +43,8 @@ export async function PATCH(request: Request) {
     const existingProfile = existingStudentProfile || {
       trainingMode: "online",
       formTitle: ONLINE_TRAINING.formTitle,
-      phoneNumber: user.email,
-      whatsappNumber: user.email,
+      phoneNumber: validated.phoneNumber,
+      whatsappNumber: validated.whatsappNumber,
       gender: validated.gender,
       dateOfBirth: validated.dateOfBirth,
       currentAddress: validated.currentAddress,
@@ -60,6 +63,8 @@ export async function PATCH(request: Request) {
 
     const updatedProfile = {
       ...existingProfile,
+      phoneNumber: validated.phoneNumber,
+      whatsappNumber: validated.whatsappNumber,
       gender: validated.gender,
       dateOfBirth: validated.dateOfBirth,
       currentAddress: validated.currentAddress,
@@ -74,13 +79,19 @@ export async function PATCH(request: Request) {
     const updatedUser = await db.updateUser(user.id, {
       bio: validated.bio?.trim() || user.bio,
       studentProfile: updatedProfile,
+      onboardingState: {
+        ...(user.onboardingState || {}),
+        profileSetupStartedAt: user.onboardingState?.profileSetupStartedAt || new Date(),
+        updatedAt: new Date(),
+      },
     })
 
     if (!updatedUser) {
       return NextResponse.json({ error: "Unable to update profile" }, { status: 500 })
     }
 
-    const { password: _, ...safeUser } = updatedUser
+    const syncedUser = await syncStudentMilestones(db, updatedUser)
+    const { password: _, ...safeUser } = syncedUser
     return NextResponse.json({ user: safeUser })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -92,4 +103,3 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Unable to update profile" }, { status: 500 })
   }
 }
-

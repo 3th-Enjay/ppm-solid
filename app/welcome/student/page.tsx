@@ -88,7 +88,7 @@ export default function StudentWelcomePage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <Card className="border-primary/15 shadow-xl">
+        <Card className="border-primary/15 shadow-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl">
           <CardHeader className="space-y-4 border-b bg-gradient-to-br from-primary/5 via-background to-accent/5">
             <p className="inline-flex w-fit rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
               Student Welcome
@@ -96,7 +96,7 @@ export default function StudentWelcomePage() {
             <div className="space-y-2">
               <CardTitle className="text-3xl">Welcome, {user.name}</CardTitle>
               <CardDescription className="max-w-2xl text-base">
-                Your email is verified and your account is active. Start with the guided next steps below, then move into your dashboard when you are ready.
+                Your email is verified and your account is active. Start by finishing your learner record, then use the dashboard and profile hub to keep everything in sync.
               </CardDescription>
             </div>
           </CardHeader>
@@ -107,8 +107,8 @@ export default function StudentWelcomePage() {
                   <p className="text-sm font-semibold">Profile completion</p>
                   <p className="text-sm text-muted-foreground">
                     {isProfileComplete
-                      ? "Your learner profile is complete."
-                      : "Finish the rest of your learner profile from the dashboard setup flow."}
+                      ? "Your learner hub is complete and ready to guide your next step."
+                      : "Finish the rest of your learner record from guided setup so the profile hub and training record stay aligned."}
                   </p>
                 </div>
                 <p className="text-sm font-semibold text-primary">{state.profileCompletionPercent}%</p>
@@ -129,38 +129,38 @@ export default function StudentWelcomePage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <Card className="border-primary/10">
+              <Card className="border-primary/10 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base"><UserRound className="h-4 w-4 text-primary" /> Complete profile</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
-                  <p>{isProfileComplete ? "Review your learner details anytime from the dashboard." : "Finish the deferred profile questions and unlock tailored recommendations."}</p>
-                  <Button asChild variant="cta" className="w-full">
-                    <Link href="/dashboard/profile/setup">{isProfileComplete ? "Review profile" : "Continue profile setup"}</Link>
+                  <p>{isProfileComplete ? "Review your learner record anytime from the profile hub." : "Finish the deferred learner questions and unlock tailored recommendations."}</p>
+                  <Button asChild variant="cta" className="h-auto w-full whitespace-normal px-4 py-3 text-center leading-snug">
+                    <Link href={isProfileComplete ? "/dashboard/profile" : "/dashboard/profile/setup"}>{isProfileComplete ? "Open learner hub" : "Continue guided setup"}</Link>
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="border-primary/10">
+              <Card className="border-primary/10 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base"><BookOpen className="h-4 w-4 text-primary" /> Explore courses</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
                   <p>Browse the course catalog and begin your learning path.</p>
-                  <Button asChild variant="outline" className="w-full bg-transparent">
+                  <Button asChild variant="outline" className="h-auto w-full whitespace-normal bg-transparent px-4 py-3 text-center leading-snug">
                     <Link href="/courses">Browse courses</Link>
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="border-primary/10">
+              <Card className="border-primary/10 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base"><Sparkles className="h-4 w-4 text-primary" /> View onsite training</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-base"><Sparkles className="h-4 w-4 text-primary" /> Explore onsite pathway</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
-                  <p>Explore the premium onsite option from inside your student dashboard.</p>
-                  <Button asChild variant="cta" className="w-full">
-                    <Link href="/dashboard/onsite-training">Open onsite training</Link>
+                  <p>Compare the premium onsite pathway from inside your dashboard without losing your online learner progress.</p>
+                  <Button asChild variant="cta" className="h-auto w-full whitespace-normal px-4 py-3 text-center leading-snug">
+                    <Link href="/dashboard/onsite-training">Open onsite pathway</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -171,8 +171,8 @@ export default function StudentWelcomePage() {
         <div className="space-y-4">
           <Card className="border-primary/15">
             <CardHeader>
-              <CardTitle className="text-base">First steps</CardTitle>
-              <CardDescription>Use this as your starting checklist.</CardDescription>
+              <CardTitle className="text-base">Learner journey</CardTitle>
+              <CardDescription>Use this as your first progress checklist.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-start gap-3 rounded-2xl border bg-background p-3">
@@ -186,7 +186,7 @@ export default function StudentWelcomePage() {
                 <CheckCircle2 className={`mt-0.5 h-4 w-4 ${state.checklist.completeProfile ? "text-primary" : "text-muted-foreground"}`} />
                 <div>
                   <p className="font-medium">Complete profile</p>
-                  <p className="text-muted-foreground">Current completion: {state.profileCompletionPercent}%.</p>
+                  <p className="text-muted-foreground">Current learner-record completion: {state.profileCompletionPercent}%.</p>
                 </div>
               </div>
               {!state.checklist.completeProfile && remainingLabels.length > 0 ? (
@@ -197,14 +197,14 @@ export default function StudentWelcomePage() {
               <div className="flex items-start gap-3 rounded-2xl border bg-background p-3">
                 <CheckCircle2 className={`mt-0.5 h-4 w-4 ${state.checklist.viewOnsiteTraining ? "text-primary" : "text-muted-foreground"}`} />
                 <div>
-                  <p className="font-medium">Explore onsite training</p>
-                  <p className="text-muted-foreground">Optional premium upgrade inside the authenticated dashboard.</p>
+                  <p className="font-medium">Explore onsite pathway</p>
+                  <p className="text-muted-foreground">Optional premium upgrade that stays visible inside your authenticated learner hub.</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Button asChild variant="outline" className="w-full bg-transparent">
+          <Button asChild variant="outline" className="h-auto w-full whitespace-normal bg-transparent px-4 py-3 text-center leading-snug">
             <Link href="/dashboard">Go to dashboard</Link>
           </Button>
         </div>
@@ -212,3 +212,4 @@ export default function StudentWelcomePage() {
     </div>
   )
 }
+
