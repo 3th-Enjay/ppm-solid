@@ -62,12 +62,23 @@ export default function HomePage() {
   ]
 
   const visualStack = [
-    "/prompt-heroimg3.jpeg",
-    "https://images.pexels.com/photos/35645507/pexels-photo-35645507.jpeg?auto=compress&cs=tinysrgb&w=900",
-    "https://images.unsplash.com/photo-1550831107-1553da8c8464?auto=format&fit=crop&w=900&q=80",
-    "https://images.pexels.com/photos/35645529/pexels-photo-35645529.jpeg?auto=compress&cs=tinysrgb&w=900",
+    {
+      imageUrl: "https://images.pexels.com/photos/4989136/pexels-photo-4989136.jpeg?auto=compress&cs=tinysrgb&w=900",
+      alt: "African male doctor writing notes in a clinical setting",
+    },
+    {
+      imageUrl: "https://images.pexels.com/photos/5452224/pexels-photo-5452224.jpeg?auto=compress&cs=tinysrgb&w=900",
+      alt: "African medical practitioners collaborating over a tablet",
+    },
+    {
+      imageUrl: "https://images.pexels.com/photos/6129154/pexels-photo-6129154.jpeg?auto=compress&cs=tinysrgb&w=900",
+      alt: "African doctor and nurse reviewing patient information in a hospital corridor",
+    },
+    {
+      imageUrl: "https://images.pexels.com/photos/4989166/pexels-photo-4989166.jpeg?auto=compress&cs=tinysrgb&w=900",
+      alt: "African doctor smiling with a laptop in a bright clinic",
+    },
   ]
-
   const journeySlides = [
     {
       title: "Start with the Fundamentals",
@@ -147,15 +158,15 @@ export default function HomePage() {
               ))}
             </div>
             <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-              {visualStack.map((imageUrl, index) => (
+              {visualStack.map((image, index) => (
                 <motion.div
-                  key={imageUrl}
+                  key={image.imageUrl}
                   variants={fadeUp(0.08 * (index + 1))}
                   className="overflow-hidden rounded-2xl border border-border/80 bg-card/80 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:border-accent/50 hover:shadow-lifted"
                 >
                   <img
-                    src={imageUrl}
-                    alt={`Healthcare learning environment placeholder ${index + 1}`}
+                    src={image.imageUrl}
+                    alt={image.alt}
                     className="h-40 w-full object-cover transition-transform duration-500 hover:scale-[1.04]"
                     loading="lazy"
                     decoding="async"
@@ -281,5 +292,4 @@ export default function HomePage() {
     </div>
   )
 }
-
 
