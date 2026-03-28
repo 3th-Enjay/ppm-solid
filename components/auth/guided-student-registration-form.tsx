@@ -3,7 +3,7 @@
 import type React from "react"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, ShieldCheck, Sparkles } from "lucide-react"
 import { OnboardingPreview, type OnboardingPreviewSection } from "@/components/auth/onboarding-preview"
@@ -61,6 +61,9 @@ const DRAFT_KEY = "onboarding:draft:student"
 
 export function GuidedStudentRegistrationForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectParam = searchParams.get("redirect")
+  const loginHref = redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login"
   const { toast } = useToast()
   const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -144,11 +147,11 @@ export function GuidedStudentRegistrationForm() {
   useEffect(() => {
     trackOnboardingEvent("signup_step_viewed", {
       role: "student",
-      mode: "online",
+      mode: redirectParam === "/dashboard/onsite-training" ? "onsite-intent" : "online",
       step: steps[currentStep]?.id,
       stepIndex: currentStep + 1,
     })
-  }, [currentStep, steps])
+  }, [currentStep, redirectParam, steps])
 
   const fullName = useMemo(() => buildFullName(formData.firstName, formData.lastName), [formData.firstName, formData.lastName])
   const firstNameGreeting = formData.firstName.trim() || "there"
@@ -243,7 +246,7 @@ export function GuidedStudentRegistrationForm() {
 
     trackOnboardingEvent("signup_step_completed", {
       role: "student",
-      mode: "online",
+      mode: redirectParam === "/dashboard/onsite-training" ? "onsite-intent" : "online",
       step: steps[currentStep]?.id,
       stepIndex: currentStep + 1,
     })
@@ -275,17 +278,16 @@ export function GuidedStudentRegistrationForm() {
 
       clearOnboardingDraft(DRAFT_KEY)
 
-      const nextUrl =
-        result?.nextRoute ||
-        buildVerifyOtpRoute({
-          email: validated.email,
-          role: "student",
-          source: "signup",
-        })
+      const nextUrl = buildVerifyOtpRoute({
+        email: validated.email,
+        role: "student",
+        source: "signup",
+        redirect: redirectParam,
+      })
 
       trackOnboardingEvent("signup_submitted", {
         role: "student",
-        mode: "online",
+        mode: redirectParam === "/dashboard/onsite-training" ? "onsite-intent" : "online",
         nextRoute: nextUrl,
       })
 
@@ -303,7 +305,7 @@ export function GuidedStudentRegistrationForm() {
     } catch (submitError: any) {
       trackOnboardingEvent("signup_submit_failed", {
         role: "student",
-        mode: "online",
+        mode: redirectParam === "/dashboard/onsite-training" ? "onsite-intent" : "online",
       })
       setError(submitError?.issues?.[0]?.message || submitError?.message || "Please review your details and try again")
     } finally {
@@ -370,6 +372,11 @@ export function GuidedStudentRegistrationForm() {
           </p>
           <p>We only collect the essentials here so you can get to OTP verification quickly.</p>
           <p>Profile details like address, training preferences, and background can be completed later from your account.</p>
+          {redirectParam === "/dashboard/onsite-training" ? (
+            <p className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-foreground">
+              Because you came from the campaign page, successful verification will continue you straight into the onsite training flow.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -390,7 +397,7 @@ export function GuidedStudentRegistrationForm() {
   const footer = (
     <p className="text-center">
       Already have an account?{" "}
-      <Link href="/login" className="font-medium text-primary hover:underline">
+      <Link href={loginHref} className="font-medium text-primary hover:underline">
         Sign in
       </Link>
       {" "}or{" "}

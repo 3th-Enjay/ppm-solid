@@ -1,4 +1,4 @@
-﻿import { getSafeRedirectForRole } from "@/lib/role-routing"
+import { getSafeRedirectForRole } from "@/lib/role-routing"
 import type { UserRole } from "@/lib/types"
 
 export type RegistrationMode = "onsite" | "online"
@@ -129,6 +129,11 @@ export function getOtpChangeEmailRoute({
 export function getPostVerificationRoute(role: string | undefined, requestedRedirect?: string | null): string {
   const normalizedRole = (role || "student") as UserRole
   const flags = getOnboardingFeatureFlags()
+  const safeRequestedRedirect = getSafeRedirectForRole(normalizedRole, requestedRedirect)
+
+  if (requestedRedirect && safeRequestedRedirect !== getSafeRedirectForRole(normalizedRole)) {
+    return safeRequestedRedirect
+  }
 
   if (flags.postVerifyWelcome) {
     if (normalizedRole === "student") {
@@ -140,5 +145,5 @@ export function getPostVerificationRoute(role: string | undefined, requestedRedi
     }
   }
 
-  return getSafeRedirectForRole(normalizedRole, requestedRedirect)
+  return safeRequestedRedirect
 }

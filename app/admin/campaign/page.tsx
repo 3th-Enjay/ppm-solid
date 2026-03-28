@@ -1,0 +1,287 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { Save } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
+import { useAuthStore } from "@/lib/store"
+import { DEFAULT_CAMPAIGN_CONFIG, type CampaignConfig } from "@/lib/campaign-shared"
+
+export default function AdminCampaignPage() {
+  const { toast } = useToast()
+  const { token } = useAuthStore()
+  const [config, setConfig] = useState<CampaignConfig>(DEFAULT_CAMPAIGN_CONFIG)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch("/api/campaign")
+        const data = await res.json()
+        if (!res.ok || !data.config) {
+          throw new Error(data.error || "Failed to load campaign settings")
+        }
+        setConfig(data.config)
+      } catch (error: any) {
+        toast({
+          title: "Campaign settings load failed",
+          description: error.message || "Using current default campaign values.",
+          variant: "destructive",
+        })
+        setConfig(DEFAULT_CAMPAIGN_CONFIG)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void loadConfig()
+  }, [toast])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch("/api/campaign", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: JSON.stringify(config),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.config) {
+        throw new Error(data.error || "Failed to save campaign settings")
+      }
+      setConfig(data.config)
+      toast({
+        title: "Campaign settings saved",
+        description: "Your public campaign page now reflects the updated values.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Save failed",
+        description: error.message || "Could not save campaign settings.",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return <div className="p-8 text-sm text-muted-foreground">Loading campaign settings...</div>
+  }
+
+  return (
+    <div className="space-y-8 p-8">
+      <div>
+        <h1 className="text-3xl font-bold text-balance">Campaign</h1>
+        <p className="mt-2 text-muted-foreground">
+          Manage the public Prompt Care Academy campaign page, including location, date, support numbers,
+          CTA links, and the offer details visitors see.
+        </p>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Hero Content</CardTitle>
+            <CardDescription>These values appear at the top of the campaign page.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="heroBadge">Badge</Label>
+              <Input id="heroBadge" value={config.heroBadge} onChange={(e) => setConfig({ ...config, heroBadge: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="heroTitle">Hero Title</Label>
+              <Textarea id="heroTitle" rows={3} value={config.heroTitle} onChange={(e) => setConfig({ ...config, heroTitle: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="heroDescription">Hero Description</Label>
+              <Textarea id="heroDescription" rows={5} value={config.heroDescription} onChange={(e) => setConfig({ ...config, heroDescription: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="campaignImage">Campaign Image Path</Label>
+              <Input id="campaignImage" value={config.campaignImage} onChange={(e) => setConfig({ ...config, campaignImage: e.target.value })} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>CTA and Contact</CardTitle>
+            <CardDescription>Update where signup buttons go, plus contact numbers kept for admin operations.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="registrationCtaLabel">CTA Label</Label>
+              <Input id="registrationCtaLabel" value={config.registrationCtaLabel} onChange={(e) => setConfig({ ...config, registrationCtaLabel: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="registrationHref">CTA Link</Label>
+              <Input id="registrationHref" value={config.registrationHref} onChange={(e) => setConfig({ ...config, registrationHref: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="registrationRedirect">Post-verification Redirect</Label>
+              <Input id="registrationRedirect" value={config.registrationRedirect} onChange={(e) => setConfig({ ...config, registrationRedirect: e.target.value })} />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="supportPhone">Phone Number</Label>
+                <Input id="supportPhone" value={config.supportPhone} onChange={(e) => setConfig({ ...config, supportPhone: e.target.value, contactValue: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
+                <Input id="whatsappNumber" value={config.whatsappNumber} onChange={(e) => setConfig({ ...config, whatsappNumber: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactDescription">Contact Description</Label>
+              <Textarea id="contactDescription" rows={3} value={config.contactDescription} onChange={(e) => setConfig({ ...config, contactDescription: e.target.value })} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Offer Cards</CardTitle>
+            <CardDescription>Edit the summary cards shown under the hero section.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Cost Label</Label>
+                <Input value={config.costLabel} onChange={(e) => setConfig({ ...config, costLabel: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Cost Value</Label>
+                <Input value={config.costValue} onChange={(e) => setConfig({ ...config, costValue: e.target.value })} />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Cost Suffix</Label>
+                <Input value={config.costSuffix} onChange={(e) => setConfig({ ...config, costSuffix: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Cohort Label</Label>
+              <Input value={config.cohortLabel} onChange={(e) => setConfig({ ...config, cohortLabel: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Cohort Value</Label>
+              <Input value={config.cohortValue} onChange={(e) => setConfig({ ...config, cohortValue: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Cohort Description</Label>
+              <Textarea rows={3} value={config.cohortDescription} onChange={(e) => setConfig({ ...config, cohortDescription: e.target.value })} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Location and Timing</CardTitle>
+            <CardDescription>Update venue, date, and duration without touching code.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Venue Label</Label>
+              <Input value={config.venueLabel} onChange={(e) => setConfig({ ...config, venueLabel: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Venue Value</Label>
+              <Textarea rows={3} value={config.venueValue} onChange={(e) => setConfig({ ...config, venueValue: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Venue Description</Label>
+              <Textarea rows={3} value={config.venueDescription} onChange={(e) => setConfig({ ...config, venueDescription: e.target.value })} />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Start Date Label</Label>
+                <Input value={config.startDateLabel} onChange={(e) => setConfig({ ...config, startDateLabel: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Start Date Value</Label>
+                <Input value={config.startDateValue} onChange={(e) => setConfig({ ...config, startDateValue: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Date Description</Label>
+              <Textarea rows={3} value={config.dateDescription} onChange={(e) => setConfig({ ...config, dateDescription: e.target.value })} />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Duration Label</Label>
+                <Input value={config.durationLabel} onChange={(e) => setConfig({ ...config, durationLabel: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Duration Value</Label>
+                <Input value={config.durationValue} onChange={(e) => setConfig({ ...config, durationValue: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Duration Description</Label>
+              <Textarea rows={3} value={config.durationDescription} onChange={(e) => setConfig({ ...config, durationDescription: e.target.value })} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Section Copy</CardTitle>
+            <CardDescription>Control the lower sections of the page.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Academy Section Eyebrow</Label>
+              <Input value={config.academySectionDescription} onChange={(e) => setConfig({ ...config, academySectionDescription: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Academy Section Title</Label>
+              <Textarea rows={3} value={config.academySectionTitle} onChange={(e) => setConfig({ ...config, academySectionTitle: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Upcoming Batch Title</Label>
+              <Input value={config.upcomingBatchTitle} onChange={(e) => setConfig({ ...config, upcomingBatchTitle: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Upcoming Batch Description</Label>
+              <Textarea rows={4} value={config.upcomingBatchDescription} onChange={(e) => setConfig({ ...config, upcomingBatchDescription: e.target.value })} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Benefits</CardTitle>
+            <CardDescription>One benefit per line.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              rows={10}
+              value={config.benefits.join("\n")}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  benefits: e.target.value.split("\n").map((item) => item.trim()).filter(Boolean),
+                })
+              }
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Button onClick={handleSave} className="w-full" disabled={saving}>
+        <Save className="mr-2 h-4 w-4" />
+        {saving ? "Saving..." : "Save Campaign Settings"}
+      </Button>
+    </div>
+  )
+}
