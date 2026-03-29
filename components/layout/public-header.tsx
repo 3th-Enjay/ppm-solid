@@ -1,16 +1,31 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useState } from "react"
-import { Menu, ShoppingCart, X } from "lucide-react"
+import { useMemo, useState } from "react"
+import { LayoutDashboard, Menu, ShoppingCart, X } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { clientLogout } from "@/lib/client-logout"
+import { getRoleHomePath } from "@/lib/role-routing"
 import { useAuthStore, useCartStore } from "@/lib/store"
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "U"
+}
+
+function hasUsableAvatar(src?: string | null) {
+  if (!src) return false
+  return !src.includes("placeholder")
+}
 
 export function PublicHeader() {
   const { user, isAuthenticated, clearAuth } = useAuthStore()
@@ -18,6 +33,10 @@ export function PublicHeader() {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const dashboardHref = user ? getRoleHomePath(user.role) : "/dashboard"
+  const avatarSrc = useMemo(() => (hasUsableAvatar(user?.avatar) ? user?.avatar : undefined), [user?.avatar])
+  const initials = getInitials(user?.name || "User")
 
   const handleLogout = async () => {
     clearAuth()
@@ -70,33 +89,35 @@ export function PublicHeader() {
           </Link>
 
           {isAuthenticated() && user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="glass" className="h-10 w-10 rounded-full p-0">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={
-                      user.role === "admin" || user.role === "instructor" || user.role === "finance"
-                        ? "/admin"
-                        : "/dashboard"
-                    }
-                  >
-                    Dashboard
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+              <Button variant="cta" size="sm" asChild className="hidden md:inline-flex">
+                <Link href={dashboardHref}>
+                  <LayoutDashboard className="h-4 w-4" />
+                  Open Dashboard
+                </Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="glass" className="h-10 w-10 rounded-full p-0">
+                    <Avatar className="h-9 w-9 border border-border/70">
+                      {avatarSrc ? <AvatarImage src={avatarSrc} alt={user.name} /> : null}
+                      <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href={dashboardHref}>Dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <div className="hidden items-center gap-2 md:flex">
               <Button variant="ghost" size="sm" onClick={() => router.push("/login")}>
@@ -144,7 +165,26 @@ export function PublicHeader() {
                   </nav>
                 </div>
 
-                {!isAuthenticated() && (
+                {isAuthenticated() && user ? (
+                  <div className="space-y-2 border-t p-4">
+                    <Button variant="cta" className="w-full" asChild>
+                      <Link href={dashboardHref} onClick={() => setMobileMenuOpen(false)}>
+                        <LayoutDashboard className="h-4 w-4" />
+                        Open Dashboard
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setMobileMenuOpen(false)
+                        handleLogout()
+                      }}
+                    >
+                      Logout
+                    </Button>
+                  </div>
+                ) : (
                   <div className="space-y-2 border-t p-4">
                     <Button
                       variant="outline"
@@ -171,4 +211,3 @@ export function PublicHeader() {
     </header>
   )
 }
-

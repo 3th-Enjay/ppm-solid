@@ -16,8 +16,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    return NextResponse.json({ user })
-  } catch (error) {
+    return NextResponse.json({ user, token })
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 }

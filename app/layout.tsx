@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Plus_Jakarta_Sans } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { AuthSessionBootstrap } from "@/components/auth/auth-session-bootstrap"
 import { Toaster } from "@/components/ui/toaster"
 import { CurrencyModal } from "@/components/ui/currency-modal"
 import "./globals.css"
@@ -29,9 +30,7 @@ export const metadata: Metadata = {
       { url: "/promptcare-icon.png", sizes: "96x96", type: "image/png" },
       { url: "/promptcare-icon.png", sizes: "192x192", type: "image/png" },
     ],
-    apple: [
-      { url: "/promptcare-icon.png", sizes: "180x180", type: "image/png" },
-    ],
+    apple: [{ url: "/promptcare-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
     title: "Prompt Care Academy - Premium Online Learning",
@@ -54,6 +53,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}>
+        <AuthSessionBootstrap />
         {children}
         <Toaster />
         <CurrencyModal />
@@ -62,4 +62,3 @@ export default function RootLayout({
     </html>
   )
 }
-

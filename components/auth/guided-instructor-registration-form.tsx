@@ -385,6 +385,10 @@ export function GuidedInstructorRegistrationForm() {
       <Link href="/login" className="font-medium text-primary hover:underline">
         Sign in
       </Link>
+      {" "}or{" "}
+      <Link href="/register" className="font-medium text-primary hover:underline">
+        create a student account
+      </Link>
     </p>
   )
 
@@ -654,3 +658,4 @@ export function GuidedInstructorRegistrationForm() {
     </OnboardingShell>
   )
 }
+

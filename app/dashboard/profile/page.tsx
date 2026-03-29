@@ -579,7 +579,9 @@ export default function ProfilePage() {
       ? `Seat reserved for ${onsiteCohortLabel}. ${studentProfile.paymentReference ? `Reference: ${studentProfile.paymentReference}` : "Payment verified in your onsite record."}`
       : `Next cohort: ${getTrainingLocationLabel(studentProfile?.preferredLocation || "enugu")} - ${studentProfile?.preferredLocationStartDate || activeOnsiteLocation.startsOn}`
     : `Compare ${onsiteCohortLabel} while ${activeOnsiteLocation.slotsLeft} seats remain.`
-  const progressRingRadius = 34
+  const progressRingSize = 108
+  const progressRingCenter = progressRingSize / 2
+  const progressRingRadius = 39
   const progressRingCircumference = 2 * Math.PI * progressRingRadius
   const progressRingOffset = getProgressRingStrokeOffset(animatedCompletionPercent, progressRingRadius)
   const learnerRecordUpdatedLabel = studentProfile?.submittedAt
@@ -788,7 +790,7 @@ export default function ProfilePage() {
 
   return (
     <motion.div
-      className="mx-auto max-w-6xl space-y-8 p-4 md:p-6 lg:p-8"
+      className="w-full space-y-8 p-4 md:p-6 lg:p-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -893,14 +895,14 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex min-w-[220px] flex-col gap-3 sm:items-end">
-                <div className="w-full rounded-3xl border bg-background/80 p-4 shadow-sm sm:max-w-[240px]">
+                <div className="w-full rounded-3xl border bg-background/80 p-4 shadow-sm sm:max-w-[280px]">
                   <div className="flex items-center gap-4">
-                    <div className="relative inline-flex h-24 w-24 shrink-0 items-center justify-center">
-                      <svg className="h-24 w-24 -rotate-90" viewBox="0 0 96 96" aria-hidden="true">
-                        <circle cx="48" cy="48" r={progressRingRadius} className="fill-none stroke-primary/10" strokeWidth="8" />
+                    <div className="relative inline-flex h-28 w-28 shrink-0 items-center justify-center">
+                      <svg className="h-28 w-28 -rotate-90" viewBox={`0 0 ${progressRingSize} ${progressRingSize}`} aria-hidden="true">
+                        <circle cx={progressRingCenter} cy={progressRingCenter} r={progressRingRadius} className="fill-none stroke-primary/10" strokeWidth="8" />
                         <circle
-                          cx="48"
-                          cy="48"
+                          cx={progressRingCenter}
+                          cy={progressRingCenter}
                           r={progressRingRadius}
                           className="fill-none stroke-primary transition-all duration-500 ease-out"
                           strokeWidth="8"
@@ -910,8 +912,8 @@ export default function ProfilePage() {
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-2xl font-bold text-foreground">{animatedCompletionPercent}%</span>
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">Complete</span>
+                        <span className="px-1 text-[1.55rem] font-bold leading-none text-foreground">{animatedCompletionPercent}%</span>
+                        <span className="mt-1 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">Complete</span>
                       </div>
                     </div>
                     <div className="min-w-0 space-y-1 text-left">
@@ -2024,6 +2026,17 @@ export default function ProfilePage() {
     </motion.div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

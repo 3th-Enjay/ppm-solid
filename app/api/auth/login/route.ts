@@ -4,16 +4,16 @@ import { getDB } from "@/lib/db"
 import { buildVerifyOtpRoute } from "@/lib/onboarding-flow"
 import { loginSchema } from "@/lib/validation"
 
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
+const REMEMBER_ME_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
-function withAuthCookie(token: string, body: unknown) {
+function withAuthCookie(token: string, body: unknown, remember: boolean) {
   const response = NextResponse.json(body)
   response.cookies.set("token", token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: COOKIE_MAX_AGE_SECONDS,
+    ...(remember ? { maxAge: REMEMBER_ME_MAX_AGE_SECONDS } : {}),
   })
   return response
 }
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     }
 
     const validated = parsed.data
+    const remember = body?.remember === true
 
     const result = await authService.login(validated.email, validated.password)
 
@@ -58,11 +59,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    return withAuthCookie(result.token, {
-      success: true,
-      user: result.user,
-      token: result.token,
-    })
+    return withAuthCookie(
+      result.token,
+      {
+        success: true,
+        user: result.user,
+        token: result.token,
+        remember,
+      },
+      remember,
+    )
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
   }
