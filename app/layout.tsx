@@ -17,7 +17,12 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
 })
 
+const metadataBaseUrl =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+
 export const metadata: Metadata = {
+  metadataBase: new URL(metadataBaseUrl),
   title: "Prompt Care Academy - Premium Online Learning Platform",
   description:
     "Transform your career with Prompt Care Academy. Learn web development, UI/UX design, digital marketing, data analytics and more from industry experts. Join 10,000+ students today.",
@@ -62,3 +67,4 @@ export default function RootLayout({
     </html>
   )
 }
+

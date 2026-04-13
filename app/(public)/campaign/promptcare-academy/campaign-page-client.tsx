@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, BadgeCheck, CalendarDays, Clock3, MapPin, MessageCircle, PhoneCall } from "lucide-react"
+import { SharedCampaignCountdownBanner } from "@/components/campaign/shared-countdown-banner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -32,57 +32,8 @@ function normalizeWhatsappNumber(value: string) {
   return digits
 }
 
-function formatTimeUnit(value: number) {
-  return value.toString().padStart(2, "0")
-}
-
 export function PromptCareCampaignClient({ config, serverNow }: { config: CampaignConfig; serverNow: number }) {
   const registrationHref = config.registrationHref
-  const countdownEndMs = useMemo(() => new Date(config.countdownEndsAt).getTime(), [config.countdownEndsAt])
-  const initialRemainingMs = useMemo(() => Math.max(countdownEndMs - serverNow, 0), [countdownEndMs, serverNow])
-  const [timeLeftMs, setTimeLeftMs] = useState(initialRemainingMs)
-
-  useEffect(() => {
-    const startedAt = Date.now()
-    setTimeLeftMs(initialRemainingMs)
-
-    const interval = window.setInterval(() => {
-      const elapsedMs = Date.now() - startedAt
-      const remainingMs = Math.max(initialRemainingMs - elapsedMs, 0)
-      setTimeLeftMs(remainingMs)
-
-      if (remainingMs <= 0) {
-        window.clearInterval(interval)
-      }
-    }, 1000)
-
-    return () => window.clearInterval(interval)
-  }, [initialRemainingMs])
-
-  const countdownParts = useMemo(() => {
-    const totalSeconds = Math.floor(timeLeftMs / 1000)
-    const days = Math.floor(totalSeconds / (24 * 60 * 60))
-    const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60))
-    const minutes = Math.floor((totalSeconds % (60 * 60)) / 60)
-    const seconds = totalSeconds % 60
-
-    return [
-      { label: "Days", value: formatTimeUnit(days) },
-      { label: "Hours", value: formatTimeUnit(hours) },
-      { label: "Minutes", value: formatTimeUnit(minutes) },
-      { label: "Seconds", value: formatTimeUnit(seconds) },
-    ]
-  }, [timeLeftMs])
-
-  const countdownEndsAtText = useMemo(() => {
-    const countdownEndDate = new Date(config.countdownEndsAt)
-    return Number.isNaN(countdownEndDate.getTime())
-      ? "Deadline unavailable"
-      : countdownEndDate.toLocaleString("en-NG", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
-  }, [config.countdownEndsAt])
 
   const whatsappHref = `https://wa.me/${normalizeWhatsappNumber(config.whatsappNumber)}?text=${encodeURIComponent(
     "Hello Prompt Care Academy, I would like to learn more about the caregiver training program."
@@ -112,31 +63,7 @@ export function PromptCareCampaignClient({ config, serverNow }: { config: Campai
       <div className="absolute left-0 top-24 h-52 w-52 rounded-full bg-emerald-400/10 blur-3xl" />
       <div className="absolute right-0 top-80 h-72 w-72 rounded-full bg-blue-600/10 blur-3xl" />
 
-      <section className="container relative pt-6 sm:pt-8">
-        <div className="overflow-hidden rounded-[2rem] border border-[#0d3f78]/10 bg-slate-950 text-white shadow-[0_22px_80px_rgba(15,23,42,0.2)]">
-          <div className="bg-[linear-gradient(90deg,rgba(13,63,120,0.94),rgba(15,141,46,0.92))] px-5 py-6 sm:px-7">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">Application Window</p>
-                <h2 className="text-2xl font-black sm:text-3xl">Shared campaign countdown is live</h2>
-                <p className="text-sm leading-6 text-white/80 sm:text-base">
-                  Every visitor sees the same server-backed deadline. Fill the form first, then receive the LMS registration link by email to complete sign up.
-                </p>
-                <p className="text-sm font-semibold text-[#d8ff67]">Deadline: {countdownEndsAtText}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {countdownParts.map((item) => (
-                  <div key={item.label} className="min-w-[92px] rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center backdrop-blur-sm">
-                    <p className="text-3xl font-black tabular-nums sm:text-4xl">{item.value}</p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/70">{item.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <SharedCampaignCountdownBanner config={config} serverNow={serverNow} placement="campaign" />
 
       <section className="container relative py-10 sm:py-14 lg:py-20">
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">

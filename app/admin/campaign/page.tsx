@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/lib/store"
@@ -140,7 +141,7 @@ export default function AdminCampaignPage() {
       setServerNow(typeof data.serverNow === "number" ? data.serverNow : Date.now())
       toast({
         title: "Campaign settings saved",
-        description: "Your public campaign page and shared countdown now reflect the updated values.",
+        description: "Your public campaign page, home page timer, and shared countdown now reflect the updated values.",
       })
     } catch (error: any) {
       toast({
@@ -162,7 +163,7 @@ export default function AdminCampaignPage() {
       <div>
         <h1 className="text-3xl font-bold text-balance">Campaign</h1>
         <p className="mt-2 text-muted-foreground">
-          Manage the public Prompt Care Academy campaign page, including CTA links, offer details, and the shared countdown every visitor sees.
+          Manage the public Prompt Care Academy campaign page, including CTA links, offer details, and the shared countdown visibility on both home and campaign pages.
         </p>
       </div>
 
@@ -170,10 +171,27 @@ export default function AdminCampaignPage() {
         <CardHeader>
           <CardTitle>Campaign Countdown</CardTitle>
           <CardDescription className="text-white/75">
-            This timer is stored on the server, so it stays consistent across devices, users, and page reloads.
+            This timer is stored on the server, and you can choose whether it appears on the home page, the campaign page, both pages, or neither.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="grid gap-4 rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-sm md:grid-cols-2">
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/10 px-4 py-3">
+              <div>
+                <p className="font-semibold text-white">Show On Home Page</p>
+                <p className="text-sm text-white/70">Display the countdown banner and register link on the public home page.</p>
+              </div>
+              <Switch checked={config.showCountdownOnHomePage} onCheckedChange={(checked) => setConfig({ ...config, showCountdownOnHomePage: checked })} />
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/10 px-4 py-3">
+              <div>
+                <p className="font-semibold text-white">Show On Campaign Page</p>
+                <p className="text-sm text-white/70">Display the countdown banner at the top of the campaign landing page.</p>
+              </div>
+              <Switch checked={config.showCountdownOnCampaignPage} onCheckedChange={(checked) => setConfig({ ...config, showCountdownOnCampaignPage: checked })} />
+            </div>
+          </div>
+
           <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">

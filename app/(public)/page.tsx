@@ -15,9 +15,13 @@ import type { Course } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils/format"
 import { usePreferencesStore } from "@/lib/store"
 import { CtaBand } from "@/components/skillup/cta-band"
+import { SharedCampaignCountdownBanner } from "@/components/campaign/shared-countdown-banner"
+import type { CampaignConfig } from "@/lib/campaign-shared"
 
 export default function HomePage() {
   const [featuredCourses, setFeaturedCourses] = useState<Course[]>([])
+  const [campaignConfig, setCampaignConfig] = useState<CampaignConfig | null>(null)
+  const [campaignServerNow, setCampaignServerNow] = useState<number | null>(null)
   const { currency } = usePreferencesStore()
 
   useEffect(() => {
@@ -31,7 +35,25 @@ export default function HomePage() {
         setFeaturedCourses([])
       }
     }
-    loadCourses()
+
+    const loadCampaign = async () => {
+      try {
+        const res = await fetch("/api/campaign")
+        const data = await res.json()
+        if (!res.ok || !data.config) {
+          throw new Error(data.error || "Failed to load campaign settings")
+        }
+        setCampaignConfig(data.config)
+        setCampaignServerNow(typeof data.serverNow === "number" ? data.serverNow : Date.now())
+      } catch (error) {
+        console.error("Failed to load campaign countdown:", error)
+        setCampaignConfig(null)
+        setCampaignServerNow(null)
+      }
+    }
+
+    void loadCourses()
+    void loadCampaign()
   }, [])
 
   const features = [
@@ -107,6 +129,10 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       <SkillupHero featuredCourses={featuredCourses} currency={currency} />
+
+      {campaignConfig && typeof campaignServerNow === "number" ? (
+        <SharedCampaignCountdownBanner config={campaignConfig} serverNow={campaignServerNow} placement="home" />
+      ) : null}
 
       <SectionShell className="py-8 md:py-10" variant="split">
         <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card/70">
@@ -292,4 +318,3 @@ export default function HomePage() {
     </div>
   )
 }
-
