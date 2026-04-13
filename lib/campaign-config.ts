@@ -1,5 +1,6 @@
 import { getCollection } from "@/lib/mongodb"
 import {
+  buildDefaultCampaignConfig,
   campaignConfigSchema,
   DEFAULT_CAMPAIGN_CONFIG,
   type CampaignConfig,
@@ -19,7 +20,7 @@ async function loadFromMongo(): Promise<CampaignConfig | null> {
   const doc = await collection.findOne({ _id: SETTINGS_DOC_ID })
   if (!doc) return null
   const { _id: _unused, ...settings } = doc
-  const parsed = campaignConfigSchema.safeParse(settings)
+  const parsed = campaignConfigSchema.safeParse({ ...buildDefaultCampaignConfig(), ...settings })
   return parsed.success ? parsed.data : null
 }
 
@@ -32,7 +33,10 @@ async function saveToMongo(settings: CampaignConfig): Promise<void> {
 export async function getCampaignConfig(): Promise<CampaignConfig> {
   try {
     const mongoSettings = await loadFromMongo()
-    if (mongoSettings) return mongoSettings
+    if (mongoSettings) {
+      globalWithSettings._campaignConfigCache = mongoSettings
+      return mongoSettings
+    }
   } catch {
     // Fall back to in-memory/default settings.
   }

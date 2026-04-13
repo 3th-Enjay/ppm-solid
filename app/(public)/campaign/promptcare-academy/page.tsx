@@ -17,5 +17,5 @@ export const metadata: Metadata = {
 export default async function PromptCareCampaignPage() {
   const config = await getCampaignConfig()
 
-  return <PromptCareCampaignClient config={config} />
+  return <PromptCareCampaignClient config={config} serverNow={Date.now()} />
 }

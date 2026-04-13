@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Save } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { RotateCcw, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,12 +11,42 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/lib/store"
 import { DEFAULT_CAMPAIGN_CONFIG, type CampaignConfig } from "@/lib/campaign-shared"
 
+function padTime(value: number) {
+  return value.toString().padStart(2, "0")
+}
+
+function formatDateTimeLocal(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+
+  const year = date.getFullYear()
+  const month = padTime(date.getMonth() + 1)
+  const day = padTime(date.getDate())
+  const hours = padTime(date.getHours())
+  const minutes = padTime(date.getMinutes())
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+function toIsoFromDateTimeLocal(value: string) {
+  if (!value) return new Date().toISOString()
+  return new Date(value).toISOString()
+}
+
+function buildCountdownDuration(days: number) {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+}
+
 export default function AdminCampaignPage() {
   const { toast } = useToast()
   const { token } = useAuthStore()
   const [config, setConfig] = useState<CampaignConfig>(DEFAULT_CAMPAIGN_CONFIG)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [serverNow, setServerNow] = useState(Date.now())
+  const countdownEndMs = useMemo(() => new Date(config.countdownEndsAt).getTime(), [config.countdownEndsAt])
+  const initialPreviewMs = useMemo(() => Math.max(countdownEndMs - serverNow, 0), [countdownEndMs, serverNow])
+  const [previewMs, setPreviewMs] = useState(0)
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -28,6 +58,7 @@ export default function AdminCampaignPage() {
           throw new Error(data.error || "Failed to load campaign settings")
         }
         setConfig(data.config)
+        setServerNow(typeof data.serverNow === "number" ? data.serverNow : Date.now())
       } catch (error: any) {
         toast({
           title: "Campaign settings load failed",
@@ -35,6 +66,7 @@ export default function AdminCampaignPage() {
           variant: "destructive",
         })
         setConfig(DEFAULT_CAMPAIGN_CONFIG)
+        setServerNow(Date.now())
       } finally {
         setLoading(false)
       }
@@ -42,6 +74,52 @@ export default function AdminCampaignPage() {
 
     void loadConfig()
   }, [toast])
+
+  useEffect(() => {
+    if (Number.isNaN(countdownEndMs)) {
+      setPreviewMs(0)
+      return
+    }
+
+    const startedAt = Date.now()
+    setPreviewMs(initialPreviewMs)
+
+    const interval = window.setInterval(() => {
+      const elapsedMs = Date.now() - startedAt
+      const remainingMs = Math.max(initialPreviewMs - elapsedMs, 0)
+      setPreviewMs(remainingMs)
+
+      if (remainingMs <= 0) {
+        window.clearInterval(interval)
+      }
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [countdownEndMs, initialPreviewMs])
+
+  const countdownParts = useMemo(() => {
+    const totalSeconds = Math.floor(previewMs / 1000)
+    const days = Math.floor(totalSeconds / (24 * 60 * 60))
+    const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60))
+    const minutes = Math.floor((totalSeconds % (60 * 60)) / 60)
+    const seconds = totalSeconds % 60
+
+    return [
+      { label: "Days", value: padTime(days) },
+      { label: "Hours", value: padTime(hours) },
+      { label: "Minutes", value: padTime(minutes) },
+      { label: "Seconds", value: padTime(seconds) },
+    ]
+  }, [previewMs])
+
+  const countdownEndsAtText = useMemo(() => {
+    const countdownEndDate = new Date(config.countdownEndsAt)
+    if (Number.isNaN(countdownEndDate.getTime())) return "Invalid deadline"
+    return countdownEndDate.toLocaleString("en-NG", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    })
+  }, [config.countdownEndsAt])
 
   const handleSave = async () => {
     setSaving(true)
@@ -59,9 +137,10 @@ export default function AdminCampaignPage() {
         throw new Error(data.error || "Failed to save campaign settings")
       }
       setConfig(data.config)
+      setServerNow(typeof data.serverNow === "number" ? data.serverNow : Date.now())
       toast({
         title: "Campaign settings saved",
-        description: "Your public campaign page now reflects the updated values.",
+        description: "Your public campaign page and shared countdown now reflect the updated values.",
       })
     } catch (error: any) {
       toast({
@@ -83,10 +162,93 @@ export default function AdminCampaignPage() {
       <div>
         <h1 className="text-3xl font-bold text-balance">Campaign</h1>
         <p className="mt-2 text-muted-foreground">
-          Manage the public Prompt Care Academy campaign page, including location, date, support numbers,
-          CTA links, and the offer details visitors see.
+          Manage the public Prompt Care Academy campaign page, including CTA links, offer details, and the shared countdown every visitor sees.
         </p>
       </div>
+
+      <Card className="border-primary/20 bg-gradient-to-br from-slate-950 via-[#0d3f78] to-[#0f8d2e] text-white shadow-[0_22px_80px_rgba(15,23,42,0.18)]">
+        <CardHeader>
+          <CardTitle>Campaign Countdown</CardTitle>
+          <CardDescription className="text-white/75">
+            This timer is stored on the server, so it stays consistent across devices, users, and page reloads.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="countdownDurationDays" className="text-white">Countdown Duration in Days</Label>
+                <Input
+                  id="countdownDurationDays"
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={config.countdownDurationDays}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      countdownDurationDays: Math.max(1, Number.parseInt(e.target.value || "1", 10)),
+                    })
+                  }
+                  className="border-white/20 bg-white/10 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="countdownEndsAt" className="text-white">Countdown Ends At</Label>
+                <Input
+                  id="countdownEndsAt"
+                  type="datetime-local"
+                  value={formatDateTimeLocal(config.countdownEndsAt)}
+                  onChange={(e) => setConfig({ ...config, countdownEndsAt: toIsoFromDateTimeLocal(e.target.value) })}
+                  className="border-white/20 bg-white/10 text-white"
+                />
+              </div>
+              <div className="md:col-span-2 flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() =>
+                    setConfig({
+                      ...config,
+                      countdownEndsAt: buildCountdownDuration(config.countdownDurationDays),
+                    })
+                  }
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Reset Countdown From Now
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                  onClick={() =>
+                    setConfig({
+                      ...config,
+                      countdownDurationDays: 7,
+                      countdownEndsAt: buildCountdownDuration(7),
+                    })
+                  }
+                >
+                  Reset to 7 Days
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">Live Preview</p>
+              <p className="mt-2 text-sm text-white/80">Deadline: {countdownEndsAtText}</p>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {countdownParts.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-white/15 bg-black/10 px-4 py-3 text-center">
+                    <p className="text-3xl font-black tabular-nums">{item.value}</p>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/70">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>

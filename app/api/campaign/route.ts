@@ -16,7 +16,7 @@ function ensureAdmin(request: Request) {
 export async function GET() {
   try {
     const config = await getCampaignConfig()
-    return NextResponse.json({ config })
+    return NextResponse.json({ config, serverNow: Date.now() })
   } catch {
     return NextResponse.json({ error: "Failed to load campaign settings" }, { status: 500 })
   }
@@ -32,7 +32,7 @@ export async function PUT(request: Request) {
     const body = await request.json()
     const validated = campaignConfigSchema.parse(body)
     const config = await updateCampaignConfig(validated)
-    return NextResponse.json({ config })
+    return NextResponse.json({ config, serverNow: Date.now() })
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
