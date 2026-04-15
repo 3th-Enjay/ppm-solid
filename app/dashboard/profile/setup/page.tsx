@@ -28,6 +28,28 @@ type ProfileCompletionTracker = {
 const GENDER_OPTIONS: StudentGender[] = ["male", "female", "other", "prefer_not_to_say"]
 const LOCATION_OPTIONS: TrainingLocation[] = ["enugu", "abuja"]
 
+function formatGenderLabel(value: StudentGender) {
+  switch (value) {
+    case "male":
+      return "Male"
+    case "female":
+      return "Female"
+    case "other":
+      return "Other"
+    case "prefer_not_to_say":
+      return "Prefer Not to Say"
+  }
+}
+
+function formatLocationLabel(value: TrainingLocation) {
+  switch (value) {
+    case "enugu":
+      return "Enugu"
+    case "abuja":
+      return "Abuja"
+  }
+}
+
 export default function ProfileSetupPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -115,7 +137,7 @@ export default function ProfileSetupPage() {
     () => [
       {
         id: "personal",
-        title: "Personal info",
+        title: "Personal Info",
         description: "Share the basic details that complete your learner profile.",
       },
       {
@@ -125,7 +147,7 @@ export default function ProfileSetupPage() {
       },
       {
         id: "optional",
-        title: "Optional details",
+        title: "Optional Details",
         description: "Add a short bio to personalize your student profile.",
       },
       {
@@ -222,13 +244,13 @@ export default function ProfileSetupPage() {
     () => [
       {
         id: "personal",
-        title: "Personal info",
+        title: "Personal Info",
         onEdit: () => setCurrentStep(0),
         items: [
-          { label: "Phone number", value: formData.phoneNumber },
-          { label: "WhatsApp number", value: formData.whatsappNumber },
-          { label: "Gender", value: formData.gender.replace(/_/g, " ") },
-          { label: "Date of birth", value: formData.dateOfBirth },
+          { label: "Phone Number", value: formData.phoneNumber },
+          { label: "WhatsApp Number", value: formData.whatsappNumber },
+          { label: "Gender", value: formatGenderLabel(formData.gender) },
+          { label: "Date of Birth", value: formData.dateOfBirth },
           { label: "Address", value: formData.currentAddress },
         ],
       },
@@ -237,15 +259,15 @@ export default function ProfileSetupPage() {
         title: "Preferences",
         onEdit: () => setCurrentStep(1),
         items: [
-          { label: "Healthcare professional", value: formData.isHealthcareProfessional === "yes" ? "Yes" : "No" },
-          { label: "Current role", value: formData.currentRoleOrField },
-          { label: "Preferred location", value: formData.preferredLocation },
-          { label: "Training interest", value: formData.trainingInterest },
+          { label: "Healthcare Professional", value: formData.isHealthcareProfessional === "yes" ? "Yes" : "No" },
+          { label: "Current Role", value: formData.currentRoleOrField },
+          { label: "Preferred Location", value: formatLocationLabel(formData.preferredLocation) },
+          { label: "Training Interest", value: formData.trainingInterest },
         ],
       },
       {
         id: "optional",
-        title: "Optional",
+        title: "Optional Details",
         onEdit: () => setCurrentStep(2),
         items: [{ label: "Bio", value: formData.bio || "Not provided" }],
       },
@@ -270,13 +292,13 @@ export default function ProfileSetupPage() {
         <div className="space-y-4">
           <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
             <CardHeader>
-              <CardTitle className="text-base">Completion tracker</CardTitle>
+              <CardTitle className="text-base">Completion Tracker</CardTitle>
               <CardDescription>See exactly what is left before your learner record is fully reflected in the profile hub.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2 rounded-2xl border bg-muted/30 p-4">
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="font-medium text-foreground">Current progress</span>
+                  <span className="font-medium text-foreground">Current Progress</span>
                   <span className="font-semibold text-primary">
                     {trackerLoading ? "..." : `${profileTracker?.percent ?? 0}%`}
                   </span>
@@ -291,7 +313,7 @@ export default function ProfileSetupPage() {
 
               <div className="space-y-2 text-sm">
                 <p className="inline-flex items-center gap-2 font-medium text-foreground">
-                  <Target className="h-4 w-4 text-primary" /> Remaining items
+                  <Target className="h-4 w-4 text-primary" /> Remaining Items
                 </p>
                 {remainingLabels.length > 0 ? (
                   remainingLabels.slice(0, 5).map((label) => (
@@ -312,7 +334,7 @@ export default function ProfileSetupPage() {
 
           <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
             <CardHeader>
-              <CardTitle className="text-base">Why this matters</CardTitle>
+              <CardTitle className="text-base">Why This Matters</CardTitle>
               <CardDescription>Completing your learner record helps the whole student experience stay relevant.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
@@ -338,7 +360,7 @@ export default function ProfileSetupPage() {
       ) : null}
 
       <div className="mb-6 rounded-2xl border bg-primary/5 p-4 text-sm">
-        <p className="font-medium text-foreground">Profile setup funnel</p>
+        <p className="font-medium text-foreground">Profile Setup Funnel</p>
         <p className="mt-1 text-muted-foreground">
           We kept these heavier questions out of signup so you could create your account faster. This guided pass finishes the learner record and returns you to the profile hub to review the updated training details.
         </p>
@@ -348,7 +370,7 @@ export default function ProfileSetupPage() {
         <div className="space-y-5">
           <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone number</Label>
+              <Label htmlFor="phoneNumber">Phone Number</Label>
               <Input
                 id="phoneNumber"
                 inputMode="tel"
@@ -358,7 +380,7 @@ export default function ProfileSetupPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="whatsappNumber">WhatsApp number</Label>
+              <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
               <Input
                 id="whatsappNumber"
                 inputMode="tel"
@@ -377,14 +399,14 @@ export default function ProfileSetupPage() {
               <SelectContent>
                 {GENDER_OPTIONS.map((gender) => (
                   <SelectItem key={gender} value={gender}>
-                    {gender.replace(/_/g, " ")}
+                    {formatGenderLabel(gender)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="dateOfBirth">Date of birth</Label>
+            <Label htmlFor="dateOfBirth">Date of Birth</Label>
             <Input
               id="dateOfBirth"
               type="date"
@@ -393,7 +415,7 @@ export default function ProfileSetupPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="currentAddress">Current address</Label>
+            <Label htmlFor="currentAddress">Current Address</Label>
             <Textarea
               id="currentAddress"
               value={formData.currentAddress}
@@ -407,7 +429,7 @@ export default function ProfileSetupPage() {
       {currentStep === 1 ? (
         <div className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="isHealthcareProfessional">Healthcare professional</Label>
+            <Label htmlFor="isHealthcareProfessional">Healthcare Professional</Label>
             <Select
               value={formData.isHealthcareProfessional}
               onValueChange={(value) => setFormData({ ...formData, isHealthcareProfessional: value as "yes" | "no" })}
@@ -422,7 +444,7 @@ export default function ProfileSetupPage() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="currentRoleOrField">Current role or field</Label>
+            <Label htmlFor="currentRoleOrField">Current Role or Field</Label>
             <Input
               id="currentRoleOrField"
               value={formData.currentRoleOrField}
@@ -430,7 +452,7 @@ export default function ProfileSetupPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="preferredLocation">Preferred location</Label>
+            <Label htmlFor="preferredLocation">Preferred Location</Label>
             <Select
               value={formData.preferredLocation}
               onValueChange={(value) => setFormData({ ...formData, preferredLocation: value as TrainingLocation })}
@@ -441,7 +463,7 @@ export default function ProfileSetupPage() {
               <SelectContent>
                 {LOCATION_OPTIONS.map((location) => (
                   <SelectItem key={location} value={location}>
-                    {location}
+                    {formatLocationLabel(location)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -462,7 +484,7 @@ export default function ProfileSetupPage() {
       {currentStep === 2 ? (
         <div className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="bio">Bio (optional)</Label>
+            <Label htmlFor="bio">Bio (Optional)</Label>
             <Textarea
               id="bio"
               value={formData.bio}
@@ -499,7 +521,7 @@ export default function ProfileSetupPage() {
                 Saving...
               </>
             ) : (
-              "Save profile"
+              "Save Profile"
             )}
           </Button>
         )}
@@ -507,6 +529,3 @@ export default function ProfileSetupPage() {
     </OnboardingShell>
   )
 }
-
-
-

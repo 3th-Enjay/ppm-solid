@@ -70,32 +70,24 @@ export function SharedCampaignCountdownBanner({
     return null
   }
 
-  const isHome = placement === "home"
-
   return (
-    <section className={isHome ? "px-4 pt-6 sm:px-6 lg:px-8" : "container relative pt-6 sm:pt-8"}>
+    <section className={placement === "home" ? "px-4 pt-6 sm:px-6 lg:px-8" : "container relative pt-6 sm:pt-8"}>
       <div className="overflow-hidden rounded-[2rem] border border-[#0d3f78]/10 bg-slate-950 text-white shadow-[0_22px_80px_rgba(15,23,42,0.2)]">
         <div className="bg-[linear-gradient(90deg,rgba(13,63,120,0.94),rgba(15,141,46,0.92))] px-5 py-6 sm:px-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">Application Window</p>
-              <h2 className="text-2xl font-black sm:text-3xl">
-                {isHome ? "Campaign deadline is live on the home page" : "Shared campaign countdown is live"}
-              </h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">Limited-Time Training Offer</p>
+              <h2 className="text-2xl font-black sm:text-3xl">Claim your discount. Register now for the training.</h2>
               <p className="text-sm leading-6 text-white/80 sm:text-base">
-                {isHome
-                  ? "The caregiver campaign timer is now visible here too. Click below to register with the Google Form before the deadline closes."
-                  : "Every visitor sees the same server-backed deadline. Fill the form first, then receive the LMS registration link by email to complete sign up."}
+                Fill the Google Form before the countdown ends to secure your discounted training entry and receive the next registration steps.
               </p>
               <p className="text-sm font-semibold text-[#d8ff67]">Deadline: {countdownEndsAtText}</p>
-              {isHome ? (
-                <Button variant="secondary" size="lg" asChild className="mt-2">
-                  <Link href={config.registrationHref} target="_blank" rel="noreferrer">
-                    Click Here To Register
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              ) : null}
+              <Button variant="secondary" size="lg" asChild className="mt-2">
+                <Link href={config.registrationHref} target="_blank" rel="noreferrer">
+                  Claim Your Discount
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

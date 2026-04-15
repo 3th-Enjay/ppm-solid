@@ -1256,9 +1256,7 @@ export default function ProfilePage() {
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">Milestones mix guided setup, study activity, and certificate signals. Adjust those sources via guided setup or your enrolled courses to move this roadmap.</p>
                     <div className="flex flex-wrap gap-2">
-                      <Button asChild size="sm" variant="outline">
-                        <Link href="/dashboard/profile/setup">Open guided setup</Link>
-                      </Button>
+
                       <Button asChild size="sm" variant="outline">
                         <Link href="/courses">Visit courses</Link>
                       </Button>
@@ -1404,9 +1402,7 @@ export default function ProfilePage() {
                   <div className="rounded-2xl border border-muted/30 bg-muted/5 p-3 text-xs text-muted-foreground">
                     <p>Next-up prompts respond to guided setup input, consecutive study streaks, and note activity. Edit those sources via guided setup or your enrolled courses to keep progress moving.</p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <Button asChild size="sm" variant="outline">
-                        <Link href="/dashboard/profile/setup">Open guided setup</Link>
-                      </Button>
+
                       <Button asChild size="sm" variant="outline">
                         <Link href="/courses">Track courses</Link>
                       </Button>
@@ -1563,261 +1559,53 @@ export default function ProfilePage() {
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Identity & Contact</p>
                       <CompletionStateBadge missingCount={identityContactMissingLabels.length} />
                     </div>
-                    <div className="flex flex-col gap-3 rounded-2xl border bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p className="font-medium text-foreground">Managed in guided setup</p>
-                        <p>Last learner update {learnerRecordUpdatedLabel}</p>
-                      </div>
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={getSetupHref("personal")}>Open personal step</Link>
-                      </Button>
-                    </div>
+
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                      <TrainingValueCard title="Full Name" value={user?.name || ""} emptyStateLabel="Update your account name in the General tab." actionHref="/dashboard/profile?tab=general" actionLabel="Open General tab" />
+                      <TrainingValueCard title="Full Name" value={user?.name || ""} emptyStateLabel="Update your account name in the General tab."  />
                       <TrainingValueCard title="Email" value={user?.email || ""} emptyStateLabel="Your login email appears here once your account identity is available." />
                       <TrainingValueCard
                         title="Phone Number"
                         value={studentProfile.phoneNumber}
                         missingLabels={getFieldMissingLabels(["phoneNumber"])}
-                        actionHref={getSetupHref("personal")}
-                        actionLabel="Open personal step"
+                        
                       />
                       <TrainingValueCard
                         title="WhatsApp Number"
                         value={studentProfile.whatsappNumber}
                         missingLabels={getFieldMissingLabels(["whatsappNumber"])}
-                        actionHref={getSetupHref("personal")}
-                        actionLabel="Open personal step"
+                        
                       />
                     </div>
                   </div>
-
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <GraduationCap className="h-4 w-4 text-primary" />
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Training Mode</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Training Summary</p>
                     </div>
-                    <div className="flex flex-col gap-3 rounded-2xl border bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p className="font-medium text-foreground">Managed in learner setup and onsite routing</p>
-                        <p>Last learner update {learnerRecordUpdatedLabel}</p>
-                      </div>
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={getSetupHref("preferences")}>Open preferences step</Link>
-                      </Button>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      <TrainingValueCard title="Program" value={studentProfile.formTitle} />
+                      <TrainingValueCard title="Preferred Location" value={studentProfile.preferredLocation ? `${getTrainingLocationLabel(studentProfile.preferredLocation)} - ${studentProfile.preferredLocationStartDate}` : ""} missingLabels={getFieldMissingLabels(["preferredLocation"])} />
+                      <TrainingValueCard title="Healthcare Professional" value={studentProfile.isHealthcareProfessional ? "Yes" : "No"} missingLabels={getFieldMissingLabels(["isHealthcareProfessional"])} />
+                      <TrainingValueCard title="Current Role or Field" value={studentProfile.currentRoleOrField} missingLabels={getFieldMissingLabels(["currentRoleOrField"])} />
+                      <TrainingValueCard title="Current Address" value={studentProfile.currentAddress} missingLabels={getFieldMissingLabels(["currentAddress"])} />
+                      <TrainingValueCard title="Training Interest" value={studentProfile.trainingInterest} missingLabels={getFieldMissingLabels(["trainingInterest"])} className="xl:col-span-3" />
                     </div>
-                    <div className="grid gap-3 lg:grid-cols-3">
-                      <div className="rounded-2xl border bg-background p-4">
-                        <p className="text-muted-foreground">Access Model</p>
-                        <p className="mt-1 font-medium">{isOnsiteProfile ? "Onsite training pathway" : "Online learner pathway"}</p>
-                      </div>
-                      <div className="rounded-2xl border bg-background p-4">
-                        <p className="text-muted-foreground">Program</p>
-                        <p className="mt-1 font-medium">{studentProfile.formTitle}</p>
-                      </div>
-                      <div className="rounded-2xl border bg-background p-4">
-                        <p className="text-muted-foreground">Submitted</p>
-                        <p className="mt-1 font-medium">{new Date(studentProfile.submittedAt).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-primary" />
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Payment Status</p>
-                    </div>
-                    <div className="flex flex-col gap-3 rounded-2xl border bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p className="font-medium text-foreground">Managed on the onsite page</p>
-                        <p>{isOnsiteProfile ? `Last learner update ${learnerRecordUpdatedLabel}` : "Available whenever you choose the premium pathway"}</p>
-                      </div>
-                      <Button asChild size="sm" variant="outline">
-                        <Link href="/dashboard/onsite-training">Open onsite page</Link>
-                      </Button>
-                    </div>
-                    <div className="grid gap-3 lg:grid-cols-4">
-                      {isOnsiteProfile ? (
-                        <>
-                          <TrainingValueCard title="Status" value={studentProfile.paymentStatus === "yes" ? "Paid" : "Not yet paid"} />
-                          <TrainingValueCard title="Cohort" value={onsiteTimingLabel} />
-                          <TrainingValueCard
-                            title="Reference"
-                            value={studentProfile.paymentReference || ""}
-                            emptyStateLabel={
-                              studentProfile.paymentStatus === "yes"
-                                ? "Payment verification is complete. A reference will appear here once the onsite record is updated with it."
-                                : "A payment reference will appear here after checkout or manual verification updates your onsite record."
-                            }
-                            className="lg:col-span-2"
-                          />
-                          <TrainingValueCard title="Fee" value={`NGN ${studentProfile.registrationFeeNgn.toLocaleString("en-NG")}`} />
-                          <TrainingValueCard title="Seat signal" value={studentProfile.paymentStatus === "yes" ? "Reserved for your onsite cohort" : onsiteSeatSignal} />
-                        </>
-                      ) : (
-                        <TrainingValueCard
-                          title="Online access"
-                          value="Online students purchase courses to unlock paid content as needed."
-                          className="lg:col-span-4"
-                        />
-                      )}
-                    </div>
-                    <div className="grid gap-3 lg:grid-cols-2">
-                      <div className={`rounded-2xl border p-4 ${
-                        isOnsiteProfile && studentProfile.paymentStatus === "yes"
-                          ? "border-amber-300/60 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/20"
-                          : isOnsiteProfile
-                            ? "bg-primary/5 dark:bg-primary/10"
-                            : "bg-muted/30 dark:bg-muted/20"
-                      }`}>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Onsite verification</p>
-                        <p className="mt-2 font-medium text-foreground">
-                          {isOnsiteProfile
-                            ? studentProfile.paymentStatus === "yes"
-                              ? "Your onsite learner status is verified"
-                              : "Your onsite learner status is waiting for payment"
-                            : "You are currently on the online learner path"}
-                        </p>
-                        <p className="mt-1 text-muted-foreground">
-                          {isOnsiteProfile
-                            ? studentProfile.paymentStatus === "yes"
-                              ? "Your learner record now reflects a premium onsite track with payment confirmation, cohort visibility, and seat reservation."
-                              : "Your learner record is already prepared for the onsite route. Payment completion will finish the activation step."
-                            : "You can keep learning online and still return to the onsite page anytime to compare options or upgrade later."}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border bg-background p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Next onsite action</p>
-                        <p className="mt-2 font-medium text-foreground">
-                          {isOnsiteProfile ? "Review onsite record and payment history" : "Compare cohorts and pricing"}
-                        </p>
-                        <p className="mt-1 text-muted-foreground">
-                          {isOnsiteProfile
-                            ? "Use the onsite page to confirm cohort details, reference information, and any remaining payment action."
-                            : "Use the onsite page when you want premium training details without losing your current online learner progress."}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <Button asChild size="sm" variant={isOnsiteProfile ? "cta" : "outline"}>
-                            <Link href="/dashboard/onsite-training">
-                              {isOnsiteProfile ? "Open onsite record" : "Explore onsite pathway"}
-                            </Link>
-                          </Button>
-                          <Button asChild size="sm" variant="outline">
-                            <Link href={isOnsiteProfile ? "/dashboard/payments" : "/dashboard/profile/setup"}>
-                              {isOnsiteProfile ? "View payments" : "Update learner record"}
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <MapPinned className="h-4 w-4 text-primary" />
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Preferences</p>
-                      <CompletionStateBadge missingCount={preferencesMissingLabels.length} />
-                    </div>
-                    <div className="flex flex-col gap-3 rounded-2xl border bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p className="font-medium text-foreground">Managed in guided setup</p>
-                        <p>Last learner update {learnerRecordUpdatedLabel}</p>
-                      </div>
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={getSetupHref("preferences")}>Open preferences step</Link>
-                      </Button>
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                      <TrainingValueCard
-                        title="Preferred Location"
-                        value={studentProfile.preferredLocation ? `${getTrainingLocationLabel(studentProfile.preferredLocation)} - ${studentProfile.preferredLocationStartDate}` : ""}
-                        missingLabels={getFieldMissingLabels(["preferredLocation"])}
-                        actionHref={getSetupHref("preferences")}
-                        actionLabel="Open preferences step"
-                      />
-                      <TrainingValueCard
-                        title="Gender"
-                        value={studentProfile.gender ? studentProfile.gender.replace(/_/g, " ") : ""}
-                        missingLabels={getFieldMissingLabels(["gender"])}
-                        actionHref={getSetupHref("personal")}
-                        actionLabel="Open personal step"
-                      />
-                      <TrainingValueCard
-                        title="Date of Birth"
-                        value={studentProfile.dateOfBirth}
-                        missingLabels={getFieldMissingLabels(["dateOfBirth"])}
-                        actionHref={getSetupHref("personal")}
-                        actionLabel="Open personal step"
-                      />
-                      <TrainingValueCard
-                        title="Healthcare Professional"
-                        value={studentProfile.isHealthcareProfessional ? "Yes" : "No"}
-                        missingLabels={getFieldMissingLabels(["isHealthcareProfessional"])}
-                        actionHref={getSetupHref("preferences")}
-                        actionLabel="Open preferences step"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Additional Info</p>
-                      <CompletionStateBadge missingCount={additionalInfoMissingLabels.length} />
-                    </div>
-                    <div className="flex flex-col gap-3 rounded-2xl border bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <p className="font-medium text-foreground">Managed in guided setup</p>
-                        <p>Last learner update {learnerRecordUpdatedLabel}</p>
-                      </div>
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={getSetupHref(additionalInfoMissingItems.some((item) => item.key === "currentAddress") ? "personal" : "preferences")}>
-                          Open {additionalInfoMissingItems.some((item) => item.key === "currentAddress") ? "personal" : "preferences"} step
-                        </Link>
-                      </Button>
-                    </div>
-                    <div className="grid gap-3 lg:grid-cols-2">
-                      <TrainingValueCard
-                        title="Current Role or Field"
-                        value={studentProfile.currentRoleOrField}
-                        missingLabels={getFieldMissingLabels(["currentRoleOrField"])}
-                        actionHref={getSetupHref("preferences")}
-                        actionLabel="Open preferences step"
-                      />
-                      <TrainingValueCard
-                        title="Current Address"
-                        value={studentProfile.currentAddress}
-                        missingLabels={getFieldMissingLabels(["currentAddress"])}
-                        actionHref={getSetupHref("personal")}
-                        actionLabel="Open personal step"
-                      />
-                    </div>
-                    <TrainingValueCard
-                      title="Why Interested"
-                      value={studentProfile.trainingInterest}
-                      missingLabels={getFieldMissingLabels(["trainingInterest"])}
-                      actionHref={getSetupHref("preferences")}
-                      actionLabel="Open preferences step"
-                    />
                   </div>
 
                   <div className="flex flex-wrap gap-2 border-t pt-4">
                     <Button onClick={() => setShowTrainingModal(true)} variant="outline">
                       <CalendarDays className="mr-2 h-4 w-4" />
-                      View program summary
-                    </Button>
-                    <Button asChild variant="outline">
-                      <Link href={getSetupHref("personal")}>Edit learner details</Link>
+                      View Program Summary
                     </Button>
                     <Button asChild variant={isOnsiteProfile ? "cta" : "outline"}>
-                      <Link href={isOnsiteProfile ? "/dashboard/onsite-training" : "/courses"}>
+                      <Link href={isOnsiteProfile ? "/dashboard/onsite-training" : "/dashboard/profile/setup"}>
                         {isOnsiteProfile ? (
                           <>
                             <CreditCard className="mr-2 h-4 w-4" />
-                            {studentProfile.paymentStatus === "yes" ? "Verify onsite status" : "Manage onsite training"}
+                            {studentProfile.paymentStatus === "yes" ? "View Onsite Status" : "Manage Onsite Training"}
                           </>
                         ) : (
-                          "Browse courses"
+                          "Complete Learner Setup"
                         )}
                       </Link>
                     </Button>
@@ -1877,9 +1665,7 @@ export default function ProfilePage() {
                     <Button variant="outline" onClick={() => setActiveTab("training")}>
                       Review training tab
                     </Button>
-                    <Button asChild variant="outline">
-                      <Link href="/dashboard/profile/setup">Open guided setup</Link>
-                    </Button>
+
                   </div>
                 </div>
               </div>
@@ -2026,6 +1812,10 @@ export default function ProfilePage() {
     </motion.div>
   )
 }
+
+
+
+
 
 
 
