@@ -107,7 +107,7 @@ export default function AboutPage() {
       imagePositionClassName: "object-[center_30%]",
     },
     { name: "Dr Amara Okoye", role: "Director", image: directorImage },
-    { name: "Eunice", role: "Tutor", image: euniceImage },
+    { name: "Eunice Benjamin", role: "Tutor", image: euniceImage },
     { name: "Chinedu Amadi", role: "Tutor", image: chineduImage },
     {
       name: "Ngozi Nworah",
@@ -463,4 +463,5 @@ export default function AboutPage() {
     </div>
   )
 }
+
 
