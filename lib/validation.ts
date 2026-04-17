@@ -1,4 +1,4 @@
-﻿// Zod validation schemas
+// Zod validation schemas
 import { z } from "zod"
 
 export const loginSchema = z.object({
@@ -192,4 +192,6 @@ export const adminSettingsSchema = z.object({
   autoEnrollment: z.boolean(),
   certificateGeneration: z.boolean(),
   maintenanceMode: z.boolean(),
+  homeIntroVideoUrl: z.string().trim().optional().default(""),
 })
+

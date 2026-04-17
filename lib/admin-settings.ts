@@ -11,6 +11,7 @@ export type AdminSettings = {
   autoEnrollment: boolean
   certificateGeneration: boolean
   maintenanceMode: boolean
+  homeIntroVideoUrl: string
 }
 
 const SETTINGS_DOC_ID = "admin_settings"
@@ -25,6 +26,7 @@ const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
   autoEnrollment: true,
   certificateGeneration: true,
   maintenanceMode: false,
+  homeIntroVideoUrl: "",
 }
 
 type GlobalSettings = typeof globalThis & {
@@ -79,4 +81,6 @@ export async function updateAdminSettings(nextSettings: AdminSettings): Promise<
 
   return parsed
 }
+
+
 

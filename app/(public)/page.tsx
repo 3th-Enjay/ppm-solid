@@ -16,6 +16,7 @@ import { formatCurrency } from "@/lib/utils/format"
 import { usePreferencesStore } from "@/lib/store"
 import { CtaBand } from "@/components/skillup/cta-band"
 import { SharedCampaignCountdownBanner } from "@/components/campaign/shared-countdown-banner"
+import { HomeScrollVideoSection } from "@/components/skillup/home-scroll-video-section"
 import type { CampaignConfig } from "@/lib/campaign-shared"
 
 export default function HomePage() {
@@ -318,3 +319,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+

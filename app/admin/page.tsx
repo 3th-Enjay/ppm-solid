@@ -34,6 +34,7 @@ import {
   LockKeyhole,
   Eye,
   EyeOff,
+  Video,
 } from "lucide-react"
 import type { Payment, User, Course, Enrollment, AdminLog } from "@/lib/types"
 import { formatDate } from "@/lib/utils/format"
@@ -593,7 +594,7 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
         <Link href="/admin/analytics">
           <Card className="hover:border-primary transition-colors cursor-pointer">
             <CardHeader>
@@ -630,6 +631,19 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">Monitor student activity and status.</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/settings">
+          <Card className="hover:border-primary transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Video className="h-5 w-5 text-primary" />
+                Homepage Video
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Add or replace the introductory YouTube video shown under the homepage hero.</p>
             </CardContent>
           </Card>
         </Link>
@@ -683,5 +697,9 @@ export default function AdminDashboardPage() {
     </div>
   )
 }
+
+
+
+
 
 

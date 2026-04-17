@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Save, Bell, Mail, Shield } from "lucide-react"
+import { Save, Bell, Mail, Shield, Video } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/lib/store"
 
@@ -21,6 +21,7 @@ type AdminSettings = {
   autoEnrollment: boolean
   certificateGeneration: boolean
   maintenanceMode: boolean
+  homeIntroVideoUrl: string
 }
 
 const DEFAULT_SETTINGS: AdminSettings = {
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: AdminSettings = {
   autoEnrollment: true,
   certificateGeneration: true,
   maintenanceMode: false,
+  homeIntroVideoUrl: "",
 }
 
 export default function AdminSettingsPage() {
@@ -245,6 +247,29 @@ export default function AdminSettingsPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5" />
+              Homepage Intro Video
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="homeIntroVideoUrl">YouTube Video Link</Label>
+              <Input
+                id="homeIntroVideoUrl"
+                value={settings.homeIntroVideoUrl}
+                onChange={(e) => setSettings({ ...settings, homeIntroVideoUrl: e.target.value })}
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+              <p className="text-sm text-muted-foreground">
+                Paste a public or unlisted YouTube link. This video will appear in the scroll-aware intro section directly below the homepage hero.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         <Button onClick={handleSave} className="w-full" disabled={saving}>
           <Save className="h-4 w-4 mr-2" />
           {saving ? "Saving..." : "Save Settings"}
@@ -253,4 +278,7 @@ export default function AdminSettingsPage() {
     </div>
   )
 }
+
+
+
 
