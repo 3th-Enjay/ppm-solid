@@ -20,6 +20,8 @@ interface RoleDashboardShellProps {
   children: ReactNode
   onLogout: () => Promise<void> | void
   homeHref: string
+  settingsHref?: string
+  headerTitle?: string
 }
 
 export function RoleDashboardShell({
@@ -30,9 +32,13 @@ export function RoleDashboardShell({
   children,
   onLogout,
   homeHref,
+  settingsHref,
+  headerTitle,
 }: RoleDashboardShellProps) {
   const [open, setOpen] = useState(false)
   const displayName = toDisplayName(userName)
+  const resolvedSettingsHref = settingsHref || `${homeHref}/settings`
+  const resolvedHeaderTitle = headerTitle || `${roleLabel} Dashboard`
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -43,6 +49,17 @@ export function RoleDashboardShell({
             <div>
               <p className="text-sm font-semibold">Prompt Care Academy</p>
               <p className="text-xs text-muted-foreground">{roleLabel} Console</p>
+            </div>
+          </div>
+
+          <div className="mb-4 rounded-2xl border border-border/80 bg-muted/40 p-3">
+            <p className="text-xs text-muted-foreground">Welcome back</p>
+            <div className="mt-2 flex items-center gap-3">
+              <UserAvatar name={displayName} imageUrl={userAvatar || null} size="sm" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{displayName}</p>
+                <p className="text-xs text-muted-foreground">{roleLabel}</p>
+              </div>
             </div>
           </div>
 
@@ -67,7 +84,7 @@ export function RoleDashboardShell({
         <header className="sticky top-0 z-30 border-b border-border/80 bg-background/85 backdrop-blur-xl">
           <div className="px-4 py-3 md:px-6 lg:px-8">
             <div className="hidden min-h-11 items-center justify-between md:flex">
-              <h1 className="text-lg font-semibold">{roleLabel} Dashboard</h1>
+              <h1 className="text-lg font-semibold">{resolvedHeaderTitle}</h1>
               <DropdownMenu>
                 <UserAvatar name={displayName} imageUrl={userAvatar || null} size="md" dropdownTrigger />
                 <DropdownMenuContent align="end" className="w-44 rounded-xl">
@@ -75,7 +92,7 @@ export function RoleDashboardShell({
                     <Link href={homeHref}>Dashboard</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href={`${homeHref}/settings`}>Settings</Link>
+                    <Link href={resolvedSettingsHref}>Settings</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onLogout()}>Logout</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -128,7 +145,7 @@ export function RoleDashboardShell({
                       <Link href={homeHref}>Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={`${homeHref}/settings`}>Settings</Link>
+                      <Link href={resolvedSettingsHref}>Settings</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onLogout()}>Logout</DropdownMenuItem>
                   </DropdownMenuContent>

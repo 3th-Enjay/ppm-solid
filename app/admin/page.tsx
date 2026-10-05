@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -643,7 +643,7 @@ export default function AdminDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Add or replace the introductory YouTube video shown under the homepage hero.</p>
+              <p className="text-sm text-muted-foreground">Add or replace the introductory YouTube content used in the homepage video section.</p>
             </CardContent>
           </Card>
         </Link>
@@ -697,6 +697,8 @@ export default function AdminDashboardPage() {
     </div>
   )
 }
+
+
 
 
 

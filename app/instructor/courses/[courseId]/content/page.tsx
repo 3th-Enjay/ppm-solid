@@ -10,13 +10,24 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Plus, Trash2, Save, FileVideo, Link as LinkIcon } from "lucide-react"
-import type { Course, CourseModule, Lesson, LessonType } from "@/lib/types"
+import { ArrowLeft, Plus, Trash2, Save, FileVideo, Link as LinkIcon, ClipboardList } from "lucide-react"
+import type { Course, CourseModule, Lesson, LessonAssignmentDetails, LessonType } from "@/lib/types"
 import { useAuthStore } from "@/lib/store"
 
 type ResourceItem = { title: string; url: string }
 
 const lessonTypes: LessonType[] = ["video", "article", "quiz", "assignment"]
+
+const createDefaultAssignment = (attachTo: "lesson" | "video" = "lesson"): LessonAssignmentDetails => ({
+  title: "",
+  instructions: "",
+  dueDate: "",
+  maxScore: 100,
+  submissionType: "text",
+  attachTo,
+  estimatedMinutes: 20,
+  resources: [],
+})
 
 export default function InstructorCourseContentPage() {
   const params = useParams()
@@ -627,3 +638,9 @@ export default function InstructorCourseContentPage() {
     </div>
   )
 }
+
+
+
+
+
+

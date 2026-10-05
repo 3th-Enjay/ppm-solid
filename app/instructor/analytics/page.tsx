@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Award, BarChart3, BookOpen, TrendingUp, Users } from "lucide-react"
+import { ArrowLeft, Award, BarChart3, BookOpen, Clock, TrendingUp, Users } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,10 +17,12 @@ export default function InstructorAnalyticsPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
       if (!user) return
+      setLoading(true)
       try {
         const coursesRes = await fetch(`/api/courses?instructorId=${encodeURIComponent(user.id)}&includeDrafts=true`, {
           headers: { Authorization: `Bearer ${token || ""}` },
@@ -48,6 +50,8 @@ export default function InstructorAnalyticsPage() {
         setPayments(paymentsData.payments || [])
       } catch (error) {
         console.error("Failed to load instructor analytics:", error)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -90,7 +94,7 @@ export default function InstructorAnalyticsPage() {
   const pieColors = ["#22c7a8", "#16a34a", "#ef4444"]
 
   return (
-    <div className="space-y-8 p-4 md:p-6 lg:p-8">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <div className="space-y-4">
         <Link href="/instructor">
           <Button variant="ghost" size="sm">
@@ -103,6 +107,27 @@ export default function InstructorAnalyticsPage() {
           <p className="mt-1 text-muted-foreground">Measure learner progress, course quality, and revenue outcomes.</p>
         </div>
       </div>
+
+      {loading ? (
+        <Card variant="elevated">
+          <CardContent className="flex items-center gap-3 p-6 text-muted-foreground">
+            <Clock className="h-5 w-5 animate-pulse" />
+            <span>Loading your analytics overview...</span>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card variant="elevated">
+        <CardContent className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">Analytics overview</p>
+            <h2 className="text-xl font-semibold">{stats.totalCourses} course{stats.totalCourses === 1 ? "" : "s"} contributing to your current analytics</h2>
+          </div>
+          <Button variant="outline" asChild>
+            <Link href="/instructor/courses">Manage courses</Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Card>
@@ -138,7 +163,7 @@ export default function InstructorAnalyticsPage() {
             <CardTitle className="text-sm font-medium">Revenue (NGN est.)</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="text-2xl font-bold">N{stats.totalRevenueNgn.toLocaleString()}</CardContent>
+          <CardContent className="text-2xl font-bold">NGN {stats.totalRevenueNgn.toLocaleString()}</CardContent>
         </Card>
       </div>
 
@@ -195,4 +220,3 @@ export default function InstructorAnalyticsPage() {
     </div>
   )
 }
-

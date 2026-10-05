@@ -1,4 +1,4 @@
-﻿// Core type definitions for the Prompt Care Academy platform
+// Core type definitions for the Prompt Care Academy platform
 
 export type UserRole = "student" | "instructor" | "admin" | "finance"
 export type StudentGender = "male" | "female" | "other" | "prefer_not_to_say"
@@ -172,6 +172,22 @@ export interface CourseModule {
 
 export type LessonType = "video" | "article" | "quiz" | "assignment"
 
+export interface LessonAssignmentResource {
+  title: string
+  url: string
+}
+
+export interface LessonAssignmentDetails {
+  title: string
+  instructions: string
+  dueDate?: string
+  maxScore: number
+  submissionType: "text" | "file" | "link"
+  attachTo: "lesson" | "video"
+  estimatedMinutes?: number
+  resources?: LessonAssignmentResource[]
+}
+
 export interface Lesson {
   id: string
   title: string
@@ -185,7 +201,8 @@ export interface Lesson {
     articleContent?: string
     quizId?: string
     assignmentId?: string
-    resources?: { title: string; url: string }[]
+    assignment?: LessonAssignmentDetails
+    resources?: LessonAssignmentResource[]
   }
   isFree: boolean
   // Approval workflow for individual lessons
@@ -348,6 +365,9 @@ export interface LearningNote {
   createdAt: Date
   updatedAt: Date
 }
+
+
+
 
 
 

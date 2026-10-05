@@ -1,9 +1,21 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { getDB } from "@/lib/db"
+import { getTokenFromRequest } from "@/lib/jwt"
+import { authService } from "@/lib/auth"
 import type { Payment } from "@/lib/types"
 
 export async function GET(request: NextRequest) {
   try {
+    const token = getTokenFromRequest(request)
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const currentUser = await authService.getCurrentUser(token)
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get("id")
     const userId = searchParams.get("userId")
@@ -17,32 +29,53 @@ export async function GET(request: NextRequest) {
     const db = getDB()
     let payments: Payment[] = await db.getAllPayments()
 
+    const isPrivilegedRole = currentUser.role === "admin" || currentUser.role === "finance"
+
+    if (currentUser.role === "student") {
+      payments = payments.filter((payment: Payment) => payment.userId === currentUser.id)
+      if (userId && userId !== currentUser.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+    } else if (currentUser.role === "instructor") {
+      const instructorCourses = await db.getCoursesByInstructor(currentUser.id)
+      const instructorCourseIds = new Set((instructorCourses || []).map((course: any) => course.id))
+      payments = payments.filter((payment: Payment) => {
+        if (instructorCourseIds.has(payment.courseId)) return true
+        return Boolean(payment.courseIds?.some((value: string) => instructorCourseIds.has(value)))
+      })
+
+      if (userId) {
+        payments = payments.filter((payment: Payment) => payment.userId === userId)
+      }
+    } else if (!isPrivilegedRole) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     if (id) {
-      payments = payments.filter((payment) => payment.id === id)
+      payments = payments.filter((payment: Payment) => payment.id === id)
     }
 
     if (reference) {
-      const payment = await db.getPaymentByReference(reference)
-      payments = payment ? [payment] : []
+      payments = payments.filter((payment: Payment) => payment.reference === reference)
     }
 
-    if (userId) {
-      payments = payments.filter((p) => p.userId === userId)
+    if (userId && currentUser.role !== "instructor") {
+      payments = payments.filter((payment: Payment) => payment.userId === userId)
     }
 
     if (status) {
-      payments = payments.filter((p) => p.status === status)
+      payments = payments.filter((payment: Payment) => payment.status === status)
     }
 
     if (currency) {
-      payments = payments.filter((p) => p.currency === currency)
+      payments = payments.filter((payment: Payment) => payment.currency === currency)
     }
 
     if (courseId || courseIds) {
       const ids = courseIds ? courseIds.split(",") : [courseId as string]
-      payments = payments.filter((p) => {
-        if (ids.includes(p.courseId)) return true
-        if (p.courseIds && p.courseIds.some((id) => ids.includes(id))) return true
+      payments = payments.filter((payment: Payment) => {
+        if (ids.includes(payment.courseId)) return true
+        if (payment.courseIds && payment.courseIds.some((value: string) => ids.includes(value))) return true
         return false
       })
     }
@@ -57,14 +90,14 @@ export async function GET(request: NextRequest) {
         ? (db as any).getAllCoursesIncludingDrafts()
         : Promise.resolve([]),
     ])
+
     const userById = new Map((users || []).map((user: any) => [user.id, user]))
     const courseById = new Map((courses || []).map((course: any) => [course.id, course]))
 
-    const enriched = payments.map((payment) => {
-      const resolvedCourseIds =
-        payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
+    const enriched = payments.map((payment: Payment) => {
+      const resolvedCourseIds = payment.courseIds && payment.courseIds.length > 0 ? payment.courseIds : [payment.courseId]
       const paymentCourses = resolvedCourseIds
-        .map((resolvedId) => {
+        .map((resolvedId: string) => {
           const course = courseById.get(resolvedId) as any
           if (!course) return null
           return {
@@ -78,15 +111,17 @@ export async function GET(request: NextRequest) {
         })
         .filter(Boolean)
 
-      const user = userById.get(payment.userId) as any
+      const relatedUser = userById.get(payment.userId) as any
+      const includeUserDetails = isPrivilegedRole
+
       return {
         ...payment,
-        user: user
+        user: includeUserDetails && relatedUser
           ? {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
+              id: relatedUser.id,
+              name: relatedUser.name,
+              email: relatedUser.email,
+              role: relatedUser.role,
             }
           : undefined,
         courses: paymentCourses,

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import { RotateCcw, Save } from "lucide-react"
@@ -171,7 +171,7 @@ export default function AdminCampaignPage() {
         <CardHeader>
           <CardTitle>Campaign Countdown</CardTitle>
           <CardDescription className="text-white/75">
-            This timer is stored on the server, and you can choose whether it appears on the home page, the campaign page, both pages, or neither.
+            This timer is stored on the server, and you can choose whether it appears on the campaign page while keeping the timing configuration updated centrally.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -179,7 +179,7 @@ export default function AdminCampaignPage() {
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/10 px-4 py-3">
               <div>
                 <p className="font-semibold text-white">Show On Home Page</p>
-                <p className="text-sm text-white/70">Display the countdown banner and register link on the public home page.</p>
+                <p className="text-sm text-white/70">Homepage display is currently disabled, but this toggle remains available for future use.</p>
               </div>
               <Switch checked={config.showCountdownOnHomePage} onCheckedChange={(checked) => setConfig({ ...config, showCountdownOnHomePage: checked })} />
             </div>
@@ -465,3 +465,4 @@ export default function AdminCampaignPage() {
     </div>
   )
 }
+

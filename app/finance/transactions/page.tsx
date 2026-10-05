@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -214,7 +214,7 @@ export default function FinanceTransactionsPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Revenue</p>
-            <p className="text-2xl font-bold">â‚¦{totals.totalRevenue.toLocaleString()}</p>
+            <p className="text-2xl font-bold">NGN {totals.totalRevenue.toLocaleString()}</p>
           </CardContent>
         </Card>
         <Card>
@@ -389,3 +389,4 @@ export default function FinanceTransactionsPage() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -264,8 +264,17 @@ export default function AdminSettingsPage() {
                 placeholder="https://www.youtube.com/watch?v=..."
               />
               <p className="text-sm text-muted-foreground">
-                Paste a public or unlisted YouTube link. This video will appear in the scroll-aware intro section directly below the homepage hero.
+                Paste a public or unlisted YouTube link. This video stays hidden until a valid YouTube URL is saved, then it appears in the homepage intro video section.
               </p>
+              {settings.homeIntroVideoUrl.trim() ? (
+                <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                  Intro video is configured. Save changes, then refresh the homepage to confirm the player appears.
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-4 py-3 text-sm text-muted-foreground">
+                  No homepage video is configured yet, so the section remains hidden on the public home page.
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -278,6 +287,8 @@ export default function AdminSettingsPage() {
     </div>
   )
 }
+
+
 
 
 
