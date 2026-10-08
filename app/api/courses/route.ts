@@ -3,6 +3,7 @@ import { ZodError } from "zod"
 import { getDB } from "@/lib/db"
 import { courseCreateSchema } from "@/lib/validation"
 import { authService } from "@/lib/auth"
+import { getCurrentUserFromRequest, sanitizeCourseMutationInput } from "@/lib/authorization"
 import { maskCourseForUser } from "@/lib/utils/course-masking"
 
 export async function GET(request: NextRequest) {
@@ -102,8 +103,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUserFromRequest(request)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
+    if (!user.role || !["instructor", "admin"].includes(user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     const body = await request.json()
-    const validated = courseCreateSchema.parse(body)
+    const sanitizedBody = sanitizeCourseMutationInput(body, user)
+    const validated = courseCreateSchema.parse(sanitizedBody)
 
     const db = getDB()
 
@@ -122,13 +133,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create course (approved defaults to false, only admin can approve)
+    const instructorId = user.role === "admin" ? (validated.instructorId || user.id) : user.id
+    const isAdminApproval = user.role === "admin"
+
     const course = await db.createCourse({
       ...validated,
+      instructorId,
       slug,
       thumbnail: validated.thumbnail || "/placeholder.jpg",
-      published: validated.published ?? false,
-      approved: validated.approved ?? false,
+      published: false,
+      approved: isAdminApproval ? (validated.approved ?? false) : false,
       modules: validated.modules ?? [],
       totalDuration: validated.totalDuration ?? 0,
       enrollmentCount: validated.enrollmentCount ?? 0,

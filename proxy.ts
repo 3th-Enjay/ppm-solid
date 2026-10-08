@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { isValidSessionToken } from "@/lib/auth"
 
 const PROTECTED_PREFIXES = ["/admin", "/dashboard", "/instructor", "/finance", "/checkout"]
 
@@ -49,7 +50,7 @@ export function proxy(request: NextRequest) {
 
   if (PROTECTED_PREFIXES.some((prefix) => matchesPrefix(pathname, prefix))) {
     const authToken = request.cookies.get("token")?.value
-    if (!authToken) {
+    if (!authToken || !isValidSessionToken(authToken)) {
       const loginUrl = new URL("/login", request.url)
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)

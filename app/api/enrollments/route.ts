@@ -6,6 +6,7 @@ import { authService } from "@/lib/auth"
 import { syncStudentMilestones } from "@/lib/student-milestones"
 import { enrollmentCreateSchema } from "@/lib/validation"
 import { maskCourseForUser } from "@/lib/utils/course-masking"
+import { getCurrentUserFromRequest, resolveAuthorizedUserId, requireRole } from "@/lib/authorization"
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,27 +16,36 @@ export async function GET(request: NextRequest) {
     const courseIds = searchParams.get("courseIds")
     const all = searchParams.get("all") === "true"
 
+    const actingUser = await getCurrentUserFromRequest(request)
+    if (!actingUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const db = getDB()
     let enrollments: any[] = []
 
     if (all) {
-      const token = getTokenFromRequest(request)
-      if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-
-      const session = authService.decodeToken(token)
-      if (!session) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
-
-      if (session.role !== "admin") {
+      try {
+        requireRole(actingUser, "admin")
+      } catch {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
 
       enrollments = await db.getAllEnrollments()
     } else if (userId) {
-      enrollments = await db.getEnrollmentsByUserId(userId)
+      const authorizedUserId = (() => {
+        try {
+          return resolveAuthorizedUserId(actingUser, userId)
+        } catch {
+          return null
+        }
+      })()
+
+      if (!authorizedUserId) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+
+      enrollments = await db.getEnrollmentsByUserId(authorizedUserId)
       const user = await db.findUserById(userId)
       if (
         user?.role === "student" &&
@@ -117,18 +127,34 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const actingUser = await getCurrentUserFromRequest(request)
+    if (!actingUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { userId, courseId } = enrollmentCreateSchema.parse(body)
+    const authorizedUserId = (() => {
+      try {
+        return resolveAuthorizedUserId(actingUser, userId)
+      } catch {
+        return null
+      }
+    })()
+
+    if (!authorizedUserId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const db = getDB()
-    const existing = await db.getEnrollment(userId, courseId)
+    const existing = await db.getEnrollment(authorizedUserId, courseId)
 
     if (existing) {
       return NextResponse.json({ error: "Already enrolled in this course" }, { status: 400 })
     }
 
     const enrollment = await db.createEnrollment({
-      userId,
+      userId: authorizedUserId,
       courseId,
       progress: 0,
       completedLessons: [],
@@ -136,10 +162,10 @@ export async function POST(request: NextRequest) {
       enrolledAt: new Date(),
     })
 
-    const user = await db.findUserById(userId)
+    const user = await db.findUserById(authorizedUserId)
     if (user) {
       const updatedCourses = Array.from(new Set([...(user.enrolledCourses || []), courseId]))
-      const updatedUser = await db.updateUser(userId, { enrolledCourses: updatedCourses })
+      const updatedUser = await db.updateUser(authorizedUserId, { enrolledCourses: updatedCourses })
       if (updatedUser?.role === "student") {
         await syncStudentMilestones(db, updatedUser)
       }

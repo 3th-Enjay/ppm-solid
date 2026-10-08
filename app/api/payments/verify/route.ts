@@ -5,6 +5,7 @@ import { notifyManualReviewAlert } from "@/lib/payment-alerts"
 import { expirePaymentIfStale, logPaymentEvent } from "@/lib/payments/runtime"
 import { evaluateVerification } from "@/lib/payments/verification"
 import { paystackService } from "@/lib/paystack"
+import { getCurrentUserFromRequest, requireRole } from "@/lib/authorization"
 
 const MAX_VERIFICATION_ATTEMPTS = 5
 
@@ -21,6 +22,17 @@ async function recordOnsitePaymentOutcome(reference: string, status: "completed"
 
 export async function GET(request: NextRequest) {
   try {
+    const actingUser = await getCurrentUserFromRequest(request)
+    if (!actingUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    try {
+      requireRole(actingUser, ["admin", "finance"])
+    } catch {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const reference = searchParams.get("reference")
 

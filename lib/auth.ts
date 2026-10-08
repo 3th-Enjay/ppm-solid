@@ -29,11 +29,24 @@ type PendingRegistrationResult = {
   pendingRegistration: Omit<PendingRegistration, "password" | "otpHash">
 }
 
-const JWT_SECRET = (process.env.JWT_SECRET || "your-secret-key-change-in-production").trim()
+const JWT_SECRET = process.env.JWT_SECRET?.trim()
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d").trim()
 const OTP_EXPIRES_MINUTES = Number(process.env.OTP_EXPIRES_MINUTES || 5)
 const ADMIN_ACCOUNTS_EMAIL = (process.env.ADMIN_ACCOUNTS_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL)?.trim()
 const ADMIN_ACCOUNTS_PASSWORD = (process.env.ADMIN_ACCOUNTS_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD)?.trim()
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET?.trim()
+
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("JWT_SECRET environment variable is required in production")
+    }
+    throw new Error("JWT_SECRET environment variable is required")
+  }
+
+  return secret
+}
 
 // Password hashing utility
 async function hashPassword(password: string): Promise<string> {
@@ -67,17 +80,21 @@ function generateToken(user: User): string {
   const options: any = {
     expiresIn: JWT_EXPIRES_IN,
   }
-  return jwt.sign(payload, JWT_SECRET as string, options)
+  return jwt.sign(payload, getJwtSecret(), options)
 }
 
 // Verify JWT token
 function verifyToken(token: string): SessionData | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET as string) as SessionData
+    const decoded = jwt.verify(token, getJwtSecret()) as SessionData
     return decoded
   } catch (error) {
     return null
   }
+}
+
+export function isValidSessionToken(token: string): boolean {
+  return !!token && !!verifyToken(token)
 }
 
 async function validateUserPassword(user: User, password: string): Promise<boolean> {

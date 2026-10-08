@@ -1,5 +1,3 @@
-import "server-only"
-
 import { getAdminSettings } from "./admin-settings"
 import { getDB } from "./db"
 import { sendPaymentManualReviewAlert } from "./email"

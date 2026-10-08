@@ -83,7 +83,7 @@ export default function MyCoursesPage() {
                 <CardContent className="p-6">
                   <h3 className="mb-2 line-clamp-2 text-lg font-semibold">{enrollment.course?.title}</h3>
                   <div className="mb-4 text-sm text-muted-foreground">
-                    {formatDuration(enrollment.course?.totalDuration || 0)} • {enrollment.course?.level}
+                    {formatDuration(enrollment.course?.totalDuration || 0)} â€¢ {enrollment.course?.level}
                   </div>
                   <Progress value={enrollment.progress} className="mb-4 h-2" />
                   <Button className="w-full" asChild>

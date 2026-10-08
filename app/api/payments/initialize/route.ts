@@ -5,16 +5,23 @@ import { getDB } from "@/lib/db"
 import { paymentInitializeSchema } from "@/lib/validation"
 import type { Currency } from "@/lib/types"
 import { logPaymentEvent } from "@/lib/payments/runtime"
+import { getCurrentUserFromRequest, resolveAuthorizedUserId } from "@/lib/authorization"
 
 export async function POST(request: NextRequest) {
   try {
+    const actingUser = await getCurrentUserFromRequest(request)
+    if (!actingUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const validated = paymentInitializeSchema.parse(body)
-    const { userId, courseIds, amount, email } = validated
+    const userId = resolveAuthorizedUserId(actingUser, validated.userId)
+    const { courseIds, amount } = validated
     const currency = validated.currency || "USD"
+    const email = actingUser.email
 
     const db = getDB()
-    // Check if user exists
     const user = await db.findUserById(userId)
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })

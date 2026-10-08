@@ -177,7 +177,7 @@ export default function LearnPage() {
           </div>
           <div>
             <h1 className="mb-2 text-2xl font-bold text-balance">{currentLesson.title}</h1>
-            <p className="text-muted-foreground">{currentLesson.type} • {currentLesson.duration} minutes</p>
+            <p className="text-muted-foreground">{currentLesson.type} â€¢ {currentLesson.duration} minutes</p>
           </div>
 
           {currentLesson.type === "article" && currentLesson.content.articleContent ? (

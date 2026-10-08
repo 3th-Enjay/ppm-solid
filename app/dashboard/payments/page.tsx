@@ -89,7 +89,7 @@ export default function PaymentsPage() {
                         <h3 className="mb-1 truncate font-semibold">{purchasedCourseNames}</h3>
                         <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
                           <span>{formatDate(payment.createdAt)}</span>
-                          <span>•</span>
+                          <span>â€¢</span>
                           <span className="truncate">{payment.reference}</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">

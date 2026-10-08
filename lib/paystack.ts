@@ -1,4 +1,3 @@
-import "server-only"
 import crypto from "crypto"
 import type { Currency } from "./types"
 import { currencyConfig } from "./currency"

@@ -1,21 +1,10 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, Plus_Jakarta_Sans } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthSessionBootstrap } from "@/components/auth/auth-session-bootstrap"
 import { Toaster } from "@/components/ui/toaster"
 import { CurrencyModal } from "@/components/ui/currency-modal"
 import "./globals.css"
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-})
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-plus-jakarta",
-})
 
 const metadataBaseUrl =
   process.env.NEXT_PUBLIC_APP_URL ||
@@ -57,7 +46,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <AuthSessionBootstrap />
         {children}
         <Toaster />

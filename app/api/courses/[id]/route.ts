@@ -3,6 +3,7 @@ import { ZodError } from "zod"
 import { getDB } from "@/lib/db"
 import { courseUpdateSchema } from "@/lib/validation"
 import { authService } from "@/lib/auth"
+import { getCurrentUserFromRequest, sanitizeCourseMutationInput } from "@/lib/authorization"
 import { maskCourseForUser } from "@/lib/utils/course-masking"
 
 export async function GET(
@@ -42,26 +43,14 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
-    
-    // Get auth token from headers
-    const authHeader = request.headers.get("authorization")
-    const token = authHeader?.replace("Bearer ", "")
-    
-    if (!token) {
+    const user = await getCurrentUserFromRequest(request)
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized - no token" }, { status: 401 })
     }
 
-    // Verify token and get user
-    const user = await authService.getCurrentUser(token)
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized - invalid token" }, { status: 401 })
-    }
-
-    // Check if user has permission to edit courses
-    const canEdit = ["admin", "instructor", "finance"].includes(user.role)
+    const canEdit = ["admin", "instructor"].includes(user.role)
     if (!canEdit) {
-      return NextResponse.json({ error: "Forbidden - only admin, instructor, or finance can edit courses" }, { status: 403 })
+      return NextResponse.json({ error: "Forbidden - only admin or instructor can edit courses" }, { status: 403 })
     }
 
     const db = getDB()
@@ -70,15 +59,14 @@ export async function PUT(
       return NextResponse.json({ error: "Course not found" }, { status: 404 })
     }
 
-    // If not admin and not the course instructor, cannot edit
     if (user.role !== "admin" && course.instructorId !== user.id) {
       return NextResponse.json({ error: "Forbidden - you can only edit your own courses" }, { status: 403 })
     }
 
-    // Parse and validate updates
-    const validated = courseUpdateSchema.parse(body)
+    const body = await request.json()
+    const sanitizedBody = sanitizeCourseMutationInput(body, user, { allowPublishedUpdate: user.role === "admin" })
+    const validated = courseUpdateSchema.parse(sanitizedBody)
 
-    // Only admin can approve courses
     if (body.approved !== undefined && user.role !== "admin") {
       return NextResponse.json({ error: "Forbidden - only admin can approve courses" }, { status: 403 })
     }

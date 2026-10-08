@@ -1,5 +1,3 @@
-import "server-only"
-
 const RESEND_API_URL = "https://api.resend.com/emails"
 
 type WelcomeEmailRole = "student" | "instructor" | "admin" | "finance"

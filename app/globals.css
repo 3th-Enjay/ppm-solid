@@ -4,6 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-inter: "Inter", "Segoe UI", sans-serif;
+  --font-plus-jakarta: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
   --background: #f6f7fb;
   --foreground: #1b1d22;
   --card: #ffffff;
