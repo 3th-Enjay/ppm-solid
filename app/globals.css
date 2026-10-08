@@ -1,0 +1,254 @@
+@import "../node_modules/tailwindcss/index.css";
+@import "../node_modules/tw-animate-css/dist/tw-animate.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-inter: "Inter", "Segoe UI", sans-serif;
+  --font-plus-jakarta: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  --background: #f6f7fb;
+  --foreground: #1b1d22;
+  --card: #ffffff;
+  --card-foreground: #1b1d22;
+  --popover: #ffffff;
+  --popover-foreground: #1b1d22;
+
+  --primary: #16a34a;
+  --primary-foreground: #ffffff;
+  --secondary: #ecfdf3;
+  --secondary-foreground: #1f4030;
+  --accent: #10b981;
+  --accent-foreground: #052e16;
+
+  --muted: #eef1f6;
+  --muted-foreground: #6b7280;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e3e7ef;
+  --input: #f3f5fa;
+  --ring: #4ade80;
+
+  --chart-1: #16a34a;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #2563eb;
+  --chart-5: #f43f5e;
+
+  --radius: 0.875rem;
+  --shadow-soft: 0 8px 30px rgba(31, 41, 55, 0.08);
+  --shadow-lifted: 0 18px 40px rgba(31, 41, 55, 0.12);
+  --glow-green: 0 0 0 3px rgba(34, 199, 168, 0.25);
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1b1d22;
+  --sidebar-primary: #16a34a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef1f6;
+  --sidebar-accent-foreground: #1b1d22;
+  --sidebar-border: #e3e7ef;
+  --sidebar-ring: #4ade80;
+}
+
+.dark {
+  --background: #0e1117;
+  --foreground: #f5f7fb;
+  --card: #171b23;
+  --card-foreground: #f5f7fb;
+  --popover: #171b23;
+  --popover-foreground: #f5f7fb;
+
+  --primary: #4ade80;
+  --primary-foreground: #04210f;
+  --secondary: #1f2f26;
+  --secondary-foreground: #f5f7fb;
+  --accent: #34d399;
+  --accent-foreground: #022c22;
+
+  --muted: #1f2432;
+  --muted-foreground: #a4adbf;
+  --destructive: #f87171;
+  --destructive-foreground: #1f1010;
+  --border: #2a3142;
+  --input: #212736;
+  --ring: #86efac;
+
+  --chart-1: #4ade80;
+  --chart-2: #34d399;
+  --chart-3: #f59e0b;
+  --chart-4: #60a5fa;
+  --chart-5: #fb7185;
+
+  --sidebar: #151a25;
+  --sidebar-foreground: #f5f7fb;
+  --sidebar-primary: #4ade80;
+  --sidebar-primary-foreground: #04210f;
+  --sidebar-accent: #1f2432;
+  --sidebar-accent-foreground: #f5f7fb;
+  --sidebar-border: #2a3142;
+  --sidebar-ring: #86efac;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), "Inter", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-display: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lifted: var(--shadow-lifted);
+  --glow-green: var(--glow-green);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
+  }
+}
+
+/* Container - Centered layout with max width */
+@layer components {
+  .container {
+    @apply mx-auto w-full px-4 sm:px-6 lg:px-8;
+    max-width: 1280px;
+  }
+
+  /* Full width container for background elements */
+  .container-full {
+    @apply w-full;
+  }
+
+  /* Centered content wrapper */
+  .content-wrapper {
+    @apply mx-auto w-full px-4 sm:px-6 lg:px-8;
+    max-width: 1280px;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--muted-foreground) 50%, transparent);
+}
+
+@keyframes sheen {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes spin-shake {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(2.5deg);
+  }
+  50% {
+    transform: rotate(-2.5deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@layer utilities {
+  .bg-grain-soft {
+    background-image: radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.04) 1px, transparent 0);
+    background-size: 8px 8px;
+  }
+
+  .marquee-track {
+    width: max-content;
+    animation: marquee 24s linear infinite;
+  }
+
+  .focus-green-glow:focus-visible {
+    box-shadow: var(--glow-green);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+

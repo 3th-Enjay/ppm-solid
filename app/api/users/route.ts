@@ -1,0 +1,49 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { getDB } from "@/lib/db"
+import type { User } from "@/lib/types"
+import { getTokenFromRequest } from "@/lib/jwt"
+import { authService } from "@/lib/auth"
+
+export async function GET(request: NextRequest) {
+  try {
+    const token = getTokenFromRequest(request)
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const session = authService.decodeToken(token)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (session.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const searchParams = request.nextUrl.searchParams
+    const role = searchParams.get("role")
+    const id = searchParams.get("id")
+
+    const db = getDB()
+
+    if (id) {
+      const user = await db.findUserById(id)
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
+      }
+      const { password: _, ...safeUser } = user
+      return NextResponse.json({ user: safeUser })
+    }
+
+    let users: User[] = await db.getAllUsers()
+    if (role) {
+      users = users.filter((u) => u.role === role)
+    }
+
+    const safeUsers = users.map(({ password: _, ...rest }) => rest)
+    return NextResponse.json({ users: safeUsers })
+  } catch (error) {
+    console.error("Get users error:", error)
+    return NextResponse.json({ error: "Failed to get users" }, { status: 500 })
+  }
+}

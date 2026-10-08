@@ -1,0 +1,531 @@
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
+import { AlertCircle, CheckCircle2, Loader2, Sparkles, Target } from "lucide-react"
+import { OnboardingPreview, type OnboardingPreviewSection } from "@/components/auth/onboarding-preview"
+import { OnboardingShell, type OnboardingShellStep } from "@/components/auth/onboarding-shell"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { buildProfileRouteQuery } from "@/lib/profile-route-state"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { useAuthStore } from "@/lib/store"
+import type { StudentGender, TrainingLocation } from "@/lib/types"
+
+type ProfileCompletionTracker = {
+  percent: number
+  completedCount: number
+  totalCount: number
+  remainingLabels: string[]
+}
+
+const GENDER_OPTIONS: StudentGender[] = ["male", "female", "other", "prefer_not_to_say"]
+const LOCATION_OPTIONS: TrainingLocation[] = ["enugu", "abuja"]
+
+function formatGenderLabel(value: StudentGender) {
+  switch (value) {
+    case "male":
+      return "Male"
+    case "female":
+      return "Female"
+    case "other":
+      return "Other"
+    case "prefer_not_to_say":
+      return "Prefer Not to Say"
+  }
+}
+
+function formatLocationLabel(value: TrainingLocation) {
+  switch (value) {
+    case "enugu":
+      return "Enugu"
+    case "abuja":
+      return "Abuja"
+  }
+}
+
+export default function ProfileSetupPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { user, token, setAuth, hydrated } = useAuthStore()
+  const [currentStep, setCurrentStep] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [trackerLoading, setTrackerLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [initialized, setInitialized] = useState(false)
+  const [profileTracker, setProfileTracker] = useState<ProfileCompletionTracker | null>(null)
+
+  const [formData, setFormData] = useState({
+    phoneNumber: user?.studentProfile?.phoneNumber || "",
+    whatsappNumber: user?.studentProfile?.whatsappNumber || "",
+    gender: (user?.studentProfile?.gender || "prefer_not_to_say") as StudentGender,
+    dateOfBirth: user?.studentProfile?.dateOfBirth || "",
+    currentAddress: user?.studentProfile?.currentAddress || "",
+    isHealthcareProfessional: user?.studentProfile?.isHealthcareProfessional ? "yes" : "no",
+    currentRoleOrField: user?.studentProfile?.currentRoleOrField || "",
+    preferredLocation: (user?.studentProfile?.preferredLocation || "enugu") as TrainingLocation,
+    trainingInterest: user?.studentProfile?.trainingInterest || "",
+    bio: user?.bio || "",
+  })
+
+  useEffect(() => {
+    if (!hydrated) return
+    if (!user) {
+      router.replace("/login?redirect=/dashboard/profile/setup")
+      return
+    }
+    if (user.role !== "student") {
+      router.replace("/dashboard")
+    }
+  }, [hydrated, router, user])
+
+  useEffect(() => {
+    if (!user || initialized) return
+    setFormData({
+      phoneNumber: user.studentProfile?.phoneNumber || "",
+      whatsappNumber: user.studentProfile?.whatsappNumber || "",
+      gender: (user.studentProfile?.gender || "prefer_not_to_say") as StudentGender,
+      dateOfBirth: user.studentProfile?.dateOfBirth || "",
+      currentAddress: user.studentProfile?.currentAddress || "",
+      isHealthcareProfessional: user.studentProfile?.isHealthcareProfessional ? "yes" : "no",
+      currentRoleOrField: user.studentProfile?.currentRoleOrField || "",
+      preferredLocation: (user.studentProfile?.preferredLocation || "enugu") as TrainingLocation,
+      trainingInterest: user.studentProfile?.trainingInterest || "",
+      bio: user.bio || "",
+    })
+    setInitialized(true)
+  }, [initialized, user])
+
+  useEffect(() => {
+    if (!token || !user || user.role !== "student") return
+
+    void fetch("/api/onboarding/state", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ markProfileSetupStarted: true }),
+    })
+
+    const loadTracker = async () => {
+      setTrackerLoading(true)
+      try {
+        const res = await fetch("/api/onboarding/state", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        if (data?.profileCompletion) {
+          setProfileTracker(data.profileCompletion as ProfileCompletionTracker)
+        }
+      } finally {
+        setTrackerLoading(false)
+      }
+    }
+
+    void loadTracker()
+  }, [token, user])
+
+  const steps = useMemo<OnboardingShellStep[]>(
+    () => [
+      {
+        id: "personal",
+        title: "Personal Info",
+        description: "Share the basic details that complete your learner profile.",
+      },
+      {
+        id: "preferences",
+        title: "Preferences",
+        description: "Tell us more about your background and training goals.",
+      },
+      {
+        id: "optional",
+        title: "Optional Details",
+        description: "Add a short bio to personalize your student profile.",
+      },
+      {
+        id: "review",
+        title: "Review",
+        description: "Confirm everything before saving to your profile.",
+      },
+    ],
+    [],
+  )
+
+  useEffect(() => {
+    const requestedStep = searchParams.get("step")
+    if (!requestedStep) return
+
+    const requestedIndex = steps.findIndex((step) => step.id === requestedStep)
+    if (requestedIndex >= 0 && requestedIndex !== currentStep) {
+      setCurrentStep(requestedIndex)
+    }
+  }, [currentStep, searchParams, steps])
+
+  const validateStep = (stepIndex: number) => {
+    setError("")
+    const stepId = steps[stepIndex]?.id
+
+    if (stepId === "personal") {
+      if (
+        formData.phoneNumber.trim().length < 7 ||
+        formData.whatsappNumber.trim().length < 7 ||
+        !formData.dateOfBirth ||
+        formData.currentAddress.trim().length < 5
+      ) {
+        setError("Please complete your phone, WhatsApp, date of birth, and address.")
+        return false
+      }
+    }
+
+    if (stepId === "preferences") {
+      if (!formData.currentRoleOrField.trim() || formData.trainingInterest.trim().length < 10) {
+        setError("Please complete your role and training interest.")
+        return false
+      }
+    }
+
+    return true
+  }
+
+  const handleNext = () => {
+    if (!validateStep(currentStep)) return
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+  }
+
+  const handleBack = () => {
+    setError("")
+    setCurrentStep((prev) => Math.max(prev - 1, 0))
+  }
+
+  const handleSubmit = async () => {
+    if (!user || !token) return
+    setLoading(true)
+    setError("")
+
+    try {
+      const res = await fetch("/api/profile/setup", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.user) {
+        throw new Error(data?.error || "Unable to update profile")
+      }
+
+      setAuth(data.user, token)
+      const returnQuery = buildProfileRouteQuery(undefined, {
+        setup: "complete",
+        success: "setup-complete",
+        tab: "training",
+        highlight: "training-profile",
+        updated: "identity-contact,training-mode,preferences,additional-info",
+      })
+      router.push(returnQuery ? `/dashboard/profile?${returnQuery}` : "/dashboard/profile")
+    } catch (updateError: any) {
+      setError(updateError?.message || "Unable to update profile")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const reviewSections = useMemo<OnboardingPreviewSection[]>(
+    () => [
+      {
+        id: "personal",
+        title: "Personal Info",
+        onEdit: () => setCurrentStep(0),
+        items: [
+          { label: "Phone Number", value: formData.phoneNumber },
+          { label: "WhatsApp Number", value: formData.whatsappNumber },
+          { label: "Gender", value: formatGenderLabel(formData.gender) },
+          { label: "Date of Birth", value: formData.dateOfBirth },
+          { label: "Address", value: formData.currentAddress },
+        ],
+      },
+      {
+        id: "preferences",
+        title: "Preferences",
+        onEdit: () => setCurrentStep(1),
+        items: [
+          { label: "Healthcare Professional", value: formData.isHealthcareProfessional === "yes" ? "Yes" : "No" },
+          { label: "Current Role", value: formData.currentRoleOrField },
+          { label: "Preferred Location", value: formatLocationLabel(formData.preferredLocation) },
+          { label: "Training Interest", value: formData.trainingInterest },
+        ],
+      },
+      {
+        id: "optional",
+        title: "Optional Details",
+        onEdit: () => setCurrentStep(2),
+        items: [{ label: "Bio", value: formData.bio || "Not provided" }],
+      },
+    ],
+    [formData],
+  )
+
+  const remainingLabels = profileTracker?.remainingLabels || []
+
+  if (!hydrated || !user || user.role !== "student") {
+    return null
+  }
+
+  return (
+    <OnboardingShell
+      badge="Profile Setup"
+      title="Complete your learner record"
+      description="Finish the deferred fields from signup so your learner hub, training record, and milestone journey stay aligned across the dashboard."
+      currentStep={currentStep}
+      steps={steps}
+      aside={
+        <div className="space-y-4">
+          <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
+            <CardHeader>
+              <CardTitle className="text-base">Completion Tracker</CardTitle>
+              <CardDescription>See exactly what is left before your learner record is fully reflected in the profile hub.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2 rounded-2xl border bg-muted/30 p-4">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="font-medium text-foreground">Current Progress</span>
+                  <span className="font-semibold text-primary">
+                    {trackerLoading ? "..." : `${profileTracker?.percent ?? 0}%`}
+                  </span>
+                </div>
+                <Progress value={profileTracker?.percent ?? 0} aria-label="Profile completion progress" />
+                <p className="text-xs text-muted-foreground">
+                  {trackerLoading
+                    ? "Checking your current completion state..."
+                    : `${profileTracker?.completedCount ?? 0} of ${profileTracker?.totalCount ?? 0} profile items complete.`}
+                </p>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <p className="inline-flex items-center gap-2 font-medium text-foreground">
+                  <Target className="h-4 w-4 text-primary" /> Remaining Items
+                </p>
+                {remainingLabels.length > 0 ? (
+                  remainingLabels.slice(0, 5).map((label) => (
+                    <div key={label} className="flex items-start gap-2 rounded-xl border bg-background p-3 text-muted-foreground">
+                      <AlertCircle className="mt-0.5 h-4 w-4 text-primary" />
+                      <span>{label}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex items-start gap-2 rounded-xl border bg-background p-3 text-muted-foreground">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary" />
+                    <span>Your profile is already complete. Review and update anything you want.</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/15 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
+            <CardHeader>
+              <CardTitle className="text-base">Why This Matters</CardTitle>
+              <CardDescription>Completing your learner record helps the whole student experience stay relevant.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p className="inline-flex items-center gap-2 font-medium text-foreground">
+                <Sparkles className="h-4 w-4 text-primary" /> Better recommendations
+              </p>
+              <p>We use these details to shape your learner hub, match you with the right courses, and keep onsite cohort guidance accurate.</p>
+            </CardContent>
+          </Card>
+        </div>
+      }
+      footer={
+        <p>
+          Prefer to finish later? <Link href="/dashboard/profile">Return to learner hub</Link>
+        </p>
+      }
+    >
+      {error ? (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="mb-6 rounded-2xl border bg-primary/5 p-4 text-sm">
+        <p className="font-medium text-foreground">Profile Setup Funnel</p>
+        <p className="mt-1 text-muted-foreground">
+          We kept these heavier questions out of signup so you could create your account faster. This guided pass finishes the learner record and returns you to the profile hub to review the updated training details.
+        </p>
+      </div>
+
+      {currentStep === 0 ? (
+        <div className="space-y-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                inputMode="tel"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                placeholder="Enter your main phone number"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
+              <Input
+                id="whatsappNumber"
+                inputMode="tel"
+                value={formData.whatsappNumber}
+                onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                placeholder="Enter your WhatsApp number"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="gender">Gender</Label>
+            <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value as StudentGender })}>
+              <SelectTrigger id="gender">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {GENDER_OPTIONS.map((gender) => (
+                  <SelectItem key={gender} value={gender}>
+                    {formatGenderLabel(gender)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dateOfBirth">Date of Birth</Label>
+            <Input
+              id="dateOfBirth"
+              type="date"
+              value={formData.dateOfBirth}
+              onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="currentAddress">Current Address</Label>
+            <Textarea
+              id="currentAddress"
+              value={formData.currentAddress}
+              onChange={(e) => setFormData({ ...formData, currentAddress: e.target.value })}
+              rows={3}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {currentStep === 1 ? (
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="isHealthcareProfessional">Healthcare Professional</Label>
+            <Select
+              value={formData.isHealthcareProfessional}
+              onValueChange={(value) => setFormData({ ...formData, isHealthcareProfessional: value as "yes" | "no" })}
+            >
+              <SelectTrigger id="isHealthcareProfessional">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="yes">Yes</SelectItem>
+                <SelectItem value="no">No</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="currentRoleOrField">Current Role or Field</Label>
+            <Input
+              id="currentRoleOrField"
+              value={formData.currentRoleOrField}
+              onChange={(e) => setFormData({ ...formData, currentRoleOrField: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="preferredLocation">Preferred Location</Label>
+            <Select
+              value={formData.preferredLocation}
+              onValueChange={(value) => setFormData({ ...formData, preferredLocation: value as TrainingLocation })}
+            >
+              <SelectTrigger id="preferredLocation">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {LOCATION_OPTIONS.map((location) => (
+                  <SelectItem key={location} value={location}>
+                    {formatLocationLabel(location)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="trainingInterest">Why are you interested in this training?</Label>
+            <Textarea
+              id="trainingInterest"
+              value={formData.trainingInterest}
+              onChange={(e) => setFormData({ ...formData, trainingInterest: e.target.value })}
+              rows={4}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {currentStep === 2 ? (
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="bio">Bio (Optional)</Label>
+            <Textarea
+              id="bio"
+              value={formData.bio}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              rows={4}
+              placeholder="Tell us about yourself"
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {currentStep === 3 ? (
+        <div className="space-y-5">
+          <OnboardingPreview sections={reviewSections} />
+          <div className="rounded-2xl border bg-muted/30 p-4 text-sm text-muted-foreground">
+            Review your profile details and save to complete onboarding.
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-6 flex flex-col gap-3 border-t pt-6 sm:flex-row sm:justify-between">
+        <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 0 || loading}>
+          Back
+        </Button>
+        {currentStep < steps.length - 1 ? (
+          <Button type="button" variant="cta" onClick={handleNext} disabled={loading}>
+            Continue
+          </Button>
+        ) : (
+          <Button type="button" variant="cta" onClick={handleSubmit} disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Profile"
+            )}
+          </Button>
+        )}
+      </div>
+    </OnboardingShell>
+  )
+}
