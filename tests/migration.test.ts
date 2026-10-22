@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import "./database/migration.test"
+import { buildMigrationRows } from "../scripts/migration-executor"
 import {
   buildMigrationInventory,
   isMigrationExecutionReady,
@@ -14,6 +15,84 @@ import {
   type MigrationIssue,
   type PostgresTargetInspection,
 } from "../scripts/migrate-mongodb-to-postgres"
+
+function validMigrationUser(fields: Record<string, unknown> = {}) {
+  return {
+    _id: "mongo-user-1",
+    id: "user-1",
+    email: "learner@example.test",
+    password: "hash",
+    name: "Learner",
+    role: "student",
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    enrolledCourses: [],
+    ...fields,
+  }
+}
+
+test("populated onboardingState is preserved in the existing user legacy JSONB payload", () => {
+  const rows = buildMigrationRows({
+    users: [validMigrationUser({
+      onboardingState: {
+        welcomeSeenAt: new Date("2026-01-02T03:04:05.000Z"),
+        viewedOnsiteTrainingAt: new Date("2026-01-03T03:04:05.000Z"),
+      },
+    })],
+  })
+
+  assert.deepEqual(rows.users[0].legacy_payload, {
+    onboardingState: {
+      welcomeSeenAt: "2026-01-02T03:04:05.000Z",
+      viewedOnsiteTrainingAt: "2026-01-03T03:04:05.000Z",
+    },
+  })
+})
+
+test("populated studentMilestones are preserved in the existing user legacy JSONB payload", () => {
+  const rows = buildMigrationRows({
+    users: [validMigrationUser({
+      studentMilestones: [{
+        key: "welcome_aboard",
+        title: "Welcome aboard",
+        description: "Started the learning journey",
+        category: "onboarding",
+        unlockedAt: new Date("2026-01-04T03:04:05.000Z"),
+      }],
+    })],
+  })
+
+  assert.deepEqual(rows.users[0].legacy_payload, {
+    studentMilestones: [{
+      key: "welcome_aboard",
+      title: "Welcome aboard",
+      description: "Started the learning journey",
+      category: "onboarding",
+      unlockedAt: "2026-01-04T03:04:05.000Z",
+    }],
+  })
+})
+
+test("arbitrary unknown non-empty user fields still fail closed", () => {
+  assert.throws(
+    () => buildMigrationRows({ users: [validMigrationUser({ futureUserState: { enabled: true } })] }),
+    /users has non-empty unmapped fields: futureUserState/,
+  )
+})
+
+test("empty and null unknown optional user fields do not trigger unmapped-field failures", () => {
+  const rows = buildMigrationRows({
+    users: [validMigrationUser({
+      futureNull: null,
+      futureBlank: " ",
+      futureArray: [],
+      futureObject: {},
+    })],
+  })
+
+  assert.equal(rows.users.length, 1)
+  assert.equal(rows.users[0].legacy_payload, undefined)
+})
 
 const sourceInventory = buildMigrationInventory([
   { name: "users", count: 10 },
@@ -151,6 +230,7 @@ test("missing or unknown target identity blocks pre-execution", async () => {
 
 test("production target identity and environment are blocked without connecting", async () => {
   const productionConfig = resolveMigrationConfig({
+    NODE_ENV: "test",
     MIGRATION_MONGODB_URI: "mongodb://staging.example.test:27017/learnhub_migration_staging",
     MIGRATION_MONGODB_DB: "learnhub_migration_staging",
     MIGRATION_POSTGRES_URL: "postgresql://prod-db.example.test:5432/learnhub",

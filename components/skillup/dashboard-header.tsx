@@ -12,7 +12,8 @@ import { UserAvatar } from "@/components/skillup/user-avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import type { User } from "@/lib/types"
-import Image from "next/image"
+import { Logo, LogoMark } from "@/components/ui/logo"
+import { getAcademyName } from "@/lib/brand-config"
 
 interface DashboardHeaderProps {
   user: Pick<User, "name" | "avatar">
@@ -32,6 +33,7 @@ export function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const prefersReducedMotion = useReducedMotion()
+  const academyName = getAcademyName()
 
   const title = useMemo(() => getPageTitle(pathname), [pathname])
 
@@ -74,15 +76,9 @@ export function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {
                 transition={{ duration: 0.22, ease: "easeOut" }}
               >
                 <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <Image
-                      src="/promptcare-icon.png"
-                      alt="Prompt Care Academy"
-                      width={24}
-                      height={24}
-                      className="h-6 w-6"
-                    />
-                    Prompt Care Academy
+                  <SheetTitle className="flex items-center gap-2 text-left">
+                    <LogoMark size={24} className="h-6 w-6 shrink-0" />
+                    <span className="truncate">{academyName}</span>
                   </SheetTitle>
                 </SheetHeader>
                 <div className="mt-5 space-y-4">
@@ -96,12 +92,8 @@ export function DashboardHeader({ user, onLogout }: DashboardHeaderProps) {
             </SheetContent>
           </Sheet>
 
-          <div className="flex items-center justify-center gap-2">
-            <Image src="/promptcare-icon.png" alt="Prompt Care Academy" width={18} height={18} className="h-5 w-5" />
-            <h1 className="text-center text-xs uppercase tracking-wide text-foreground">
-              <span className="font-bold">PROMPT</span> <span className="font-normal">CARE</span>{" "}
-              <span className="font-normal">ACADEMY</span>
-            </h1>
+          <div className="flex items-center justify-center">
+            <Logo variant="compact" href="/dashboard" academyName={academyName} />
           </div>
 
           <div className="flex justify-end">

@@ -1,5 +1,6 @@
-import { getCollection } from "@/lib/mongodb"
 import { adminSettingsSchema } from "@/lib/validation"
+import { isPostgresBackend } from "@/lib/db"
+import { getPostgresDatabase } from "@/lib/postgres-db"
 
 export type AdminSettings = {
   siteName: string
@@ -17,10 +18,10 @@ export type AdminSettings = {
 const SETTINGS_DOC_ID = "admin_settings"
 
 const DEFAULT_ADMIN_SETTINGS: AdminSettings = {
-  siteName: "Prompt Care Academy",
-  siteDescription: "Professional online learning platform",
-  contactEmail: "admin@promptcareacademy.com",
-  supportEmail: "support@promptcareacademy.com",
+  siteName: process.env.NEXT_PUBLIC_APP_NAME?.trim() || "Technology Academy",
+  siteDescription: "Practical technology skills and engineering academy",
+  contactEmail: "admissions@techacademy.edu",
+  supportEmail: "support@techacademy.edu",
   emailNotifications: true,
   courseApproval: false,
   autoEnrollment: true,
@@ -35,8 +36,17 @@ type GlobalSettings = typeof globalThis & {
 
 const globalWithSettings = globalThis as GlobalSettings
 
-async function loadFromMongo(): Promise<AdminSettings | null> {
-  if (!process.env.MONGODB_URI) return null
+async function loadFromDb(): Promise<AdminSettings | null> {
+  if (isPostgresBackend()) {
+    const pg = getPostgresDatabase()
+    const data = await pg.getAppSettings<AdminSettings>(SETTINGS_DOC_ID)
+    if (!data) return null
+    const parsed = adminSettingsSchema.safeParse(data)
+    return parsed.success ? parsed.data : null
+  }
+
+  if (process.env.DATABASE_BACKEND !== "mongodb" || !process.env.MONGODB_URI) return null
+  const { getCollection } = await import("@/lib/mongodb")
   const collection = await getCollection<AdminSettings & { _id: string }>("app_settings")
   const doc = await collection.findOne({ _id: SETTINGS_DOC_ID })
   if (!doc) return null
@@ -45,8 +55,15 @@ async function loadFromMongo(): Promise<AdminSettings | null> {
   return parsed.success ? parsed.data : null
 }
 
-async function saveToMongo(settings: AdminSettings): Promise<void> {
-  if (!process.env.MONGODB_URI) return
+async function saveToDb(settings: AdminSettings): Promise<void> {
+  if (isPostgresBackend()) {
+    const pg = getPostgresDatabase()
+    await pg.setAppSettings(SETTINGS_DOC_ID, settings)
+    return
+  }
+
+  if (process.env.DATABASE_BACKEND !== "mongodb" || !process.env.MONGODB_URI) return
+  const { getCollection } = await import("@/lib/mongodb")
   const collection = await getCollection<AdminSettings & { _id: string }>("app_settings")
   await collection.updateOne(
     { _id: SETTINGS_DOC_ID },
@@ -57,8 +74,8 @@ async function saveToMongo(settings: AdminSettings): Promise<void> {
 
 export async function getAdminSettings(): Promise<AdminSettings> {
   try {
-    const mongoSettings = await loadFromMongo()
-    if (mongoSettings) return mongoSettings
+    const dbSettings = await loadFromDb()
+    if (dbSettings) return dbSettings
   } catch {
     // Fall through to in-memory fallback.
   }
@@ -74,7 +91,7 @@ export async function updateAdminSettings(nextSettings: AdminSettings): Promise<
   globalWithSettings._adminSettingsCache = parsed
 
   try {
-    await saveToMongo(parsed)
+    await saveToDb(parsed)
   } catch {
     // Keep in-memory value even if persistence fails.
   }

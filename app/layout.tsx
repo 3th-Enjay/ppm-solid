@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { AuthSessionBootstrap } from "@/components/auth/auth-session-bootstrap"
 import { Toaster } from "@/components/ui/toaster"
 import { CurrencyModal } from "@/components/ui/currency-modal"
+import { brandConfig } from "@/lib/brand-config"
 import "./globals.css"
 
 const metadataBaseUrl =
@@ -12,30 +13,29 @@ const metadataBaseUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(metadataBaseUrl),
-  title: "Prompt Care Academy - Premium Online Learning Platform",
-  description:
-    "Transform your career with Prompt Care Academy. Learn web development, UI/UX design, digital marketing, data analytics and more from industry experts. Join 10,000+ students today.",
-  generator: "v0.app",
+  title: {
+    default: `${brandConfig.name} — ${brandConfig.tagline}`,
+    template: `%s | ${brandConfig.name}`,
+  },
+  description: brandConfig.description,
   icons: {
     icon: [
-      { url: "/promptcare-icon.png", sizes: "32x32", type: "image/png" },
-      { url: "/promptcare-icon.png", sizes: "48x48", type: "image/png" },
-      { url: "/promptcare-icon.png", sizes: "64x64", type: "image/png" },
-      { url: "/promptcare-icon.png", sizes: "96x96", type: "image/png" },
-      { url: "/promptcare-icon.png", sizes: "192x192", type: "image/png" },
+      { url: "/tech-academy-icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: "/promptcare-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "Prompt Care Academy - Premium Online Learning",
-    description: "Transform your career with expert-led courses and certification programs",
+    title: `${brandConfig.name} — ${brandConfig.tagline}`,
+    description: brandConfig.description,
     type: "website",
     locale: "en_US",
+    siteName: brandConfig.name,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Prompt Care Academy",
-    description: "Premium online learning platform for professional development",
+    title: brandConfig.name,
+    description: brandConfig.description,
   },
 }
 
@@ -56,4 +56,3 @@ export default function RootLayout({
     </html>
   )
 }
-

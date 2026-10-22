@@ -23,14 +23,14 @@ const sizeClasses: Record<AvatarSize, { root: string; text: string }> = {
   lg: { root: "h-14 w-14", text: "text-lg" },
 }
 
-// Controlled palette so colors are consistent and brand-safe.
+// Controlled palette so colors are consistent, accessible, and brand-safe.
 const colorPalette = [
-  "bg-emerald-500/15 text-emerald-700 ring-emerald-500/20 dark:text-emerald-300",
-  "bg-emerald-500/15 text-emerald-700 ring-emerald-500/20 dark:text-emerald-300",
+  "bg-blue-500/15 text-blue-700 ring-blue-500/20 dark:text-blue-300",
+  "bg-indigo-500/15 text-indigo-700 ring-indigo-500/20 dark:text-indigo-300",
   "bg-sky-500/15 text-sky-700 ring-sky-500/20 dark:text-sky-300",
   "bg-amber-500/15 text-amber-700 ring-amber-500/20 dark:text-amber-300",
   "bg-rose-500/15 text-rose-700 ring-rose-500/20 dark:text-rose-300",
-  "bg-lime-500/15 text-lime-700 ring-lime-500/20 dark:text-lime-300",
+  "bg-emerald-500/15 text-emerald-700 ring-emerald-500/20 dark:text-emerald-300",
 ]
 
 function getInitial(name: string): string {

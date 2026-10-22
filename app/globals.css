@@ -7,86 +7,92 @@
   --font-inter: "Inter", "Segoe UI", sans-serif;
   --font-plus-jakarta: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
-  --background: #f6f7fb;
-  --foreground: #1b1d22;
+  /* Electric Slate & Tech Blue Design System — Light Mode */
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #1b1d22;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #1b1d22;
+  --popover-foreground: #0f172a;
 
-  --primary: #16a34a;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #ecfdf3;
-  --secondary-foreground: #1f4030;
-  --accent: #10b981;
-  --accent-foreground: #052e16;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
+  --accent: #0284c7;
+  --accent-foreground: #ffffff;
 
-  --muted: #eef1f6;
-  --muted-foreground: #6b7280;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e3e7ef;
-  --input: #f3f5fa;
-  --ring: #4ade80;
+  --border: #e2e8f0;
+  --input: #f1f5f9;
+  --ring: #3b82f6;
 
-  --chart-1: #16a34a;
-  --chart-2: #10b981;
-  --chart-3: #f59e0b;
-  --chart-4: #2563eb;
-  --chart-5: #f43f5e;
+  --chart-1: #2563eb;
+  --chart-2: #0284c7;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #8b5cf6;
 
-  --radius: 0.875rem;
-  --shadow-soft: 0 8px 30px rgba(31, 41, 55, 0.08);
-  --shadow-lifted: 0 18px 40px rgba(31, 41, 55, 0.12);
-  --glow-green: 0 0 0 3px rgba(34, 199, 168, 0.25);
+  --radius: 0.625rem;
+  --shadow-soft: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lifted: 0 12px 32px -4px rgba(15, 23, 42, 0.10);
+  --glow-blue: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  --glow-green: var(--glow-blue);
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #1b1d22;
-  --sidebar-primary: #16a34a;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef1f6;
-  --sidebar-accent-foreground: #1b1d22;
-  --sidebar-border: #e3e7ef;
-  --sidebar-ring: #4ade80;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #3b82f6;
 }
 
 .dark {
-  --background: #0e1117;
-  --foreground: #f5f7fb;
-  --card: #171b23;
-  --card-foreground: #f5f7fb;
-  --popover: #171b23;
-  --popover-foreground: #f5f7fb;
+  /* Electric Slate & Tech Blue Design System — Dark Mode */
+  --background: #090d16;
+  --foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
 
-  --primary: #4ade80;
-  --primary-foreground: #04210f;
-  --secondary: #1f2f26;
-  --secondary-foreground: #f5f7fb;
-  --accent: #34d399;
-  --accent-foreground: #022c22;
+  --primary: #3b82f6;
+  --primary-foreground: #020617;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --accent: #38bdf8;
+  --accent-foreground: #031020;
 
-  --muted: #1f2432;
-  --muted-foreground: #a4adbf;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
   --destructive: #f87171;
   --destructive-foreground: #1f1010;
-  --border: #2a3142;
-  --input: #212736;
-  --ring: #86efac;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #60a5fa;
 
-  --chart-1: #4ade80;
-  --chart-2: #34d399;
-  --chart-3: #f59e0b;
-  --chart-4: #60a5fa;
-  --chart-5: #fb7185;
+  --chart-1: #3b82f6;
+  --chart-2: #38bdf8;
+  --chart-3: #34d399;
+  --chart-4: #fbbf24;
+  --chart-5: #a78bfa;
 
-  --sidebar: #151a25;
-  --sidebar-foreground: #f5f7fb;
-  --sidebar-primary: #4ade80;
-  --sidebar-primary-foreground: #04210f;
-  --sidebar-accent: #1f2432;
-  --sidebar-accent-foreground: #f5f7fb;
-  --sidebar-border: #2a3142;
-  --sidebar-ring: #86efac;
+  --glow-blue: 0 0 0 3px rgba(96, 165, 250, 0.35);
+  --glow-green: var(--glow-blue);
+
+  --sidebar: #0f1523;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #020617;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #60a5fa;
 }
 
 @theme inline {
@@ -131,6 +137,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --shadow-soft: var(--shadow-soft);
   --shadow-lifted: var(--shadow-lifted);
+  --glow-blue: var(--glow-blue);
   --glow-green: var(--glow-green);
 }
 
@@ -235,8 +242,9 @@
     animation: marquee 24s linear infinite;
   }
 
+  .focus-blue-glow:focus-visible,
   .focus-green-glow:focus-visible {
-    box-shadow: var(--glow-green);
+    box-shadow: var(--glow-blue);
   }
 }
 
@@ -250,5 +258,3 @@
     scroll-behavior: auto !important;
   }
 }
-
-

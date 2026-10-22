@@ -10,9 +10,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { SectionShell } from "@/components/skillup/section-shell"
 import { contactSchema } from "@/lib/validation"
-import { fadeUp, floating, hoverLift, maskReveal, sectionStagger, slowZoom, useReducedMotionSafe } from "@/lib/motion"
-import { Mail, MapPin, MessageCircle, Phone, ShieldCheck, Clock3, CircleCheckBig } from "lucide-react"
+import { fadeUp, floating, hoverLift, maskReveal, sectionStagger, useReducedMotionSafe } from "@/lib/motion"
+import { Mail, MapPin, MessageCircle, Phone, ShieldCheck, Clock3, CircleCheckBig, Terminal, ArrowRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { getAcademyName } from "@/lib/brand-config"
 
 type ContactFormData = {
   name: string
@@ -32,7 +33,7 @@ const defaultForm: ContactFormData = {
   message: "",
 }
 
-function FloatingField({
+function FormInputField({
   id,
   label,
   value,
@@ -40,6 +41,7 @@ function FloatingField({
   error,
   type = "text",
   required = false,
+  placeholder = "",
 }: {
   id: keyof ContactFormData
   label: string
@@ -48,28 +50,26 @@ function FloatingField({
   error?: string
   type?: "text" | "email" | "tel"
   required?: boolean
+  placeholder?: string
 }) {
   return (
-    <div className="relative">
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="block text-xs font-medium text-foreground">
+        {label} {required ? <span className="text-primary">*</span> : null}
+      </label>
       <input
         id={id}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder=" "
+        placeholder={placeholder}
         required={required}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="peer h-12 w-full rounded-xl border border-border bg-background px-3 pt-5 text-sm outline-none transition-all duration-200 focus:border-accent focus:[box-shadow:0_0_0_3px_rgba(34,199,168,0.35)]"
+        className="h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
-      <label
-        htmlFor={id}
-        className="pointer-events-none absolute left-3 top-3 origin-left text-sm text-muted-foreground transition-all duration-200 peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:scale-[0.86] peer-focus:text-accent peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:scale-[0.86]"
-      >
-        {label}
-      </label>
       {error ? (
-        <p id={`${id}-error`} className="mt-1 text-xs text-red-500">
+        <p id={`${id}-error`} className="text-xs text-destructive">
           {error}
         </p>
       ) : null}
@@ -77,40 +77,41 @@ function FloatingField({
   )
 }
 
-function FloatingTextarea({
+function FormTextareaField({
   id,
   label,
   value,
   onChange,
   error,
+  required = true,
+  placeholder = "",
 }: {
   id: keyof ContactFormData
   label: string
   value: string
   onChange: (value: string) => void
   error?: string
+  required?: boolean
+  placeholder?: string
 }) {
   return (
-    <div className="relative">
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="block text-xs font-medium text-foreground">
+        {label} {required ? <span className="text-primary">*</span> : null}
+      </label>
       <textarea
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder=" "
-        rows={6}
-        required
+        placeholder={placeholder}
+        rows={5}
+        required={required}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="peer w-full rounded-xl border border-border bg-background px-3 pb-3 pt-6 text-sm outline-none transition-all duration-200 focus:border-accent focus:[box-shadow:0_0_0_3px_rgba(34,199,168,0.35)]"
+        className="w-full rounded-xl border border-border bg-background p-3.5 text-sm outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
-      <label
-        htmlFor={id}
-        className="pointer-events-none absolute left-3 top-3 origin-left text-sm text-muted-foreground transition-all duration-200 peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:scale-[0.86] peer-focus:text-accent peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:scale-[0.86]"
-      >
-        {label}
-      </label>
       {error ? (
-        <p id={`${id}-error`} className="mt-1 text-xs text-red-500">
+        <p id={`${id}-error`} className="text-xs text-destructive">
           {error}
         </p>
       ) : null}
@@ -125,34 +126,35 @@ export default function ContactPage() {
   const [errors, setErrors] = useState<ContactFormErrors>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const academyName = getAcademyName()
 
   const contactOptions = useMemo(
     () => [
       {
         icon: Phone,
         title: "Call Admissions",
-        description: "Speak directly with admissions support during office hours.",
+        description: "Speak directly with academic advisors during office hours.",
         cta: "Call now",
         href: "tel:+2349030910091",
       },
       {
         icon: MessageCircle,
-        title: "WhatsApp Chat",
-        description: "Get quick answers on program options and enrollment support.",
+        title: "WhatsApp Advisor",
+        description: "Get quick answers on technical tracks, curriculum, and enrollments.",
         cta: "Start chat",
         href: "https://wa.me/2349030910091",
       },
       {
         icon: Mail,
-        title: "Email Us",
-        description: "Send detailed inquiries and receive guidance from our team.",
+        title: "Email Support",
+        description: "Send curriculum inquiries, course requests, or account questions.",
         cta: "Send email",
-        href: "mailto:promptcareacademy.com@gmail.com",
+        href: "mailto:support@technologyacademy.org",
       },
       {
         icon: MapPin,
         title: "Visit Campus",
-        description: "Meet the team and explore training opportunities in person.",
+        description: "Meet the team and explore our practical computer lab facilities.",
         cta: "Get directions",
         href: "https://maps.google.com/?q=Suite+B16,+Area+11+Shopping+Complex,+Ahmadu+Bello+Way,+Garki+Abuja",
       },
@@ -194,13 +196,13 @@ export default function ContactPage() {
       return
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 900))
+    await new Promise((resolve) => setTimeout(resolve, 800))
     setSubmitting(false)
     setSubmitted(true)
     setFormData(defaultForm)
     toast({
-      title: "Message sent",
-      description: "Our admissions team will respond within 24 hours.",
+      title: "Inquiry received",
+      description: "Our technical advisors will respond within 24 hours.",
     })
   }
 
@@ -210,46 +212,35 @@ export default function ContactPage() {
         variant="immersive"
         hasParallax
         hasFloatingAccent
-        backgroundType="image"
-        backgroundImageUrl="/contact-medical-care-kit.svg"
-        backgroundImageAlt="Medical caregiver essentials including a clipboard, care cross, and stethoscope"
-        className="text-white"
+        className="relative overflow-hidden border-b border-border/80 bg-gradient-to-br from-[#090D16] via-[#0E1726] to-[#0A192F] py-16 text-white md:py-24"
       >
-        {/* Inanimate caregiver-themed contact hero artwork. */}
-        <motion.div
-          aria-hidden="true"
-          variants={slowZoom}
-          initial="initial"
-          animate={shouldReduceMotion ? "initial" : "animate"}
-          className="pointer-events-none absolute inset-0"
-        />
-        <motion.div variants={sectionStagger} initial="initial" animate="animate" className="mx-auto max-w-3xl space-y-5 text-center">
-          <Badge className="border-white/20 bg-white/10 text-white">Contact Admissions</Badge>
+        <div className="pointer-events-none absolute inset-0 opacity-10 [background-image:linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] [background-size:28px_28px]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(37,99,235,0.3)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(2,132,199,0.25)_0%,transparent_50%)]" />
+
+        <motion.div variants={sectionStagger} initial="initial" animate="animate" className="relative mx-auto max-w-3xl space-y-5 text-center">
+          <Badge className="border-sky-400/30 bg-sky-500/10 text-sky-300">
+            <Terminal className="mr-1.5 h-3.5 w-3.5" />
+            Admissions & Technical Inquiries
+          </Badge>
           <div className="overflow-hidden">
-            <motion.h1 variants={maskReveal} className="text-4xl font-bold md:text-6xl">
-              Let’s plan your{" "}
-              <span className="bg-[linear-gradient(110deg,#22c7a8_10%,#6ee7d8_60%,#22c7a8_95%)] bg-clip-text text-transparent">
+            <motion.h1 variants={maskReveal} className="text-4xl font-extrabold tracking-tight md:text-6xl">
+              Let&apos;s plan your{" "}
+              <span className="bg-gradient-to-r from-primary via-accent to-sky-400 bg-clip-text text-transparent">
                 next step
               </span>{" "}
-              in healthcare.
+              in technology.
             </motion.h1>
           </div>
-          <motion.p variants={fadeUp} className="text-lg text-white/90">
-            We’re here to help you choose the right program and begin with clarity and confidence.
+          <motion.p variants={fadeUp} className="text-base text-slate-300 sm:text-lg">
+            Connect with our curriculum team to identify the right track, review prerequisite requirements, and start your engineering journey.
           </motion.p>
-          <motion.p variants={fadeUp} className="text-sm font-medium text-white/80">
-            Admissions responses are typically sent within 24 hours.
+          <motion.p variants={fadeUp} className="text-xs font-mono text-slate-400">
+            Admissions responses typically sent within 24 hours on business days.
           </motion.p>
-          <motion.div variants={fadeUp}>
-            <a href="#contact-form" className="inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-accent">
-              Start your application conversation
-              <span className="h-[2px] w-12 bg-accent transition-all duration-200 hover:w-16" />
-            </a>
-          </motion.div>
         </motion.div>
       </SectionShell>
 
-      <SectionShell>
+      <SectionShell className="py-14">
         <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {contactOptions.map((option) => (
             <motion.a
@@ -261,33 +252,33 @@ export default function ContactPage() {
               {...hoverLift()}
               className="group rounded-2xl border border-border/80 bg-card p-5 shadow-soft transition-all duration-200 hover:border-accent/40 hover:shadow-lifted"
             >
-              <option.icon className="h-5 w-5 text-muted-foreground transition-colors duration-200 group-hover:text-accent" />
+              <option.icon className="h-5 w-5 text-muted-foreground transition-colors duration-200 group-hover:text-primary" />
               <h3 className="mt-3 text-lg font-semibold">{option.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{option.description}</p>
-              <span className="mt-4 inline-block text-sm font-semibold text-foreground transition-colors duration-200 group-hover:text-accent">
-                {option.cta}
+              <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{option.description}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-primary transition-colors duration-200">
+                {option.cta} &rarr;
               </span>
             </motion.a>
           ))}
         </motion.div>
       </SectionShell>
 
-      <SectionShell id="contact-form" variant="split" hasParallax className="bg-muted/20">
-        <div className="grid gap-8 lg:grid-cols-[1fr_minmax(0,1fr)] lg:items-start">
+      <SectionShell id="contact-form" variant="split" hasParallax className="bg-muted/20 py-16">
+        <div className="grid gap-10 lg:grid-cols-[1fr_minmax(0,1.1fr)] lg:items-start">
           <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="space-y-4">
             <motion.p variants={fadeUp} className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-              Main Contact Form
+              Direct Contact
             </motion.p>
-            <motion.h2 variants={fadeUp} className="text-3xl font-bold md:text-4xl">
-              Tell us what you need. We’ll guide you clearly.
+            <motion.h2 variants={fadeUp} className="text-3xl font-bold tracking-tight md:text-4xl">
+              Tell us your learning goals. We&apos;ll guide you clearly.
             </motion.h2>
-            <motion.p variants={fadeUp} className="max-w-xl text-muted-foreground">
-              Share your goals and our admissions team will help you identify the best training path, timelines, and support options.
+            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed">
+              Whether you are an aspiring software engineer, transitioning from another industry, or selecting training for your technical team, our advisors provide direct guidance.
             </motion.p>
             <motion.ul variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="space-y-3 pt-2">
-              {["Fast response", "Confidential support", "No obligation consultation"].map((item) => (
+              {["Fast 24-hour business response", "Transparent curriculum prerequisites", "Structured assessment guidance"].map((item) => (
                 <motion.li key={item} variants={fadeUp} className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <ShieldCheck className="h-4 w-4 text-accent" />
+                  <ShieldCheck className="h-4 w-4 text-primary" />
                   {item}
                 </motion.li>
               ))}
@@ -295,37 +286,43 @@ export default function ContactPage() {
           </motion.div>
 
           <motion.div variants={fadeUp} initial="initial" whileInView="animate" viewport={{ once: true }}>
-            <Card className="rounded-2xl border-border/80 bg-card/95 shadow-lifted">
-              <div className="h-[2px] w-full rounded-t-2xl bg-accent/80" />
-              <CardContent className="p-6 md:p-7">
+            <Card className="rounded-2xl border-border/80 bg-card shadow-lifted">
+              <div className="h-1 w-full rounded-t-2xl bg-gradient-to-r from-primary to-accent" />
+              <CardContent className="p-6 sm:p-8">
                 <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                  <FloatingField
+                  <FormInputField
                     id="name"
                     label="Full Name"
+                    placeholder="e.g. Alex Johnson"
                     value={formData.name}
                     onChange={(value) => updateField("name", value)}
                     error={errors.name}
                     required
                   />
-                  <FloatingField
+                  <FormInputField
                     id="email"
                     type="email"
                     label="Email Address"
+                    placeholder="alex@example.com"
                     value={formData.email}
                     onChange={(value) => updateField("email", value)}
                     error={errors.email}
                     required
                   />
-                  <FloatingField
+                  <FormInputField
                     id="phone"
                     type="tel"
                     label="Phone Number (Optional)"
+                    placeholder="+234..."
                     value={formData.phone}
                     onChange={(value) => updateField("phone", value)}
                     error={errors.phone}
                   />
 
-                  <div className="relative">
+                  <div className="space-y-1.5">
+                    <label htmlFor="subject" className="block text-xs font-medium text-foreground">
+                      Inquiry Topic <span className="text-primary">*</span>
+                    </label>
                     <select
                       id="subject"
                       value={formData.subject}
@@ -333,53 +330,54 @@ export default function ContactPage() {
                       required
                       aria-invalid={Boolean(errors.subject)}
                       aria-describedby={errors.subject ? "subject-error" : undefined}
-                      className="h-12 w-full rounded-xl border border-border bg-background px-3 pt-5 text-sm outline-none transition-all duration-200 focus:border-accent focus:[box-shadow:0_0_0_3px_rgba(34,199,168,0.35)]"
+                      className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
                     >
-                      <option value="">Select a subject</option>
-                      <option value="Course enrollment">Course enrollment</option>
-                      <option value="Program guidance">Program guidance</option>
-                      <option value="Payment questions">Payment questions</option>
-                      <option value="Campus visit">Campus visit</option>
+                      <option value="">Select a topic</option>
+                      <option value="Full-Stack Web Development Track">Full-Stack Web Development Track</option>
+                      <option value="Cloud, DevOps & Backend Track">Cloud, DevOps & Backend Track</option>
+                      <option value="Data Engineering & AI Track">Data Engineering & AI Track</option>
+                      <option value="UI/UX & Product Design Track">UI/UX & Product Design Track</option>
+                      <option value="Course enrollment & tuition questions">Course enrollment & tuition questions</option>
+                      <option value="Corporate or cohort training inquiry">Corporate or cohort training inquiry</option>
                     </select>
-                    <label htmlFor="subject" className="pointer-events-none absolute left-3 top-1.5 text-xs text-accent">
-                      Subject
-                    </label>
                     {errors.subject ? (
-                      <p id="subject-error" className="mt-1 text-xs text-red-500">
+                      <p id="subject-error" className="text-xs text-destructive">
                         {errors.subject}
                       </p>
                     ) : null}
                   </div>
 
-                  <FloatingTextarea
+                  <FormTextareaField
                     id="message"
                     label="Message"
+                    placeholder="Describe your background, questions, or intended timeline..."
                     value={formData.message}
                     onChange={(value) => updateField("message", value)}
                     error={errors.message}
+                    required
                   />
 
                   <Button
                     type="submit"
                     size="lg"
-                    className="h-11 w-full bg-accent text-emerald-950 transition-all duration-200 hover:bg-accent/90"
+                    variant="cta"
+                    className="h-11 w-full font-semibold transition-all duration-200"
                     disabled={submitting}
                   >
-                    {submitting ? "Sending..." : "Send Message"}
+                    {submitting ? "Sending..." : "Submit Inquiry"}
                   </Button>
 
-                  <motion.div
-                    initial={{ opacity: 0, y: 6, height: 0 }}
-                    animate={submitted ? { opacity: 1, y: 0, height: "auto" } : { opacity: 0, y: 6, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                    aria-live="polite"
-                  >
-                    <div className="mt-1 flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-sm text-foreground">
-                      <CircleCheckBig className="h-4 w-4 text-accent" />
-                      Message sent successfully. We will contact you shortly.
-                    </div>
-                  </motion.div>
+                  {submitted ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-300"
+                      aria-live="polite"
+                    >
+                      <CircleCheckBig className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      Inquiry submitted successfully. Our technical advisors will reach out shortly.
+                    </motion.div>
+                  ) : null}
                 </form>
               </CardContent>
             </Card>
@@ -387,112 +385,61 @@ export default function ContactPage() {
         </div>
       </SectionShell>
 
-      <SectionShell backgroundType="gradient">
+      <SectionShell className="py-14">
         <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="grid gap-6 lg:grid-cols-2">
           <motion.div variants={fadeUp} className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <iframe
-              title="Prompt Care Academy location map"
+              title={`${academyName} Location Map`}
               src="https://www.google.com/maps?q=Suite+B16,+Area+11+Shopping+Complex,+Ahmadu+Bello+Way,+Garki+Abuja&output=embed"
               className="h-[320px] w-full border-0"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
           </motion.div>
-          <motion.div variants={fadeUp} className="space-y-4 rounded-2xl border border-border/80 bg-card/90 p-6 shadow-soft">
-            <h3 className="text-2xl font-semibold">Visit Our Campus</h3>
-            <p className="text-muted-foreground">
+          <motion.div variants={fadeUp} className="space-y-4 rounded-2xl border border-border/80 bg-card/90 p-6 shadow-soft flex flex-col justify-center">
+            <h3 className="text-2xl font-semibold">Campus & Computer Lab</h3>
+            <p className="text-muted-foreground text-sm">
               Suite B16, Area 11 Shopping Complex, Ahmadu Bello Way, Garki Abuja.
             </p>
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock3 className="h-4 w-4 text-accent" />
-              Mon - Fri: 9:00 AM to 5:00 PM
+              Monday &ndash; Friday: 9:00 AM to 5:00 PM
             </p>
-            <Button variant="outline" className="border-accent/40 hover:border-accent hover:text-accent" asChild>
-              <a
-                href="https://maps.google.com/?q=Suite+B16,+Area+11+Shopping+Complex,+Ahmadu+Bello+Way,+Garki+Abuja"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Get Directions
-              </a>
-            </Button>
+            <div className="pt-2">
+              <Button variant="outline" asChild>
+                <a
+                  href="https://maps.google.com/?q=Suite+B16,+Area+11+Shopping+Complex,+Ahmadu+Bello+Way,+Garki+Abuja"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Get Directions
+                </a>
+              </Button>
+            </div>
           </motion.div>
         </motion.div>
       </SectionShell>
 
-      <SectionShell>
-        <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="space-y-5">
-          <motion.h2 variants={fadeUp} className="text-3xl font-bold md:text-4xl">
-            Have a quick question?
-          </motion.h2>
-          <motion.p variants={fadeUp} className="max-w-2xl text-muted-foreground">
-            Here are answers to common admissions questions before you submit a request.
-          </motion.p>
-          <motion.div variants={fadeUp} className="rounded-2xl border border-border/80 bg-card shadow-soft">
-            <Accordion type="single" collapsible>
-              <AccordionItem value="faq-1">
-                <AccordionTrigger className="px-5 text-left hover:text-accent">
-                  How soon will admissions respond?
-                </AccordionTrigger>
-                <AccordionContent className="px-5 text-muted-foreground">
-                  Most inquiries receive a response within 24 hours on business days.
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="faq-2">
-                <AccordionTrigger className="px-5 text-left hover:text-accent">
-                  Can I speak to someone before choosing a course?
-                </AccordionTrigger>
-                <AccordionContent className="px-5 text-muted-foreground">
-                  Yes. You can call, email, or use WhatsApp to get personalized guidance before enrolling.
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="faq-3">
-                <AccordionTrigger className="px-5 text-left hover:text-accent">
-                  Is campus visit available?
-                </AccordionTrigger>
-                <AccordionContent className="px-5 text-muted-foreground">
-                  Yes. We welcome scheduled campus visits for prospective learners and families.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </motion.div>
-          <motion.div variants={fadeUp}>
-            <Button variant="outline" className="border-accent/40 hover:border-accent hover:text-accent" asChild>
-              <Link href="/faq">View Full FAQ</Link>
-            </Button>
-          </motion.div>
-        </motion.div>
-      </SectionShell>
-
-      <SectionShell variant="immersive" backgroundType="gradient" hasFloatingAccent>
+      <SectionShell variant="immersive" className="py-12 bg-muted/20">
         <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="mx-auto max-w-3xl space-y-5 text-center">
           <div className="overflow-hidden">
-            <motion.h2 variants={maskReveal} className="text-3xl font-bold md:text-4xl">
-              Your healthcare career starts with a conversation.
+            <motion.h2 variants={maskReveal} className="text-3xl font-bold tracking-tight md:text-4xl">
+              Your software career starts with a conversation.
             </motion.h2>
           </div>
-          <motion.p variants={fadeUp} className="text-muted-foreground">
-            Talk with admissions and choose the training path that matches your goals.
+          <motion.p variants={fadeUp} className="text-muted-foreground max-w-xl mx-auto">
+            Talk with our curriculum advisors to choose the training track that matches your ambitions.
           </motion.p>
           <motion.div variants={fadeUp} className="flex flex-col justify-center gap-3 sm:flex-row">
-            <Button className="h-11 bg-accent text-emerald-950 hover:bg-accent/90" asChild>
-              <Link href="/courses">Explore Courses</Link>
+            <Button size="lg" variant="cta" asChild>
+              <Link href="/courses">Explore All Courses</Link>
             </Button>
-            <Button variant="outline" className="h-11 border-accent/40 hover:border-accent hover:text-accent" asChild>
-              <a href="https://wa.me/2349030910091" target="_blank" rel="noreferrer">
-                Speak to Admissions
-              </a>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/faq">Review Common Questions</Link>
             </Button>
           </motion.div>
-          <motion.div
-            aria-hidden="true"
-            variants={floating}
-            animate={shouldReduceMotion ? undefined : "animate"}
-            className="mx-auto h-12 w-32 rounded-full bg-accent/20 blur-2xl"
-          />
         </motion.div>
       </SectionShell>
     </div>
   )
 }
-

@@ -407,8 +407,8 @@ The Stage 1.5 Drizzle schema defines the following PostgreSQL objects:
 | `users.bio` | `users.bio` | No | direct mapping |
 | `users.status` | `users.status` | No | direct mapping |
 | `users.emailVerified` | `users.email_verified` | Yes | property->column rename |
-| `users.onboardingState` | `users.onboarding_state` | DECISION REQUIRED | currently not in PostgreSQL; store as JSONB or child table if needed |
-| `users.studentMilestones` | `users.student_milestones` | DECISION REQUIRED | currently not in PostgreSQL; could be JSONB or dedicated table |
+| `users.onboardingState` | `users.legacy_payload.onboardingState` | Yes | preserve original value as JSONB without interpreting it |
+| `users.studentMilestones` | `users.legacy_payload.studentMilestones` | Yes | preserve original array as JSONB without interpreting it |
 | `users.otpHash` | `users.otp_hash` | Yes | property->column rename |
 | `users.otpExpiresAt` | `users.otp_expires_at` | Yes | date mapping |
 | `users.studentProfile` | `users.student_profile` | Yes | JSONB |
@@ -419,7 +419,9 @@ The Stage 1.5 Drizzle schema defines the following PostgreSQL objects:
 
 Notes:
 
-- `onboardingState` and `studentMilestones` are not yet represented in the current PostgreSQL core schema and therefore require either a dedicated child table or a controlled JSONB representation.
+- `onboardingState` and `studentMilestones` are legitimate persisted user state used by the onboarding and milestone flows. Neither is represented by `student_profile`, `instructor_profile`, or `enrolled_courses`; those columns have different meanings.
+- Preserve both under their original keys in the existing `users.legacy_payload` JSONB column. BSON dates nested in these values are stored as ISO-8601 strings, matching JSONB's date representation. This migration does not change runtime behavior or reinterpret the values.
+- `studentMilestones` must not be reconstructed from enrollments, certificates, or activity: current code derives eligibility/progress but also persists milestone keys, presentation metadata, and each milestone's original `unlockedAt`.
 - `password` and `otpHash` remain sensitive and must not appear in migration reports.
 
 ### 3.2 `pending_registrations`
@@ -568,43 +570,43 @@ Important reconciliation rule:
 | `payments.paymentType` | `payments.payment_type` | Yes | direct mapping |
 | `payments.courseId` | `payments.course_id` | Yes | nullable course ref |
 | `payments.courseIds` | `payments.course_ids` | Yes | JSONB array |
-| `payments.invoiceNumber` | `payments.invoice_number` | DECISION REQUIRED | current schema does not include this field |
+| `payments.invoiceNumber` | `payments.legacy_payload.invoiceNumber` | Yes | preserve original value as JSONB without interpreting it |
 | `payments.amount` | `payments.amount` | No | direct mapping |
 | `payments.currency` | `payments.currency` | No | direct mapping |
 | `payments.status` | `payments.status` | No | enum mapping |
 | `payments.reference` | `payments.reference` | No | unique key |
 | `payments.paymentMethod` | `payments.method` | Yes | rename to match schema |
-| `payments.transactionId` | `payments.transaction_id` | DECISION REQUIRED | not in current schema |
-| `payments.gatewayStatus` | `payments.gateway_status` | DECISION REQUIRED | not in current schema |
-| `payments.gatewayMessage` | `payments.gateway_message` | DECISION REQUIRED | not in current schema |
-| `payments.gatewayChannel` | `payments.gateway_channel` | DECISION REQUIRED | not in current schema |
-| `payments.gatewayFee` | `payments.gateway_fee` | DECISION REQUIRED | not in current schema |
-| `payments.customerEmail` | `payments.customer_email` | DECISION REQUIRED | not in current schema |
-| `payments.customerCode` | `payments.customer_code` | DECISION REQUIRED | not in current schema |
-| `payments.verificationAttempts` | `payments.verification_attempts` | DECISION REQUIRED | not in schema |
+| `payments.transactionId` | `payments.legacy_payload.transactionId` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.gatewayStatus` | `payments.legacy_payload.gatewayStatus` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.gatewayMessage` | `payments.legacy_payload.gatewayMessage` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.gatewayChannel` | `payments.legacy_payload.gatewayChannel` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.gatewayFee` | `payments.legacy_payload.gatewayFee` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.customerEmail` | `payments.legacy_payload.customerEmail` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.customerCode` | `payments.legacy_payload.customerCode` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.verificationAttempts` | `payments.legacy_payload.verificationAttempts` | Yes | preserve original value as JSONB without interpreting it |
 | `payments.verificationLocked` | `payments.verification_lock` | Yes | boolean rename |
-| `payments.verificationLockToken` | `payments.verification_lock_token` | DECISION REQUIRED | not in schema |
+| `payments.verificationLockToken` | `payments.legacy_payload.verificationLockToken` | Yes | preserve original value as JSONB without interpreting it |
 | `payments.verificationLockExpiresAt` | `payments.verification_lock_expires_at` | Yes | timestamp |
-| `payments.lastVerificationAt` | `payments.last_verification_at` | DECISION REQUIRED | not in schema |
-| `payments.manualReviewReason` | `payments.manual_review_reason` | DECISION REQUIRED | not in schema |
-| `payments.manualReviewSource` | `payments.manual_review_source` | DECISION REQUIRED | not in schema |
-| `payments.manualReviewCreatedAt` | `payments.manual_review_created_at` | DECISION REQUIRED | not in schema |
-| `payments.manualReviewUpdatedAt` | `payments.manual_review_updated_at` | DECISION REQUIRED | not in schema |
-| `payments.fraudFlagged` | `payments.fraud_flagged` | DECISION REQUIRED | not in schema |
-| `payments.fraudReason` | `payments.fraud_reason` | DECISION REQUIRED | not in schema |
-| `payments.fraudFlaggedAt` | `payments.fraud_flagged_at` | DECISION REQUIRED | not in schema |
-| `payments.fraudFlaggedBy` | `payments.fraud_flagged_by` | DECISION REQUIRED | not in schema |
-| `payments.reviewedBy` | `payments.reviewed_by` | DECISION REQUIRED | not in schema |
-| `payments.reviewedAt` | `payments.reviewed_at` | DECISION REQUIRED | not in schema |
-| `payments.reviewNote` | `payments.review_note` | DECISION REQUIRED | not in schema |
-| `payments.paidAt` | `payments.paid_at` | DECISION REQUIRED | not in schema |
-| `payments.refundReason` | `payments.refund_reason` | DECISION REQUIRED | not in schema |
-| `payments.refundedBy` | `payments.refunded_by` | DECISION REQUIRED | not in schema |
-| `payments.refundedAt` | `payments.refunded_at` | DECISION REQUIRED | not in schema |
+| `payments.lastVerificationAt` | `payments.legacy_payload.lastVerificationAt` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.manualReviewReason` | `payments.legacy_payload.manualReviewReason` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.manualReviewSource` | `payments.legacy_payload.manualReviewSource` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.manualReviewCreatedAt` | `payments.legacy_payload.manualReviewCreatedAt` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.manualReviewUpdatedAt` | `payments.legacy_payload.manualReviewUpdatedAt` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.fraudFlagged` | `payments.legacy_payload.fraudFlagged` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.fraudReason` | `payments.legacy_payload.fraudReason` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.fraudFlaggedAt` | `payments.legacy_payload.fraudFlaggedAt` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.fraudFlaggedBy` | `payments.legacy_payload.fraudFlaggedBy` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.reviewedBy` | `payments.legacy_payload.reviewedBy` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.reviewedAt` | `payments.legacy_payload.reviewedAt` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.reviewNote` | `payments.legacy_payload.reviewNote` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.paidAt` | `payments.legacy_payload.paidAt` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.refundReason` | `payments.legacy_payload.refundReason` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.refundedBy` | `payments.legacy_payload.refundedBy` | Yes | preserve original value as JSONB without interpreting it |
+| `payments.refundedAt` | `payments.legacy_payload.refundedAt` | Yes | preserve original value as JSONB without interpreting it |
 | `payments.createdAt` | `payments.created_at` | Yes | direct mapping |
-| `payments.completedAt` | `payments.completed_at` | DECISION REQUIRED | nullable timestamp in source but not strongly represented in schema |
+| `payments.completedAt` | `payments.legacy_payload.completedAt` | Yes | preserve original value as JSONB without interpreting it |
 
-Important: the current PostgreSQL mapping is intentionally partial; some financial fields exist on the application model but not yet in the Drizzle schema. These are `DECISION REQUIRED` and should remain explicit pending review.
+The additional financial fields listed above are preserved under `payments.legacy_payload` without changing payment lifecycle, gateway, fraud, refund, or review semantics. They remain excluded from structured application columns until separately reviewed.
 
 ### 3.10 `payment_events`
 
@@ -615,9 +617,9 @@ Important: the current PostgreSQL mapping is intentionally partial; some financi
 | `payment_events.reference` | `payment_events.reference` | No | direct mapping |
 | `payment_events.paymentId` | `payment_events.payment_id` | Yes | FK to payments |
 | `payment_events.type` | `payment_events.event_type` | Yes | property rename |
-| `payment_events.source` | `payment_events.source` | NOT MIGRATED | current `payment_events` table does not include `source` column |
-| `payment_events.status` | `payment_events.status` | NOT MIGRATED | not included in schema |
-| `payment_events.message` | `payment_events.message` | NOT MIGRATED | not included in schema |
+| `payment_events.source` | `payment_events.legacy_payload.source` | Yes | preserve original value as JSONB without interpreting it |
+| `payment_events.status` | `payment_events.legacy_payload.status` | Yes | preserve original value as JSONB without interpreting it |
+| `payment_events.message` | `payment_events.legacy_payload.message` | Yes | preserve original value as JSONB without interpreting it |
 | `payment_events.metadata` | `payment_events.event_data` | Yes | normalization |
 | `payment_events.createdAt` | `payment_events.created_at` | Yes | date mapping |
 
@@ -652,13 +654,13 @@ Important: the current PostgreSQL mapping is intentionally partial; some financi
 | `admin_logs._id` | `admin_logs.legacy_mongo_id` | Yes | preserve Mongo id |
 | `admin_logs.id` | `admin_logs.id` | No | direct mapping |
 | `admin_logs.actorId` | `admin_logs.actor_id` | Yes | direct mapping |
-| `admin_logs.actorName` | `admin_logs.actor_name` | NOT MIGRATED | not in schema |
-| `admin_logs.actorEmail` | `admin_logs.actor_email` | NOT MIGRATED | not in schema |
+| `admin_logs.actorName` | `admin_logs.legacy_payload.actorName` | Yes | preserve original value as JSONB without interpreting it |
+| `admin_logs.actorEmail` | `admin_logs.legacy_payload.actorEmail` | Yes | preserve original value as JSONB without interpreting it |
 | `admin_logs.action` | `admin_logs.action` | No | direct mapping |
-| `admin_logs.targetUserId` | `admin_logs.user_id` | DECISION REQUIRED | ambiguous between `user_id` and actor/target semantics |
-| `admin_logs.targetName` | `admin_logs.details` | DECISION REQUIRED | could live in JSONB details |
-| `admin_logs.targetEmail` | `admin_logs.details` | DECISION REQUIRED | could live in JSONB details |
-| `admin_logs.targetRole` | `admin_logs.details` | DECISION REQUIRED | could live in JSONB details |
+| `admin_logs.targetUserId` | `admin_logs.legacy_payload.targetUserId` | Yes | preserve without conflating actor and target identities |
+| `admin_logs.targetName` | `admin_logs.legacy_payload.targetName` | Yes | preserve original value as JSONB without interpreting it |
+| `admin_logs.targetEmail` | `admin_logs.legacy_payload.targetEmail` | Yes | preserve original value as JSONB without interpreting it |
+| `admin_logs.targetRole` | `admin_logs.legacy_payload.targetRole` | Yes | preserve original value as JSONB without interpreting it |
 | `admin_logs.createdAt` | `admin_logs.created_at` | Yes | date mapping |
 
 ### 3.14 `onboarding_events`
@@ -668,7 +670,7 @@ Important: the current PostgreSQL mapping is intentionally partial; some financi
 | `onboarding_events._id` | `onboarding_events.legacy_mongo_id` | Yes | preserve Mongo id |
 | `onboarding_events.id` | `onboarding_events.id` | No | direct mapping |
 | `onboarding_events.name` | `onboarding_events.event` | Yes | property rename |
-| `onboarding_events.role` | `onboarding_events.user_id` | DECISION REQUIRED | not a direct mapping; role may exist in details |
+| `onboarding_events.role` | `onboarding_events.legacy_payload.role` | Yes | preserve without treating role as a user identifier |
 | `onboarding_events.mode` | `onboarding_events.data` | Yes | JSONB payload |
 | `onboarding_events.source` | `onboarding_events.data` | Yes | JSONB payload |
 | `onboarding_events.step` | `onboarding_events.data` | Yes | JSONB payload |

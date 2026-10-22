@@ -32,8 +32,12 @@ type PendingRegistrationResult = {
 const JWT_SECRET = process.env.JWT_SECRET?.trim()
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d").trim()
 const OTP_EXPIRES_MINUTES = Number(process.env.OTP_EXPIRES_MINUTES || 5)
-const ADMIN_ACCOUNTS_EMAIL = (process.env.ADMIN_ACCOUNTS_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL)?.trim()
-const ADMIN_ACCOUNTS_PASSWORD = (process.env.ADMIN_ACCOUNTS_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD)?.trim()
+function getAdminAccountEmail(): string | undefined {
+  return (process.env.ADMIN_ACCOUNTS_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL)?.trim()
+}
+function getAdminAccountPassword(): string | undefined {
+  return (process.env.ADMIN_ACCOUNTS_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD)?.trim()
+}
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET?.trim()
@@ -71,7 +75,7 @@ function sanitizePendingRegistration(registration: PendingRegistration): Omit<Pe
 }
 
 // Generate JWT token
-function generateToken(user: User): string {
+export function generateToken(user: User): string {
   const payload = {
     userId: user.id,
     email: user.email,
@@ -109,30 +113,39 @@ export const authService = {
   async login(email: string, password: string): Promise<{ user: User; token: string } | null> {
     const db = getDB()
     const normalizedEmail = email?.trim().toLowerCase()
-    const normalizedAdminAccountEmail = ADMIN_ACCOUNTS_EMAIL?.toLowerCase()
+    const adminEmail = getAdminAccountEmail()
+    const adminPassword = getAdminAccountPassword()
+    const normalizedAdminAccountEmail = adminEmail?.toLowerCase()
 
     // Check if this is the env admin account first
-    if (normalizedAdminAccountEmail && ADMIN_ACCOUNTS_PASSWORD && normalizedEmail === normalizedAdminAccountEmail && password === ADMIN_ACCOUNTS_PASSWORD) {
+    if (normalizedAdminAccountEmail && adminPassword && normalizedEmail === normalizedAdminAccountEmail && password === adminPassword) {
       // Try to find existing user first
       let user = await db.findUserByEmail(normalizedEmail)
+      const hashedPassword = await hashPassword(password)
       
       if (!user) {
         // Create admin user if it doesn't exist
-        user = await db.createUser({
-          email: normalizedEmail,
-          password: await hashPassword(password),
-          name: "Admin Account",
-          role: "admin",
-          status: "active",
-          emailVerified: true,
-          enrolledCourses: [],
-        })
+        try {
+          user = await db.createUser({
+            email: normalizedEmail,
+            password: hashedPassword,
+            name: "Admin Account",
+            role: "admin",
+            status: "active",
+            emailVerified: true,
+            enrolledCourses: [],
+          })
+        } catch {
+          user = await db.findUserByEmail(normalizedEmail)
+          if (!user) throw new Error("Failed to provision administrator account")
+        }
       } else {
-        // Update user to ensure it's an admin with verified email
+        // Update user to ensure it's an admin with verified email and matching password
         user = await db.updateUser(user.id, {
           role: "admin",
           status: "active",
           emailVerified: true,
+          password: hashedPassword,
         }) || user
       }
       
@@ -234,6 +247,9 @@ export const authService = {
     studentProfile?: Omit<StudentRegistrationProfile, "submittedAt">,
     extraUserFields?: Partial<Pick<User, "bio" | "avatar" | "instructorProfile">>
   ): Promise<PendingRegistrationResult> {
+    if (role === "admin" || role === "finance") {
+      throw new Error("Administrative roles cannot be registered via self-service signup")
+    }
     const db = getDB()
     const normalizedEmail = email.trim().toLowerCase()
     const existingUser = await db.findUserByEmail(normalizedEmail)

@@ -1,7 +1,6 @@
 "use client"
 
 import type { ReactNode } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,6 +10,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from "@/component
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useState } from "react"
 import { toDisplayName } from "@/lib/utils/name"
+import { Logo, LogoMark } from "@/components/ui/logo"
+import { getAcademyName } from "@/lib/brand-config"
 
 interface RoleDashboardShellProps {
   roleLabel: string
@@ -39,15 +40,16 @@ export function RoleDashboardShell({
   const displayName = toDisplayName(userName)
   const resolvedSettingsHref = settingsHref || `${homeHref}/settings`
   const resolvedHeaderTitle = headerTitle || `${roleLabel} Dashboard`
+  const academyName = getAcademyName()
 
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-72 border-r border-border/80 bg-card/80 p-4 lg:block">
         <div className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col rounded-2xl border border-border/80 bg-card p-4 shadow-[var(--shadow-soft)]">
           <div className="mb-4 flex items-center gap-3 border-b border-border/80 pb-4">
-            <Image src="/promptcare-icon.png" alt="Prompt Care Academy" width={44} height={44} className="h-10 w-10" />
-            <div>
-              <p className="text-sm font-semibold">Prompt Care Academy</p>
+            <LogoMark size={36} className="h-9 w-9 shrink-0" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{academyName}</p>
               <p className="text-xs text-muted-foreground">{roleLabel} Console</p>
             </div>
           </div>
@@ -108,15 +110,9 @@ export function RoleDashboardShell({
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[88%] max-w-sm rounded-r-3xl">
                   <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <Image
-                        src="/promptcare-icon.png"
-                        alt="Prompt Care Academy"
-                        width={24}
-                        height={24}
-                        className="h-6 w-6"
-                      />
-                      Prompt Care Academy
+                    <SheetTitle className="flex items-center gap-2 text-left">
+                      <LogoMark size={24} className="h-6 w-6 shrink-0" />
+                      <span className="truncate">{academyName}</span>
                     </SheetTitle>
                   </SheetHeader>
                   <div className="mt-5 space-y-4">
@@ -129,12 +125,8 @@ export function RoleDashboardShell({
                 </SheetContent>
               </Sheet>
 
-              <div className="flex items-center justify-center gap-2">
-                <Image src="/promptcare-icon.png" alt="Prompt Care Academy" width={18} height={18} className="h-5 w-5" />
-                <span className="text-center text-xs uppercase tracking-wide text-foreground">
-                  <span className="font-bold">PROMPT</span> <span className="font-normal">CARE</span>{" "}
-                  <span className="font-normal">ACADEMY</span>
-                </span>
+              <div className="flex items-center justify-center">
+                <Logo variant="compact" href={homeHref} academyName={academyName} />
               </div>
 
               <div className="flex justify-end">

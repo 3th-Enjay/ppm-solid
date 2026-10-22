@@ -15,7 +15,7 @@ const globalWithMongo = global as GlobalMongo
 let clientPromise: Promise<MongoClient>
 let indexesEnsuredPromise: Promise<void> | null = null
 
-if (uri && !globalWithMongo._mongoClientPromise) {
+if (process.env.DATABASE_BACKEND === "mongodb" && uri && !globalWithMongo._mongoClientPromise) {
   const client = new MongoClient(uri)
   globalWithMongo._mongoClientPromise = client.connect()
 }
@@ -23,6 +23,9 @@ if (uri && !globalWithMongo._mongoClientPromise) {
 clientPromise = globalWithMongo._mongoClientPromise as Promise<MongoClient>
 
 export async function getDatabase() {
+  if (process.env.DATABASE_BACKEND !== "mongodb") {
+    throw new Error("MongoDB access attempted while DATABASE_BACKEND is not set to 'mongodb'.")
+  }
   if (!uri) {
     throw new Error("MONGODB_URI is not set")
   }

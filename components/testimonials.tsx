@@ -1,92 +1,93 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Star } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Code2, GitBranch, Laptop, ShieldCheck } from "lucide-react"
 import { motion } from "framer-motion"
 
-interface Testimonial {
-  name: string
-  role: string
-  content: string
-  rating: number
-  image?: string
-}
-
-const testimonials: Testimonial[] = [
+const methodologySteps = [
   {
-    name: "Amina Hassan",
-    role: "Nursing Student",
-    content: "Prompt Care Academy has transformed my career. The courses are comprehensive, and the instructors are incredibly supportive. I've gained practical skills that I use every day in my work.",
-    rating: 5,
+    step: "01",
+    title: "Code-First Fundamentals",
+    description:
+      "Move beyond passive video watching. Every lesson connects concepts directly to runnable code, interactive exercises, and structured knowledge checks.",
+    icon: Code2,
+    badge: "Active Coding",
   },
   {
-    name: "David Okonkwo",
-    role: "Healthcare Professional",
-    content: "The flexibility of learning at my own pace while maintaining quality education is outstanding. The certificate I earned has opened new opportunities for me in the healthcare sector.",
-    rating: 5,
+    step: "02",
+    title: "Applied Project Milestones",
+    description:
+      "Build real-world software modules step by step. Integrate databases, craft responsive user interfaces, and connect authenticated REST APIs.",
+    icon: Laptop,
+    badge: "Hands-On Labs",
   },
   {
-    name: "Fatima Ibrahim",
-    role: "Medical Student",
-    content: "I was impressed by the depth of knowledge and practical approach. The hands-on training modules helped me understand complex concepts easily. Highly recommended!",
-    rating: 5,
+    step: "03",
+    title: "Rubric-Guided Evaluation",
+    description:
+      "Receive transparent, criterion-referenced evaluations on your code submissions. Understand exact benchmarks for code quality, correctness, and architecture.",
+    icon: ShieldCheck,
+    badge: "Objective Standards",
   },
   {
-    name: "Emeka Nwosu",
-    role: "Caregiver",
-    content: "As someone new to healthcare, Prompt Care Academy provided me with the foundation I needed. The courses are well-structured, and the support team is always ready to help.",
-    rating: 5,
-  },
-  {
-    name: "Grace Adeyemi",
-    role: "Nursing Graduate",
-    content: "The quality of education here is exceptional. I've recommended Prompt Care Academy to many of my colleagues. The practical skills I learned are invaluable.",
-    rating: 5,
-  },
-  {
-    name: "Michael Okafor",
-    role: "Healthcare Administrator",
-    content: "The courses are up-to-date with current industry standards. I've enhanced my skills significantly and feel more confident in my role. Thank you, Prompt Care Academy!",
-    rating: 5,
+    step: "04",
+    title: "Portfolio Capstone Projects",
+    description:
+      "Complete comprehensive end-of-course capstones. Deliver tested, documented GitHub repositories ready to showcase to employers and engineering teams.",
+    icon: GitBranch,
+    badge: "Verifiable Proof",
   },
 ]
 
 export function Testimonials() {
   return (
-    <section className="py-20 bg-muted/50">
+    <section className="py-20 bg-muted/30 border-y border-border/70">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-14 space-y-3"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Students Say</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Don't just take our word for it. Here's what our students have to say about their learning experience.
+          <Badge variant="secondary" className="rounded-full px-3.5 py-1 text-xs">
+            The Learning Methodology
+          </Badge>
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+            How You Build Real Technical Competence
+          </h2>
+          <p className="text-base text-muted-foreground max-w-2xl mx-auto sm:text-lg">
+            Our instructional approach is grounded in active software construction, continuous feedback loops, and verifiable demonstration of skill.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {methodologySteps.map((item, index) => (
             <motion.div
-              key={testimonial.name}
+              key={item.step}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.1 * index }}
+              transition={{ duration: 0.4, delay: 0.08 * index }}
             >
-              <Card className="h-full hover:shadow-lg transition-shadow">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex gap-1">
-                    {Array.from({ length: testimonial.rating }).map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    ))}
+              <Card variant="elevated" className="h-full border-border/80 bg-card/80 transition-all duration-200 hover:-translate-y-1 hover:border-accent/50 hover:shadow-lifted">
+                <CardContent className="p-6 space-y-4 flex flex-col h-full">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-accent px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
+                      Step {item.step}
+                    </span>
+                    <Badge variant="outline" className="text-[11px] font-normal">
+                      {item.badge}
+                    </Badge>
                   </div>
-                  <p className="text-muted-foreground italic">"{testimonial.content}"</p>
-                  <div className="pt-4 border-t">
-                    <p className="font-semibold">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+
+                  <div className="space-y-2 flex-1">
+                    <h3 className="text-lg font-semibold">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -97,8 +98,3 @@ export function Testimonials() {
     </section>
   )
 }
-
-
-
-
-

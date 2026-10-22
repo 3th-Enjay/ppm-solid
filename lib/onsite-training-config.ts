@@ -1,9 +1,10 @@
-import { getCollection } from "@/lib/mongodb"
 import {
   DEFAULT_ONSITE_TRAINING_CONFIG,
   onsiteTrainingConfigSchema,
   type OnsiteTrainingConfig,
 } from "@/lib/onsite-training-shared"
+import { isPostgresBackend } from "@/lib/db"
+import { getPostgresDatabase } from "@/lib/postgres-db"
 
 const SETTINGS_DOC_ID = "onsite_training_settings"
 
@@ -13,8 +14,17 @@ type GlobalSettings = typeof globalThis & {
 
 const globalWithSettings = globalThis as GlobalSettings
 
-async function loadFromMongo(): Promise<OnsiteTrainingConfig | null> {
-  if (!process.env.MONGODB_URI) return null
+async function loadFromDb(): Promise<OnsiteTrainingConfig | null> {
+  if (isPostgresBackend()) {
+    const pg = getPostgresDatabase()
+    const data = await pg.getAppSettings<OnsiteTrainingConfig>(SETTINGS_DOC_ID)
+    if (!data) return null
+    const parsed = onsiteTrainingConfigSchema.safeParse(data)
+    return parsed.success ? parsed.data : null
+  }
+
+  if (process.env.DATABASE_BACKEND !== "mongodb" || !process.env.MONGODB_URI) return null
+  const { getCollection } = await import("@/lib/mongodb")
   const collection = await getCollection<OnsiteTrainingConfig & { _id: string }>("app_settings")
   const doc = await collection.findOne({ _id: SETTINGS_DOC_ID })
   if (!doc) return null
@@ -23,16 +33,23 @@ async function loadFromMongo(): Promise<OnsiteTrainingConfig | null> {
   return parsed.success ? parsed.data : null
 }
 
-async function saveToMongo(settings: OnsiteTrainingConfig): Promise<void> {
-  if (!process.env.MONGODB_URI) return
+async function saveToDb(settings: OnsiteTrainingConfig): Promise<void> {
+  if (isPostgresBackend()) {
+    const pg = getPostgresDatabase()
+    await pg.setAppSettings(SETTINGS_DOC_ID, settings)
+    return
+  }
+
+  if (process.env.DATABASE_BACKEND !== "mongodb" || !process.env.MONGODB_URI) return
+  const { getCollection } = await import("@/lib/mongodb")
   const collection = await getCollection<OnsiteTrainingConfig & { _id: string }>("app_settings")
   await collection.updateOne({ _id: SETTINGS_DOC_ID }, { $set: settings }, { upsert: true })
 }
 
 export async function getOnsiteTrainingConfig(): Promise<OnsiteTrainingConfig> {
   try {
-    const mongoSettings = await loadFromMongo()
-    if (mongoSettings) return mongoSettings
+    const dbSettings = await loadFromDb()
+    if (dbSettings) return dbSettings
   } catch {
     // Fall back to in-memory/default settings.
   }
@@ -49,7 +66,7 @@ export async function updateOnsiteTrainingConfig(nextSettings: OnsiteTrainingCon
   globalWithSettings._onsiteTrainingConfigCache = parsed
 
   try {
-    await saveToMongo(parsed)
+    await saveToDb(parsed)
   } catch {
     // Keep in-memory value even if persistence fails.
   }

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Script from "next/script"
 import { motion } from "framer-motion"
-import { Search } from "lucide-react"
+import { Search, Terminal } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { SectionShell } from "@/components/skillup/section-shell"
 import { fadeUp, floating, maskReveal, sectionStagger, useReducedMotionSafe } from "@/lib/motion"
 import { cn } from "@/lib/utils"
+import { getAcademyName } from "@/lib/brand-config"
 
 type FAQItem = {
   question: string
@@ -28,101 +29,111 @@ type FAQCategory = {
 const FAQ_CATEGORIES: FAQCategory[] = [
   {
     id: "admissions",
-    title: "Admissions",
-    intro: "Everything you need to know before joining Prompt Care Academy.",
+    title: "Admissions & Prerequisites",
+    intro: "Everything you need to know before enrolling in our technical tracks.",
     questions: [
       {
-        question: "Do I need a medical background to enroll?",
+        question: "Do I need a computer science background to enroll?",
         answer:
-          "No. Beginner tracks are designed for learners with no prior medical experience, and we guide you from care ethics to technical skill application.",
+          "No. Foundational tracks are designed for beginners with no prior coding experience. We guide you step by step from basic syntax to software architecture.",
       },
       {
-        question: "Can family caregivers join the program?",
+        question: "What hardware or software requirements do I need?",
         answer:
-          "Yes. We offer practical tracks for sons, daughters, and spouses supporting loved ones at home.",
+          "A computer (Mac, Windows, or Linux) capable of running a modern browser (Chrome, Firefox, or Edge), Node.js, and an IDE such as Visual Studio Code. High-end hardware is not required.",
       },
       {
-        question: "Where are your training locations?",
+        question: "Can working professionals study on their own schedule?",
         answer:
-          "We train in Abuja and Enugu through practical, hands-on sessions and digital learning support.",
+          "Yes. All curriculum tracks are self-paced with 24/7 access to digital learning modules, coding exercises, quizzes, and project submission panels.",
       },
     ],
   },
   {
-    id: "courses",
-    title: "Courses",
-    intro: "Understand course structure, timelines, and learning outcomes.",
+    id: "curriculum",
+    title: "Curriculum & Projects",
+    intro: "Understand our practical course structure, timelines, and capstones.",
     questions: [
       {
-        question: "How long do courses take to complete?",
+        question: "How long do technical courses take to complete?",
         answer:
-          "Beginner programs typically run 2-4 weeks, intermediate 4-6 weeks, and advanced tracks 8+ weeks depending on pace.",
+          "Programs typically range from 2 to 8 weeks depending on the course depth, complexity, and how many hours you invest each week.",
       },
       {
-        question: "Do courses include practical sessions?",
+        question: "Do courses include practical coding exercises?",
         answer:
-          "Yes. Programs combine structured online modules with practical care scenarios and assessments.",
+          "Yes. Every unit combines conceptual explanations with hands-on coding labs, interactive quizzes, and tangible project milestones.",
       },
       {
-        question: "Can I access materials after completion?",
+        question: "What is a capstone project?",
         answer:
-          "Yes. Most courses include lifetime access to digital learning materials and review resources.",
+          "A capstone is an end-to-end, production-ready software project built from scratch to demonstrate full-stack or specialized domain capability with real code and unit tests.",
+      },
+      {
+        question: "Can I access course materials after completion?",
+        answer:
+          "Yes. Enrolled students retain ongoing access to their course materials, code references, and completed assignment feedback.",
       },
     ],
   },
   {
     id: "tuition-payment",
     title: "Tuition & Payment",
-    intro: "Clear payment expectations and refund process details.",
+    intro: "Clear payment expectations, currencies, and refund procedures.",
     questions: [
       {
         question: "What payment options are available?",
         answer:
-          "Tuition can be paid through secure supported channels on our platform. Payment processing is handled by approved third-party providers.",
+          "Tuition can be paid securely through our integrated Paystack gateway supporting credit/debit cards, bank transfers, and local currency options.",
       },
       {
         question: "Do you offer refunds?",
         answer:
-          "Refund requests are reviewed under our published Refund Policy, including eligibility windows and completion thresholds.",
+          "Refund requests are governed by our published Refund Policy, accounting for course access status, module progression, and assignment submissions.",
       },
       {
         question: "Can I enroll without creating an account?",
         answer:
-          "No. Enrollment is account-gated so your progress, certification, and purchase history remain secure and trackable.",
+          "No. Enrollment is account-gated so your progress, code submissions, rubric evaluations, and certificates are securely tracked.",
       },
     ],
   },
   {
     id: "certification",
-    title: "Certification",
-    intro: "How certification works and what it represents.",
+    title: "Assessment & Certification",
+    intro: "How rubrics, quizzes, and digital certificates work.",
     questions: [
       {
-        question: "Will I receive a certificate after completion?",
+        question: "Will I receive a certificate of completion?",
         answer:
-          "Yes. Certificates are issued after completing all required modules and assessments at the required pass mark.",
+          "Yes. Verified certificates are issued upon passing all required quizzes, coding assignments, and capstone evaluations at the required mastery threshold.",
+      },
+      {
+        question: "How are assignments and capstones evaluated?",
+        answer:
+          "Submissions are evaluated using criterion-referenced academic rubrics covering code structure, correctness, typing, test coverage, and architecture.",
       },
       {
         question: "Does certification guarantee immediate employment?",
         answer:
-          "No. Certification validates professional competency, but hiring outcomes depend on employer requirements and local market conditions.",
+          "No educational institution can guarantee hiring. Our certification validates demonstrated technical skills, but hiring decisions depend on individual candidate performance and employer requirements.",
       },
     ],
   },
   {
-    id: "career-support",
-    title: "Career Support",
-    intro: "How we help learners grow beyond course completion.",
+    id: "career-readiness",
+    title: "Career & Portfolio Readiness",
+    intro: "How we help you build verifiable proof of your technical ability.",
     questions: [
       {
-        question: "Do you support graduates with career opportunities?",
+        question: "Do courses help me build an engineering portfolio?",
         answer:
-          "We provide structured guidance and industry-ready preparation. Employment decisions remain with recruiting organizations.",
+          "Yes. Capstone projects require you to deliver documented, well-structured GitHub repositories that showcase your code quality directly to technical recruiters.",
       },
       {
-        question: "Is this training useful for international opportunities?",
+        question: "Are the technologies taught aligned with modern industry standards?",
         answer:
-          "Our curriculum aligns to global care standards. Additional visa and licensing requirements still apply for each country.",
+          "Yes. Our tracks emphasize widely adopted production stacks including TypeScript, React, Next.js, PostgreSQL, REST/GraphQL APIs, and cloud deployment.",
       },
     ],
   },
@@ -149,6 +160,7 @@ export default function FAQPageClient() {
   const shouldReduceMotion = useReducedMotionSafe()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeCategory, setActiveCategory] = useState(FAQ_CATEGORIES[0].id)
+  const academyName = getAcademyName()
 
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return FAQ_CATEGORIES
@@ -209,31 +221,29 @@ export default function FAQPageClient() {
 
       <SectionShell variant="immersive" backgroundType="gradient" hasFloatingAccent className="pb-14">
         <motion.div variants={sectionStagger} initial="initial" animate="animate" className="mx-auto max-w-3xl space-y-5 text-center">
-          <Badge variant="info" className="mx-auto w-fit rounded-full px-4 py-1">
-            Help Center
+          <Badge variant="info" className="mx-auto w-fit rounded-full px-4 py-1 text-xs">
+            <Terminal className="mr-1.5 h-3.5 w-3.5 text-accent" />
+            <span>{academyName} Help Center</span>
           </Badge>
           <div className="overflow-hidden">
-            <motion.h1 variants={maskReveal} className="text-4xl font-bold md:text-5xl">
+            <motion.h1 variants={maskReveal} className="text-4xl font-extrabold tracking-tight md:text-5xl">
               Frequently Asked Questions
             </motion.h1>
           </div>
-          <motion.p variants={fadeUp} className="text-muted-foreground">
-            Clear answers on admissions, courses, payments, and certification.
+          <motion.p variants={fadeUp} className="text-muted-foreground text-base sm:text-lg">
+            Clear, transparent answers on technical curriculum tracks, prerequisites, coding assessments, payments, and certification.
           </motion.p>
-          <motion.p variants={fadeUp} className="text-sm text-muted-foreground">
-            Can&apos;t find what you need? Contact admissions.
-          </motion.p>
-          <motion.div variants={fadeUp} className="mx-auto w-full max-w-xl">
+          <motion.div variants={fadeUp} className="mx-auto w-full max-w-xl pt-2">
             <label htmlFor="faq-search" className="sr-only">
               Search FAQs
             </label>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="faq-search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by keyword"
+                placeholder="Search topics, prerequisites, or policies..."
                 className="h-11 rounded-2xl border-border/70 bg-card/80 pl-10"
               />
             </div>
@@ -254,8 +264,8 @@ export default function FAQPageClient() {
               key={category.id}
               variant="ghost"
               className={cn(
-                "h-10 rounded-xl border-b-2 border-transparent whitespace-nowrap px-4",
-                activeCategory === category.id ? "border-primary text-primary" : "text-muted-foreground hover:text-foreground",
+                "h-10 rounded-xl border-b-2 border-transparent whitespace-nowrap px-4 text-xs sm:text-sm font-medium",
+                activeCategory === category.id ? "border-primary text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground",
               )}
               onClick={() => {
                 const target = document.getElementById(category.id)
@@ -271,9 +281,9 @@ export default function FAQPageClient() {
         {filteredCategories.length === 0 ? (
           <SectionShell>
             <div className="mx-auto max-w-2xl space-y-4 rounded-2xl border border-border/70 bg-card/60 p-8 text-center">
-              <h2 className="text-2xl font-semibold">No matching question found</h2>
+              <h2 className="text-2xl font-semibold">No matching questions found</h2>
               <p className="text-sm text-muted-foreground">
-                Try a different keyword or reach out to our admissions team for direct support.
+                Try a different keyword or reach out to our technical advisory team for direct support.
               </p>
               <Button asChild className="h-11 rounded-2xl">
                 <Link href="/contact">Contact Admissions</Link>
@@ -293,7 +303,7 @@ export default function FAQPageClient() {
                   className="mx-auto max-w-3xl space-y-4"
                 >
                   <motion.div variants={fadeUp} className="space-y-1">
-                    <h2 className="text-2xl font-semibold">{category.title}</h2>
+                    <h2 className="text-2xl font-semibold tracking-tight">{category.title}</h2>
                     <p className="text-sm text-muted-foreground">{category.intro}</p>
                   </motion.div>
                   <Accordion type="single" collapsible className="space-y-3">
@@ -307,10 +317,10 @@ export default function FAQPageClient() {
                           value={`${category.id}-${index}`}
                           className="overflow-hidden rounded-xl border border-border/70 bg-card/70 px-4 data-[state=open]:border-primary/40"
                         >
-                          <AccordionTrigger className="text-left text-sm leading-6 hover:no-underline">
+                          <AccordionTrigger className="text-left text-sm font-medium leading-6 hover:no-underline">
                             {highlightMatches(faq.question, searchQuery)}
                           </AccordionTrigger>
-                          <AccordionContent className="pb-4 text-sm leading-7 text-muted-foreground">
+                          <AccordionContent className="pb-4 text-sm leading-relaxed text-muted-foreground">
                             {highlightMatches(faq.answer, searchQuery)}
                           </AccordionContent>
                         </AccordionItem>
@@ -324,17 +334,17 @@ export default function FAQPageClient() {
         )}
       </div>
 
-      <SectionShell variant="split" backgroundType="gradient" hasFloatingAccent>
+      <SectionShell variant="split" backgroundType="gradient" hasFloatingAccent className="mt-8">
         <motion.div variants={sectionStagger} initial="initial" whileInView="animate" viewport={{ once: true }} className="grid gap-6 lg:grid-cols-2 lg:items-center">
           <motion.div variants={fadeUp} className="space-y-2">
-            <h2 className="text-3xl font-bold">Still have questions?</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Still have questions?</h2>
             <p className="text-muted-foreground">
-              Our admissions team can help you choose the right program and enrollment path.
+              Our technical advisors can help you choose the right learning path and review prerequisite requirements.
             </p>
           </motion.div>
           <motion.div variants={fadeUp} className="flex lg:justify-end">
-            <Button asChild className="h-11 rounded-2xl">
-              <Link href="/contact">Speak to Admissions</Link>
+            <Button size="lg" variant="cta" asChild className="h-11 rounded-2xl">
+              <Link href="/contact">Speak to an Advisor</Link>
             </Button>
           </motion.div>
         </motion.div>

@@ -377,3 +377,6 @@ export interface LearningNote {
 
 
 
+
+export * from './academic-types'
+

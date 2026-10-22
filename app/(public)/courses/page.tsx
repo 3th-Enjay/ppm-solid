@@ -180,18 +180,18 @@ export default function CoursesPage() {
           <div className="space-y-2">
             <div className="overflow-hidden">
               <motion.h1 variants={maskReveal} className="text-4xl font-bold leading-tight md:text-5xl">
-                Build Your Career in <span className="text-primary">Healthcare</span>
+                Build Practical Skills in <span className="text-primary">Modern Technology</span>
               </motion.h1>
             </div>
             <motion.p variants={fadeUp} className="max-w-2xl text-base text-muted-foreground md:text-lg">
-              Discover accredited training built for real caregiving outcomes and long-term career growth.
+              Discover hands-on courses in software engineering, web development, cloud systems, and design. Master the tools and workflows used by professional technical teams.
             </motion.p>
           </div>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-2 text-xs md:text-sm">
-            <span className="rounded-full border border-border/70 bg-card/80 px-3 py-1">Accredited training</span>
-            <span className="rounded-full border border-border/70 bg-card/80 px-3 py-1">Industry-certified instructors</span>
-            <span className="rounded-full border border-border/70 bg-card/80 px-3 py-1">Career support included</span>
+            <span className="rounded-full border border-border/70 bg-card/80 px-3 py-1">Project-based curriculum</span>
+            <span className="rounded-full border border-border/70 bg-card/80 px-3 py-1">Rubric-guided assessments</span>
+            <span className="rounded-full border border-border/70 bg-card/80 px-3 py-1">Capstone portfolio milestones</span>
           </motion.div>
 
           <motion.div variants={fadeUp} className="max-w-2xl space-y-3">

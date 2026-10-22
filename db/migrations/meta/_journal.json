@@ -8,6 +8,27 @@
       "when": 1791407037458,
       "tag": "0000_smooth_boomerang",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791454965057,
+      "tag": "0001_next_randall",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791543070591,
+      "tag": "0002_wet_skin",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791752040612,
+      "tag": "0003_equal_molly_hayes",
+      "breakpoints": true
     }
   ]
 }

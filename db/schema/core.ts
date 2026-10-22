@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -28,7 +29,7 @@ export const users = pgTable(
   "users",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     email: text("email").notNull().unique(),
     password: text("password").notNull(),
     name: text("name").notNull(),
@@ -42,6 +43,7 @@ export const users = pgTable(
     studentProfile: jsonb("student_profile"),
     instructorProfile: jsonb("instructor_profile"),
     enrolledCourses: jsonb("enrolled_courses").default([]),
+    legacyPayload: jsonb("legacy_payload"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -54,7 +56,7 @@ export const pendingRegistrations = pgTable(
   "pending_registrations",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     email: text("email").notNull().unique(),
     password: text("password").notNull(),
     name: text("name").notNull(),
@@ -77,7 +79,7 @@ export const categories = pgTable(
   "categories",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     name: text("name").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -88,7 +90,7 @@ export const courses = pgTable(
   "courses",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     title: text("title").notNull(),
     slug: text("slug").notNull().unique(),
     description: text("description").notNull(),
@@ -117,7 +119,7 @@ export const courses = pgTable(
   },
   (table) => ({
     slugIndex: uniqueIndex("uniq_courses_slug").on(table.slug),
-    instructorIndex: uniqueIndex("idx_courses_instructor_id").on(table.instructorId),
+    instructorIndex: index("idx_courses_instructor_id").on(table.instructorId),
   }),
 )
 
@@ -125,7 +127,7 @@ export const courseModules = pgTable(
   "course_modules",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     courseId: text("course_id").notNull().references(() => courses.id),
     title: text("title").notNull(),
     order: integer("order").notNull().default(0),
@@ -138,7 +140,7 @@ export const lessons = pgTable(
   "lessons",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     courseId: text("course_id").notNull().references(() => courses.id),
     moduleId: text("module_id").references(() => courseModules.id),
     title: text("title").notNull(),
@@ -158,7 +160,7 @@ export const enrollments = pgTable(
   "enrollments",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     userId: text("user_id").notNull().references(() => users.id),
     courseId: text("course_id").notNull().references(() => courses.id),
     progress: integer("progress").notNull().default(0),
@@ -179,7 +181,7 @@ export const payments = pgTable(
   "payments",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     userId: text("user_id").notNull().references(() => users.id),
     courseId: text("course_id"),
     courseIds: jsonb("course_ids").default([]),
@@ -194,6 +196,7 @@ export const payments = pgTable(
     verificationLock: boolean("verification_lock").default(false),
     verificationLockExpiresAt: timestamp("verification_lock_expires_at"),
     paystackMetadata: jsonb("paystack_metadata"),
+    legacyPayload: jsonb("legacy_payload"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -206,11 +209,12 @@ export const paymentEvents = pgTable(
   "payment_events",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     paymentId: text("payment_id").references(() => payments.id),
     reference: text("reference").notNull(),
     eventType: text("event_type").notNull(),
     eventData: jsonb("event_data").default({}),
+    legacyPayload: jsonb("legacy_payload"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => ({
@@ -222,7 +226,7 @@ export const certificates = pgTable(
   "certificates",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     userId: text("user_id").notNull().references(() => users.id),
     courseId: text("course_id").notNull().references(() => courses.id),
     certificateUrl: text("certificate_url"),
@@ -237,7 +241,7 @@ export const quizzes = pgTable(
   "quizzes",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     title: text("title").notNull(),
     passingScore: integer("passing_score").notNull().default(0),
     timeLimit: integer("time_limit"),
@@ -250,7 +254,7 @@ export const quizQuestions = pgTable(
   "quiz_questions",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     quizId: text("quiz_id").notNull().references(() => quizzes.id),
     question: text("question").notNull(),
     options: jsonb("options").default([]),
@@ -265,7 +269,7 @@ export const assignments = pgTable(
   "assignments",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     title: text("title").notNull(),
     description: text("description").notNull(),
     dueDate: timestamp("due_date"),
@@ -279,7 +283,7 @@ export const learningNotes = pgTable(
   "learning_notes",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     userId: text("user_id").notNull().references(() => users.id),
     courseId: text("course_id").references(() => courses.id),
     title: text("title"),
@@ -293,11 +297,12 @@ export const adminLogs = pgTable(
   "admin_logs",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     userId: text("user_id").references(() => users.id),
     actorId: text("actor_id"),
     action: text("action").notNull(),
     details: jsonb("details").default({}),
+    legacyPayload: jsonb("legacy_payload"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
 )
@@ -306,10 +311,11 @@ export const onboardingEvents = pgTable(
   "onboarding_events",
   {
     id: text("id").primaryKey(),
-    legacyMongoId: text("legacy_mongo_id").notNull().unique(),
+    legacyMongoId: text("legacy_mongo_id").unique(),
     userId: text("user_id").references(() => users.id),
     event: text("event").notNull(),
     data: jsonb("data").default({}),
+    legacyPayload: jsonb("legacy_payload"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
 )
@@ -341,4 +347,14 @@ export const tableRelationships = pgTable(
   (table) => ({
     relationshipIndex: primaryKey({ columns: [table.sourceTable, table.sourceColumn, table.targetTable, table.targetColumn] }),
   }),
+)
+
+export const appSettings = pgTable(
+  "app_settings",
+  {
+    id: text("id").primaryKey(),
+    data: jsonb("data").notNull().default({}),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
 )

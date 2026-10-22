@@ -1,6 +1,15 @@
+import { randomUUID } from "node:crypto"
 import { MongoClient } from "mongodb"
 import { getTableConfig } from "drizzle-orm/pg-core"
 import { Pool } from "pg"
+import {
+  approvedExecutionIdentity,
+  buildMigrationRows,
+  executeMigrationTransaction,
+  loadMongoSourceSnapshot,
+  sourceCountMismatches,
+  type MigrationTableReport,
+} from "./migration-executor"
 import {
   adminLogs,
   assignments,
@@ -23,6 +32,24 @@ import {
 } from "../db/schema/core"
 
 export type MigrationMode = "dry-run" | "execute"
+
+type MigrationExecutionDependencies = {
+  discoverSource: typeof discoverMongoCollections
+  inspectTarget: typeof inspectPostgresTarget
+  loadSourceSnapshot: typeof loadMongoSourceSnapshot
+  executeTransaction: typeof executeMigrationTransaction
+  createRunId: () => string
+  now: () => Date
+}
+
+const defaultExecutionDependencies: MigrationExecutionDependencies = {
+  discoverSource: discoverMongoCollections,
+  inspectTarget: inspectPostgresTarget,
+  loadSourceSnapshot: loadMongoSourceSnapshot,
+  executeTransaction: executeMigrationTransaction,
+  createRunId: randomUUID,
+  now: () => new Date(),
+}
 
 export type MigrationCollectionClassification =
   | "PRESENT_WITH_DATA"
@@ -301,6 +328,28 @@ export function parseConnectionIdentity(rawUrl: string) {
       protocol: "<unknown>",
     }
   }
+}
+
+export function formatMongoSourceIdentity(
+  database: string,
+  hosts: readonly { host?: string; port?: number; socketPath?: string }[],
+) {
+  const addresses = hosts
+    .map(({ host, port, socketPath }) => {
+      if (host) {
+        const formattedHost = host.includes(":") ? `[${host}]` : host
+        return `${formattedHost}:${port ?? 27017}`
+      }
+      return socketPath ? `unix:${socketPath}` : undefined
+    })
+    .filter((address): address is string => Boolean(address))
+    .sort()
+
+  if (addresses.length === 0) {
+    throw new Error("Connected MongoDB client did not expose any source hosts.")
+  }
+
+  return `${database}@${addresses.join(",")}`
 }
 
 export function resolveMigrationConfig(env = process.env) {
@@ -603,6 +652,69 @@ export function isMigrationExecutionReady(
   )
 }
 
+async function executeApprovedMigration(
+  config: ReturnType<typeof resolveMigrationConfig>,
+  sourceInventory: CollectionInventory,
+  sourceIdentity: string,
+  targetIdentity: string,
+  dependencies: MigrationExecutionDependencies = defaultExecutionDependencies,
+) {
+  if (!config.canExecute || !config.approved) {
+    throw new Error("Execution stopped: migration approval and all configuration gates are required.")
+  }
+
+  if (
+    !approvedExecutionIdentity({
+      approved: config.approved,
+      mongoDbName: config.mongoDbName,
+      targetEnvironment: config.targetEnvironment,
+      targetIsProduction: config.targetIsProduction,
+      postgresIdentity: config.postgresIdentity,
+      postgresUrl: config.postgresUrl,
+    })
+  ) {
+    throw new Error("Execution stopped: source and target are not the explicitly approved staging identities.")
+  }
+
+  const source = await dependencies.loadSourceSnapshot(config.mongoUri, config.mongoDbName)
+  const countMismatches = sourceCountMismatches(sourceInventory, source)
+  if (countMismatches.length > 0) {
+    throw new Error(`Execution stopped: source changed after preflight; count mismatches: ${JSON.stringify(countMismatches)}.`)
+  }
+
+  const rows = buildMigrationRows(source)
+  const runId = dependencies.createRunId()
+  const executedAt = dependencies.now()
+  const transaction = await dependencies.executeTransaction(config.postgresUrl, rows, {
+    id: runId,
+    sourceIdentity,
+    targetIdentity,
+    targetEnvironment: config.targetEnvironment,
+    executedAt,
+  })
+
+  const expectedTableCount = MIGRATION_OWNED_TABLES.length
+  const reconciliationValid =
+    transaction.reports.length === expectedTableCount &&
+    transaction.reports.every((report: MigrationTableReport) => report.matches)
+  if (!reconciliationValid) {
+    throw new Error("Post-migration reconciliation failed: executor did not confirm every migration-owned table count.")
+  }
+
+  return {
+    runId,
+    status: "completed" as const,
+    transaction: "committed" as const,
+    auditRows: transaction.auditRows,
+    tables: transaction.reports,
+    relationshipIntegrity: "passed" as const,
+    reconciliation: {
+      status: "passed" as const,
+      migrationOwnedTables: transaction.reports.length,
+    },
+  }
+}
+
 export async function discoverMongoCollections(uri: string, dbName: string, limit = 200) {
   if (!uri) {
     throw new Error("MIGRATION_MONGODB_URI is required for migration discovery.")
@@ -613,6 +725,7 @@ export async function discoverMongoCollections(uri: string, dbName: string, limi
 
   try {
     const db = client.db(dbName)
+    const identity = formatMongoSourceIdentity(db.databaseName, client.options.hosts)
     const names = await db.listCollections().toArray()
     const collections = await Promise.all(
       names.map(async (entry) => {
@@ -741,6 +854,7 @@ export async function discoverMongoCollections(uri: string, dbName: string, limi
     }
 
     return {
+      identity,
       inventory,
       duplicateReports,
       orphanReports,
@@ -773,7 +887,47 @@ export function validateMigrationReadiness(sourceInventory: CollectionInventory,
   }
 }
 
-export async function runMongoToPostgresMigration(mode: MigrationMode = "dry-run", env = process.env) {
+function validateExecutorSourceSnapshot(
+  sourceInventory: CollectionInventory,
+  snapshot: Awaited<ReturnType<typeof loadMongoSourceSnapshot>>,
+): MigrationIssue[] {
+  const countMismatches = sourceCountMismatches(sourceInventory, snapshot)
+  const issues: MigrationIssue[] = countMismatches.map(({ collection, expected, actual }) => ({
+    collection,
+    kind: "validation",
+    details: `Source count changed during preflight: expected ${expected}, read ${actual}.`,
+    blocking: true,
+  }))
+  if (issues.length > 0) return issues
+
+  try {
+    buildMigrationRows(snapshot)
+    return []
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ""
+    const relationship = message.match(/^([A-Za-z0-9_.()[\]]+) references a missing source record/)
+    const orphan = Boolean(relationship) || /does not match a source payment/.test(message)
+    const duplicate = /duplicate/i.test(message)
+    return [{
+      collection: relationship?.[1]?.split(".")[0] ?? "source_mapping",
+      kind: orphan ? "orphan" : duplicate ? "duplicate" : "invalid_mapping",
+      details: relationship
+        ? `${relationship[1]} references a missing source record.`
+        : orphan
+          ? "A source relationship does not resolve to a source record."
+          : duplicate
+            ? "Source mapping contains duplicate identities or business keys."
+            : "Source snapshot cannot be mapped safely; sensitive source values were omitted.",
+      blocking: true,
+    }]
+  }
+}
+
+export async function runMongoToPostgresMigration(
+  mode: MigrationMode = "dry-run",
+  env = process.env,
+  executionDependencies: MigrationExecutionDependencies = defaultExecutionDependencies,
+) {
   const config = resolveMigrationConfig(env)
 
   if (!config.mongoUri) {
@@ -797,21 +951,50 @@ export async function runMongoToPostgresMigration(mode: MigrationMode = "dry-run
     if (!config.targetIsStaging || config.targetIsProduction || !config.targetIdentityKnown) {
       throw new Error("The migration target must be an approved staging/migration/sandbox database. Production-like names are blocked automatically.")
     }
+
+    if (
+      !approvedExecutionIdentity({
+        approved: config.approved,
+        mongoDbName: config.mongoDbName,
+        targetEnvironment: config.targetEnvironment,
+        targetIsProduction: config.targetIsProduction,
+        postgresIdentity: config.postgresIdentity,
+        postgresUrl: config.postgresUrl,
+      })
+    ) {
+      throw new Error("Execution stopped: source and target are not the explicitly approved staging identities.")
+    }
   }
 
-  const mongoLabel = `${config.mongoDbName}@${config.mongoIdentity.host}`
   const postgresLabel = `${config.postgresIdentity.database}@${config.postgresIdentity.host}`
 
-  const source = await discoverMongoCollections(config.mongoUri, config.mongoDbName)
+  const source = await executionDependencies.discoverSource(config.mongoUri, config.mongoDbName)
+  const mongoLabel = source.identity
+  const sourceSnapshot = await executionDependencies.loadSourceSnapshot(config.mongoUri, config.mongoDbName)
+  const sourceMappingIssues = validateExecutorSourceSnapshot(source.inventory, sourceSnapshot)
   const migrationPlan = buildMigrationPlan(source.inventory)
-  const target = await inspectPostgresTarget(config.postgresUrl, config.targetEnvironment, config.targetIdentityKnown)
+  const target = await executionDependencies.inspectTarget(
+    config.postgresUrl,
+    config.targetEnvironment,
+    config.targetIdentityKnown,
+  )
   const targetInventory = target.inventory
   const reconciliation = validatePreExecutionReconciliation(source.inventory, target)
-  const duplicateReports = [...source.duplicateReports, ...target.duplicateReports]
-  const orphanReports = [...source.orphanReports, ...target.orphanReports]
+  const duplicateReports = [
+    ...source.duplicateReports,
+    ...target.duplicateReports,
+    ...sourceMappingIssues.filter((issue) => issue.kind === "duplicate"),
+  ]
+  const orphanReports = [
+    ...source.orphanReports,
+    ...target.orphanReports,
+    ...sourceMappingIssues.filter((issue) => issue.kind === "orphan"),
+  ]
+  const mappingReports = sourceMappingIssues.filter((issue) => issue.kind !== "duplicate" && issue.kind !== "orphan")
   const readiness = validateMigrationReadiness(source.inventory, [
     ...duplicateReports,
     ...orphanReports,
+    ...mappingReports,
     ...target.issues,
   ])
   const canExecute = isMigrationExecutionReady(config, target, readiness, reconciliation)
@@ -843,6 +1026,7 @@ export async function runMongoToPostgresMigration(mode: MigrationMode = "dry-run
     reconciliation,
     duplicateReports,
     orphanReports,
+    mappingReports,
     canExecute,
     message:
       mode === "dry-run"
@@ -861,9 +1045,18 @@ export async function runMongoToPostgresMigration(mode: MigrationMode = "dry-run
     }
   }
 
+  const execution = await executeApprovedMigration(
+    config,
+    source.inventory,
+    mongoLabel,
+    postgresLabel,
+    executionDependencies,
+  )
+
   return {
     ...summary,
-    message: "Migration execution would proceed only against the approved staging target, using the existing migration guardrails and audit trail. This repository intentionally does not perform a production cutover.",
+    execution,
+    message: "Migration completed successfully. PostgreSQL writes were committed and post-migration reconciliation passed. Application runtime remains unchanged.",
   }
 }
 

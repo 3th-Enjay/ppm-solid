@@ -1,49 +1,21 @@
-﻿import Link from "next/link"
+import Link from "next/link"
 import { Facebook, Instagram, Youtube } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
+import { getAcademyName, getAcademyDescription } from "@/lib/brand-config"
 
 export function PublicFooter() {
   const year = new Date().getFullYear()
+  const academyName = getAcademyName()
 
   return (
     <footer className="border-t border-border/80 bg-card/70">
       <div className="container py-14">
         <div className="grid gap-10 lg:grid-cols-5">
           <div className="space-y-4 lg:col-span-2">
-            <Logo />
+            <Logo variant="compact" />
             <p className="max-w-md text-sm text-muted-foreground">
-              Prompt Care Academy provides practical caregiver education with expert instruction and flexible learning
-              paths.
+              {getAcademyDescription()}
             </p>
-            <div className="flex items-center gap-2">
-              <Link
-                href="https://www.youtube.com/@Promptcareacademy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full border border-border/70 p-2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="YouTube"
-              >
-                <Youtube className="h-4 w-4" />
-              </Link>
-              <Link
-                href="https://www.instagram.com/promptcareacademy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full border border-border/70 p-2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-4 w-4" />
-              </Link>
-              <Link
-                href="https://www.facebook.com/share/186ZGSXgVR/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full border border-border/70 p-2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-4 w-4" />
-              </Link>
-            </div>
           </div>
 
           <div>
@@ -85,6 +57,11 @@ export function PublicFooter() {
                   Privacy Policy
                 </Link>
               </li>
+              <li>
+                <Link href="/refund" className="hover:text-foreground">
+                  Refund Policy
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -98,7 +75,7 @@ export function PublicFooter() {
         </div>
 
         <div className="mt-10 border-t border-border/80 pt-6 text-sm text-muted-foreground">
-          <p>&copy; {year} Prompt Care Academy. All rights reserved.</p>
+          <p>&copy; {year} {academyName}. All rights reserved.</p>
         </div>
       </div>
     </footer>

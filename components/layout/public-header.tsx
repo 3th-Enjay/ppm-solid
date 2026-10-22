@@ -48,6 +48,7 @@ export function PublicHeader() {
     { href: "/", label: "Home" },
     { href: "/courses", label: "Courses" },
     { href: "/about", label: "About" },
+    { href: "/faq", label: "FAQ" },
     { href: "/contact", label: "Contact" },
   ]
 
@@ -56,10 +57,10 @@ export function PublicHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between gap-4">
-        <div className="flex items-center gap-8">
-          <Logo />
+        <div className="flex items-center gap-6 lg:gap-8">
+          <Logo variant="compact" />
 
-          <nav className="hidden items-center gap-2 rounded-full border border-border/70 bg-card/80 p-1 lg:flex">
+          <nav className="hidden items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1 lg:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.href}

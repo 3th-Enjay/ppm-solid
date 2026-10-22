@@ -29,12 +29,27 @@ export const MIGRATION_TABLE_ORDER = [
 
 const JSONB_COLUMNS = new Set([
   "users.student_profile", "users.instructor_profile", "users.enrolled_courses",
+  "users.legacy_payload",
   "pending_registrations.student_profile", "pending_registrations.instructor_profile",
   "courses.overview", "courses.instructor_specialties", "lessons.content",
-  "enrollments.completed_lessons", "payments.course_ids", "payments.paystack_metadata",
-  "payment_events.event_data", "quiz_questions.options", "admin_logs.details",
-  "onboarding_events.data",
+  "enrollments.completed_lessons", "payments.course_ids", "payments.paystack_metadata", "payments.legacy_payload",
+  "payment_events.event_data", "payment_events.legacy_payload", "quiz_questions.options", "admin_logs.details",
+  "admin_logs.legacy_payload", "onboarding_events.data", "onboarding_events.legacy_payload",
 ])
+
+const LEGACY_PAYLOAD_FIELDS = {
+  users: ["onboardingState", "studentMilestones"],
+  payments: [
+    "invoiceNumber", "transactionId", "gatewayStatus", "gatewayMessage", "gatewayChannel", "gatewayFee",
+    "customerEmail", "customerCode", "verificationAttempts", "verificationLockToken", "lastVerificationAt",
+    "manualReviewReason", "manualReviewSource", "manualReviewCreatedAt", "manualReviewUpdatedAt",
+    "fraudFlagged", "fraudReason", "fraudFlaggedAt", "fraudFlaggedBy", "reviewedBy", "reviewedAt",
+    "reviewNote", "paidAt", "refundReason", "refundedBy", "refundedAt", "completedAt",
+  ],
+  payment_events: ["source", "status", "message"],
+  admin_logs: ["actorName", "actorEmail", "targetUserId", "targetName", "targetEmail", "targetRole"],
+  onboarding_events: ["role"],
+} as const
 
 const SOURCE_COLLECTIONS = [
   "users", "pending_registrations", "categories", "courses", "enrollments",
@@ -164,10 +179,32 @@ function requiredArray(document: MongoDocument, key: string, label: string): unk
 
 function rejectUnmappedFields(document: MongoDocument, allowed: readonly string[], label: string) {
   const accepted = new Set(["_id", ...allowed])
-  const unmapped = Object.keys(document).filter((key) => !accepted.has(key) && document[key] !== null && document[key] !== undefined)
+  const unmapped = Object.keys(document).filter(
+    (key) => !accepted.has(key) && !isEmptyOptionalValue(document[key]),
+  )
   if (unmapped.length) {
     throw new Error(`${label} has non-empty unmapped fields: ${unmapped.join(", ")}. No PostgreSQL writes were started.`)
   }
+}
+
+function isEmptyOptionalValue(value: unknown): boolean {
+  if (value === undefined || value === null) return true
+  if (typeof value === "string") return value.trim().length === 0
+  if (Array.isArray(value)) return value.length === 0
+  return isRecord(value) && Object.keys(value).length === 0
+}
+
+function legacyPayload(
+  document: MongoDocument,
+  fields: readonly string[],
+  label: string,
+): Record<string, unknown> | undefined {
+  const payload = Object.fromEntries(
+    fields
+      .filter((field) => document[field] !== undefined)
+      .map((field) => [field, toJsonValue(document[field], `${label}.${field}`)]),
+  )
+  return Object.keys(payload).length ? payload : undefined
 }
 
 function setIfDefined(target: Record<string, unknown>, key: string, value: unknown) {
@@ -204,7 +241,8 @@ function mapUser(document: MongoDocument, courseIds: Map<string, string>): Recor
   const label = "users"
   rejectUnmappedFields(document, [
     "id", "email", "password", "name", "role", "avatar", "bio", "status", "emailVerified",
-    "otpHash", "otpExpiresAt", "studentProfile", "instructorProfile", "enrolledCourses", "createdAt", "updatedAt",
+    "onboardingState", "studentMilestones", "otpHash", "otpExpiresAt", "studentProfile", "instructorProfile",
+    "enrolledCourses", "createdAt", "updatedAt",
   ], label)
   const ids = documentIds(document, label)
   const row: Record<string, unknown> = {
@@ -225,6 +263,7 @@ function mapUser(document: MongoDocument, courseIds: Map<string, string>): Recor
   setIfDefined(row, "otp_expires_at", optionalDate(document, "otpExpiresAt", label))
   setIfDefined(row, "student_profile", optionalJson(document, "studentProfile", label))
   setIfDefined(row, "instructor_profile", optionalJson(document, "instructorProfile", label))
+  setIfDefined(row, "legacy_payload", legacyPayload(document, LEGACY_PAYLOAD_FIELDS.users, label))
   const enrolledCourses = document.enrolledCourses
   if (enrolledCourses !== undefined) {
     if (!Array.isArray(enrolledCourses)) throw new Error(`${label}.enrolledCourses must be an array.`)
@@ -409,7 +448,7 @@ function mapPayment(
   rejectUnmappedFields(document, [
     "id", "userId", "paymentType", "courseId", "courseIds", "amount", "currency", "status",
     "reference", "paymentMethod", "verificationLocked", "verificationLockExpiresAt", "reviewState",
-    "refundState", "paystackMetadata", "createdAt", "updatedAt",
+    "refundState", "paystackMetadata", "createdAt", "updatedAt", ...LEGACY_PAYLOAD_FIELDS.payments,
   ], label)
   const ids = documentIds(document, label)
   const row: Record<string, unknown> = {
@@ -435,6 +474,7 @@ function mapPayment(
   setIfDefined(row, "refund_state", optionalString(document, "refundState", label))
   setIfDefined(row, "paystack_metadata", optionalJson(document, "paystackMetadata", label))
   setIfDefined(row, "updated_at", optionalDate(document, "updatedAt", label))
+  setIfDefined(row, "legacy_payload", legacyPayload(document, LEGACY_PAYLOAD_FIELDS.payments, label))
   return row
 }
 
@@ -444,7 +484,9 @@ function mapPaymentEvent(
   paymentByReference: Map<string, string>,
 ): Record<string, unknown> {
   const label = "payment_events"
-  rejectUnmappedFields(document, ["id", "reference", "paymentId", "type", "metadata", "createdAt"], label)
+  rejectUnmappedFields(document, [
+    "id", "reference", "paymentId", "type", "metadata", "createdAt", ...LEGACY_PAYLOAD_FIELDS.payment_events,
+  ], label)
   const ids = documentIds(document, label)
   const reference = requiredString(document, "reference", label)
   const paymentId = document.paymentId === undefined || document.paymentId === null
@@ -457,6 +499,7 @@ function mapPaymentEvent(
     created_at: requiredDate(document, "createdAt", label),
   }
   setIfDefined(row, "event_data", optionalJson(document, "metadata", label))
+  setIfDefined(row, "legacy_payload", legacyPayload(document, LEGACY_PAYLOAD_FIELDS.payment_events, label))
   return row
 }
 
@@ -479,7 +522,7 @@ function mapCertificate(document: MongoDocument, userIds: Map<string, string>, c
 
 function mapAdminLog(document: MongoDocument): Record<string, unknown> {
   const label = "admin_logs"
-  rejectUnmappedFields(document, ["id", "actorId", "action", "details", "createdAt"], label)
+  rejectUnmappedFields(document, ["id", "actorId", "action", "details", "createdAt", ...LEGACY_PAYLOAD_FIELDS.admin_logs], label)
   const ids = documentIds(document, label)
   const row: Record<string, unknown> = {
     id: ids.id, legacy_mongo_id: ids.legacyMongoId,
@@ -488,12 +531,16 @@ function mapAdminLog(document: MongoDocument): Record<string, unknown> {
   }
   setIfDefined(row, "actor_id", optionalString(document, "actorId", label))
   setIfDefined(row, "details", optionalJson(document, "details", label))
+  setIfDefined(row, "legacy_payload", legacyPayload(document, LEGACY_PAYLOAD_FIELDS.admin_logs, label))
   return row
 }
 
 function mapOnboardingEvent(document: MongoDocument, userIds: Map<string, string>): Record<string, unknown> {
   const label = "onboarding_events"
-  rejectUnmappedFields(document, ["id", "userId", "name", "mode", "source", "step", "stepIndex", "status", "reference", "metadata", "createdAt"], label)
+  rejectUnmappedFields(document, [
+    "id", "userId", "name", "mode", "source", "step", "stepIndex", "status", "reference", "metadata", "createdAt",
+    ...LEGACY_PAYLOAD_FIELDS.onboarding_events,
+  ], label)
   const ids = documentIds(document, label)
   const data: Record<string, unknown> = {}
   for (const key of ["mode", "source", "step", "stepIndex", "status", "reference", "metadata"]) {
@@ -506,6 +553,7 @@ function mapOnboardingEvent(document: MongoDocument, userIds: Map<string, string
   }
   setIfDefined(row, "user_id", mappedOptionalReference(document.userId, userIds, `${label}.userId`))
   if (Object.keys(data).length) row.data = data
+  setIfDefined(row, "legacy_payload", legacyPayload(document, LEGACY_PAYLOAD_FIELDS.onboarding_events, label))
   return row
 }
 

@@ -34,22 +34,18 @@ import { useAuthStore, useCartStore, usePreferencesStore } from "@/lib/store"
 import type { Course, User as UserType } from "@/lib/types"
 import { formatCurrency, formatDuration } from "@/lib/utils/format"
 
-const testimonialData = [
+const courseLearningStandards = [
   {
-    id: "t1",
-    quote: "The practical modules made me confident in real caregiving scenarios within weeks.",
-    name: "Amaka Eze",
-    role: "Certified Caregiver",
-    image:
-      "https://images.pexels.com/photos/762020/pexels-photo-762020.jpeg?auto=compress&cs=tinysrgb&w=200",
+    id: "s1",
+    title: "Continuous Code Labs",
+    description: "Hands-on implementation checkpoints reinforce concepts after each theoretical unit.",
+    tag: "Practical Labs",
   },
   {
-    id: "t2",
-    quote: "I moved from theory to applied skills with instructor feedback that felt personal.",
-    name: "Daniel Okeke",
-    role: "Home Health Assistant",
-    image:
-      "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=200",
+    id: "s2",
+    title: "Rubric-Based Evaluations",
+    description: "Submissions are reviewed against clear criteria for code structure, accuracy, and best practices.",
+    tag: "Transparent Grading",
   },
 ]
 
@@ -240,7 +236,7 @@ export default function CourseDetailPage() {
             </motion.div>
 
             <motion.div variants={fadeUp} className="grid gap-2 rounded-2xl border border-border/70 bg-card/60 p-4 text-sm">
-              {(outcomes.length > 0 ? outcomes : ["Build practical caregiving confidence", "Gain certified healthcare skills", "Prepare for real clinical workflows"]).map(
+              {(outcomes.length > 0 ? outcomes : ["Build functional, portfolio-ready technical projects", "Master industry-standard development workflows and tooling", "Prepare for real-world software engineering and deployment"]).map(
                 (item, index) => (
                   <p key={`${item}-${index}`} className="flex items-start gap-2">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary" />
@@ -416,9 +412,9 @@ export default function CourseDetailPage() {
           </Tabs>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">Graduate Stories</h2>
+            <h2 className="text-2xl font-semibold">Assessment & Milestone Standards</h2>
             <div className="grid gap-4 md:grid-cols-2">
-              {testimonialData.map((item, index) => (
+              {courseLearningStandards.map((item, index) => (
                 <motion.article
                   key={item.id}
                   variants={fadeUp}
@@ -426,17 +422,14 @@ export default function CourseDetailPage() {
                   whileInView="animate"
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.08 }}
-                  className="rounded-3xl border border-border/70 bg-card/70 p-5"
+                  className="rounded-3xl border border-border/70 bg-card/70 p-5 space-y-2"
                 >
-                  <Quote className="h-5 w-5 text-primary" />
-                  <p className="mt-3 text-sm text-muted-foreground">{item.quote}</p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <img src={item.image} alt={item.name} className="h-10 w-10 rounded-full object-cover" loading="lazy" />
-                    <div>
-                      <p className="text-sm font-semibold">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">{item.role}</p>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="text-xs">{item.tag}</Badge>
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
                   </div>
+                  <h3 className="font-semibold text-base">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                 </motion.article>
               ))}
             </div>

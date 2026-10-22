@@ -66,7 +66,7 @@ test("migration config requires migration-specific variables and does not fall b
     MONGODB_URI: "mongodb://prod.example.com:27017/learnhub_prod",
     MONGODB_DB: "learnhub_prod",
     DATABASE_URL: "postgresql://prod-db:5432/learnhub",
-  })
+  } as any)
 
   assert.equal(config.mongoUri, "mongodb://migration.example.com:27017/learnhub_migration_staging")
   assert.equal(config.mongoDbName, "learnhub_migration_staging")
@@ -76,7 +76,7 @@ test("migration config requires migration-specific variables and does not fall b
     MONGODB_URI: "mongodb://prod.example.com:27017/learnhub_prod",
     MONGODB_DB: "learnhub_prod",
     DATABASE_URL: "postgresql://prod-db:5432/learnhub",
-  })
+  } as any)
 
   assert.equal(missing.mongoUri, "")
   assert.equal(missing.mongoDbName, "")

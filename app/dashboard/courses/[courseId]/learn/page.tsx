@@ -6,10 +6,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ChevronLeft, ChevronRight, CheckCircle, ClipboardList, ExternalLink, FileText, PlayCircle } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  ClipboardList,
+  ExternalLink,
+  FileText,
+  PlayCircle,
+  Award,
+  FolderGit2,
+} from "lucide-react"
 import { useAuthStore } from "@/lib/store"
 import type { Course, Enrollment, Lesson } from "@/lib/types"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { QuizRunner } from "@/components/academic/QuizRunner"
+import { AssignmentSubmissionPanel } from "@/components/academic/AssignmentSubmissionPanel"
+import { CapstoneProjectPanel } from "@/components/academic/CapstoneProjectPanel"
 
 export default function LearnPage() {
   const params = useParams()
@@ -20,6 +33,7 @@ export default function LearnPage() {
   const [course, setCourse] = useState<Course | null>(null)
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null)
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null)
+  const [viewMode, setViewMode] = useState<"lesson" | "capstone">("lesson")
 
   useEffect(() => {
     if (!user) {
@@ -97,6 +111,7 @@ export default function LearnPage() {
       for (const lesson of module.lessons) {
         if (found) {
           setCurrentLesson(lesson as Lesson)
+          setViewMode("lesson")
           return
         }
         if (lesson.id === currentLesson.id) {
@@ -114,6 +129,7 @@ export default function LearnPage() {
       for (const lesson of module.lessons) {
         if (lesson.id === currentLesson.id && previousLesson) {
           setCurrentLesson(previousLesson)
+          setViewMode("lesson")
           return
         }
         previousLesson = lesson as Lesson
@@ -125,193 +141,264 @@ export default function LearnPage() {
     return null
   }
 
+  const isQuizLesson = currentLesson.type === "quiz" || Boolean(currentLesson.content?.quizId)
+  const isAssignmentLesson =
+    currentLesson.type === "assignment" ||
+    Boolean(currentLesson.content?.assignmentId) ||
+    Boolean(currentLesson.content?.assignment)
+
   const lessonAssignment = currentLesson.content.assignment
   const lessonResources = currentLesson.content.resources || []
 
   return (
     <div className="flex h-screen">
-      <div className="flex flex-1 flex-col">
-        <div className="aspect-video bg-black flex items-center justify-center">
-          {currentLesson.type === "video" && currentLesson.content?.videoUrl ? (
-            (() => {
-              const url = currentLesson.content.videoUrl as string
-              const ytMatch = url.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([A-Za-z0-9_-]{11})/)
-              if (ytMatch && ytMatch[1]) {
-                return (
-                  <iframe
-                    title={currentLesson.title}
-                    src={`https://www.youtube-nocookie.com/embed/${ytMatch[1]}`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="h-full w-full"
-                  />
-                )
-              }
-              if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
-                return <video src={url} controls className="h-full w-full object-contain" />
-              }
-              return (
-                <div className="text-center text-white">
-                  <PlayCircle className="mx-auto mb-4 h-20 w-20 opacity-50" />
-                  <p className="text-lg">{currentLesson.title}</p>
-                  <a href={url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-gray-300 underline">
-                    Open lesson resource
-                  </a>
-                </div>
-              )
-            })()
-          ) : (
-            <div className="text-center text-white">
-              <PlayCircle className="mx-auto mb-4 h-20 w-20 opacity-50" />
-              <p className="text-lg">{currentLesson.title}</p>
-              <p className="mt-2 text-sm text-gray-400">Lesson media is not available for this item.</p>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-4 border-b p-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{currentLesson.type}</Badge>
-            {lessonAssignment ? <Badge variant="secondary">Assignment attached</Badge> : null}
-            {currentLesson.isFree ? <Badge className="bg-green-600">Free preview</Badge> : null}
-          </div>
-          <div>
-            <h1 className="mb-2 text-2xl font-bold text-balance">{currentLesson.title}</h1>
-            <p className="text-muted-foreground">{currentLesson.type} • {currentLesson.duration} minutes</p>
-          </div>
-
-          {currentLesson.type === "article" && currentLesson.content.articleContent ? (
-            <Card className="border-border/70 bg-muted/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="h-4 w-4 text-primary" />
-                  Lesson reading
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{currentLesson.content.articleContent}</p>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {lessonAssignment ? (
-            <Card className="border-amber-200/70 bg-amber-50/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <ClipboardList className="h-4 w-4 text-amber-700" />
-                  {lessonAssignment.title || "Lesson assignment"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <p className="whitespace-pre-wrap text-muted-foreground">
-                  {lessonAssignment.instructions || "Your instructor attached an assignment to this lesson."}
+      <div className="flex flex-1 flex-col overflow-y-auto">
+        {viewMode === "capstone" ? (
+          <div className="p-6 max-w-4xl mx-auto w-full space-y-6">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div>
+                <h1 className="text-2xl font-bold">Course Capstone Projects</h1>
+                <p className="text-sm text-muted-foreground">
+                  Final hands-on projects evaluated directly by academy instructors.
                 </p>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <Badge variant="outline">{lessonAssignment.submissionType} submission</Badge>
-                  <Badge variant="outline">Max score: {lessonAssignment.maxScore}</Badge>
-                  {lessonAssignment.estimatedMinutes ? <Badge variant="outline">{lessonAssignment.estimatedMinutes} min task</Badge> : null}
-                  {lessonAssignment.dueDate ? <Badge variant="outline">Due {lessonAssignment.dueDate}</Badge> : null}
-                </div>
-                {(lessonAssignment.resources || []).length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="font-medium">Assignment resources</p>
-                    <div className="space-y-2">
-                      {(lessonAssignment.resources || []).map((resource, index) => (
-                        <a
-                          key={`${resource.url}-${index}`}
-                          href={resource.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center justify-between rounded-lg border border-border/70 bg-background px-3 py-2 text-sm hover:border-primary"
-                        >
-                          <span>{resource.title || resource.url}</span>
-                          <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                        </a>
-                      ))}
+              </div>
+              <Button variant="outline" onClick={() => setViewMode("lesson")}>
+                Back to Lessons
+              </Button>
+            </div>
+            <CapstoneProjectPanel courseId={courseId} token={token} />
+          </div>
+        ) : (
+          <>
+            {/* Media Banner: Video or Quiz/Assignment Intro */}
+            {currentLesson.type === "video" && currentLesson.content?.videoUrl ? (
+              <div className="aspect-video bg-black flex items-center justify-center">
+                {(() => {
+                  const url = currentLesson.content.videoUrl as string
+                  const ytMatch = url.match(
+                    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([A-Za-z0-9_-]{11})/,
+                  )
+                  if (ytMatch && ytMatch[1]) {
+                    return (
+                      <iframe
+                        title={currentLesson.title}
+                        src={`https://www.youtube-nocookie.com/embed/${ytMatch[1]}`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="h-full w-full"
+                      />
+                    )
+                  }
+                  if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) {
+                    return <video src={url} controls className="h-full w-full object-contain" />
+                  }
+                  return (
+                    <div className="text-center text-white">
+                      <PlayCircle className="mx-auto mb-4 h-20 w-20 opacity-50" />
+                      <p className="text-lg">{currentLesson.title}</p>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 inline-block text-sm text-gray-300 underline"
+                      >
+                        Open lesson resource
+                      </a>
                     </div>
-                  </div>
-                ) : null}
-              </CardContent>
-            </Card>
-          ) : null}
+                  )
+                })()}
+              </div>
+            ) : null}
 
-          {lessonResources.length > 0 ? (
-            <Card className="border-border/70">
-              <CardHeader>
-                <CardTitle className="text-base">Lesson resources</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {lessonResources.map((resource, index) => (
-                  <a
-                    key={`${resource.url}-${index}`}
-                    href={resource.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2 text-sm hover:border-primary"
-                  >
-                    <span>{resource.title || resource.url}</span>
-                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                  </a>
-                ))}
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
+            <div className="space-y-6 p-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">{currentLesson.type}</Badge>
+                {isQuizLesson ? <Badge className="bg-blue-600">Graded Quiz</Badge> : null}
+                {isAssignmentLesson ? <Badge variant="secondary">Assignment</Badge> : null}
+                {currentLesson.isFree ? <Badge className="bg-green-600">Free preview</Badge> : null}
+              </div>
 
-        <div className="mt-auto flex items-center justify-between border-t p-6">
-          <Button variant="outline" onClick={goToPreviousLesson} className="bg-transparent">
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Previous
-          </Button>
-          <Button onClick={markLessonComplete}>
-            <CheckCircle className="mr-2 h-4 w-4" />
-            Mark Complete
-          </Button>
-          <Button variant="outline" onClick={goToNextLesson} className="bg-transparent">
-            Next
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+              <div>
+                <h1 className="mb-2 text-2xl font-bold text-balance">{currentLesson.title}</h1>
+                <p className="text-muted-foreground">
+                  {currentLesson.type} • {currentLesson.duration} minutes
+                </p>
+              </div>
+
+              {/* Text / Article Content */}
+              {currentLesson.type === "article" && currentLesson.content.articleContent ? (
+                <Card className="border-border/70 bg-muted/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Lesson reading
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="whitespace-pre-wrap text-sm leading-7 text-muted-foreground">
+                      {currentLesson.content.articleContent}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {/* Interactive Quiz Runner */}
+              {isQuizLesson ? (
+                <QuizRunner
+                  courseId={courseId}
+                  quizId={currentLesson.content?.quizId || currentLesson.id}
+                  lessonId={currentLesson.id}
+                  token={token}
+                  onComplete={markLessonComplete}
+                />
+              ) : null}
+
+              {/* Assignment Submission Panel */}
+              {isAssignmentLesson ? (
+                <div className="space-y-4">
+                  {lessonAssignment ? (
+                    <Card className="border-amber-200/70 bg-amber-50/70">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <ClipboardList className="h-4 w-4 text-amber-700" />
+                          {lessonAssignment.title || "Lesson assignment instructions"}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3 text-sm">
+                        <p className="whitespace-pre-wrap text-muted-foreground">
+                          {lessonAssignment.instructions ||
+                            "Your instructor attached an assignment to this lesson."}
+                        </p>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <Badge variant="outline">{lessonAssignment.submissionType} submission</Badge>
+                          <Badge variant="outline">Max score: {lessonAssignment.maxScore}</Badge>
+                          {lessonAssignment.estimatedMinutes ? (
+                            <Badge variant="outline">{lessonAssignment.estimatedMinutes} min task</Badge>
+                          ) : null}
+                          {lessonAssignment.dueDate ? (
+                            <Badge variant="outline">Due {lessonAssignment.dueDate}</Badge>
+                          ) : null}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : null}
+
+                  <AssignmentSubmissionPanel
+                    courseId={courseId}
+                    assignmentId={currentLesson.content?.assignmentId || currentLesson.id}
+                    lessonId={currentLesson.id}
+                    token={token}
+                    maxScore={lessonAssignment?.maxScore || 100}
+                    onSubmitted={markLessonComplete}
+                  />
+                </div>
+              ) : null}
+
+              {/* Resources */}
+              {lessonResources.length > 0 ? (
+                <Card className="border-border/70">
+                  <CardHeader>
+                    <CardTitle className="text-base">Lesson resources</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {lessonResources.map((resource, index) => (
+                      <a
+                        key={`${resource.url}-${index}`}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2 text-sm hover:border-primary"
+                      >
+                        <span>{resource.title || resource.url}</span>
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      </a>
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : null}
+            </div>
+
+            <div className="mt-auto flex items-center justify-between border-t p-6">
+              <Button variant="outline" onClick={goToPreviousLesson} className="bg-transparent">
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Previous
+              </Button>
+              <Button onClick={markLessonComplete}>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Mark Complete
+              </Button>
+              <Button variant="outline" onClick={goToNextLesson} className="bg-transparent">
+                Next
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
-      <aside className="w-96 overflow-auto border-l bg-card">
-        <div className="border-b p-6">
-          <h2 className="mb-2 font-semibold">Course Content</h2>
-          <Progress value={enrollment.progress} className="h-2" />
-          <p className="mt-2 text-sm text-muted-foreground">{enrollment.progress}% complete</p>
+      <aside className="w-96 overflow-auto border-l bg-card flex flex-col justify-between">
+        <div>
+          <div className="border-b p-6">
+            <h2 className="mb-2 font-semibold">Course Content</h2>
+            <Progress value={enrollment.progress} className="h-2" />
+            <p className="mt-2 text-sm text-muted-foreground">{enrollment.progress}% complete</p>
+          </div>
+
+          <Accordion type="single" collapsible className="px-4">
+            {course.modules.map((module, index) => (
+              <AccordionItem key={module.id} value={module.id}>
+                <AccordionTrigger className="text-sm font-semibold">
+                  Module {index + 1}: {module.title}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-2">
+                    {module.lessons.map((lesson) => {
+                      const isCompleted = enrollment.completedLessons.includes(lesson.id)
+                      const isCurrent = currentLesson.id === lesson.id && viewMode === "lesson"
+
+                      return (
+                        <button
+                          key={lesson.id}
+                          onClick={() => {
+                            setCurrentLesson(lesson as Lesson)
+                            setViewMode("lesson")
+                          }}
+                          className={`w-full rounded-lg p-3 text-left text-sm transition-colors ${
+                            isCurrent
+                              ? "bg-primary text-primary-foreground"
+                              : "hover:bg-accent"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isCompleted ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <div className="h-4 w-4 rounded-full border-2" />
+                            )}
+                            <span className="flex-1 truncate">{lesson.title}</span>
+                            <span className="text-xs opacity-75">{lesson.duration}m</span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
 
-        <Accordion type="single" collapsible className="px-4">
-          {course.modules.map((module, index) => (
-            <AccordionItem key={module.id} value={module.id}>
-              <AccordionTrigger className="text-sm font-semibold">
-                Module {index + 1}: {module.title}
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-2">
-                  {module.lessons.map((lesson) => {
-                    const isCompleted = enrollment.completedLessons.includes(lesson.id)
-                    const isCurrent = currentLesson.id === lesson.id
-
-                    return (
-                      <button
-                        key={lesson.id}
-                        onClick={() => setCurrentLesson(lesson as Lesson)}
-                        className={`w-full rounded-lg p-3 text-left text-sm transition-colors ${isCurrent ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {isCompleted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <div className="h-4 w-4 rounded-full border-2" />}
-                          <span className="flex-1">{lesson.title}</span>
-                          <span className="text-xs text-muted-foreground">{lesson.duration}m</span>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        {/* Capstone Section Button */}
+        <div className="border-t p-4 bg-muted/20">
+          <Button
+            variant={viewMode === "capstone" ? "default" : "outline"}
+            className="w-full gap-2 text-sm"
+            onClick={() => setViewMode("capstone")}
+          >
+            <FolderGit2 className="h-4 w-4" />
+            Course Capstone Project
+          </Button>
+        </div>
       </aside>
     </div>
   )
