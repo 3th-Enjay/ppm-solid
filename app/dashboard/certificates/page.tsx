@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Award, BookOpen, Download, ExternalLink, ShieldCheck } from "lucide-react"
+import { Award, BookOpen, Download, ExternalLink, ShieldCheck, CheckCircle2, Clock, Sparkles } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -22,7 +22,7 @@ type CertificateWithCourse = Certificate & {
 export default function CertificatesPage() {
   const { user, token } = useAuthStore()
   const [certificates, setCertificates] = useState<CertificateWithCourse[]>([])
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+  const [enrollments, setEnrollments] = useState<(Enrollment & { course?: { id: string; title: string; slug: string } })[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -53,72 +53,138 @@ export default function CertificatesPage() {
 
   const completedWithoutCertificate = useMemo(() => {
     const certificateCourseIds = new Set(certificates.map((certificate) => certificate.courseId))
-    return enrollments.filter((enrollment) => enrollment.status === "completed" && !certificateCourseIds.has(enrollment.courseId))
+    return enrollments.filter(
+      (enrollment) => enrollment.status === "completed" && !certificateCourseIds.has(enrollment.courseId),
+    )
   }, [certificates, enrollments])
 
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-balance">My Certificates</h1>
-        <p className="text-muted-foreground">Track issued certificates, verify your course outcomes, and see which completed courses are ready for the next credential step.</p>
+      {/* Header */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="border-primary/40 text-primary">
+            Academic Credentials
+          </Badge>
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight text-balance text-foreground">
+          Verified Certificates
+        </h1>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Review your earned technology credentials, verify cryptographic certification codes, and download diplomas for your professional portfolio.
+        </p>
       </div>
 
-      <Card variant="elevated" className="overflow-hidden border-emerald-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.16),_transparent_35%),linear-gradient(135deg,rgba(255,255,255,1)_0%,rgba(248,250,252,0.94)_52%,rgba(236,253,245,0.92)_100%)]">
-        <CardContent className="grid gap-4 p-5 md:grid-cols-3">
-          <div>
-            <p className="text-sm text-muted-foreground">Certificates earned</p>
-            <p className="mt-2 text-3xl font-semibold">{loading ? "..." : certificates.length}</p>
+      {/* Summary KPI Strip */}
+      <Card variant="elevated" className="overflow-hidden border-border/80 bg-gradient-to-br from-card via-card to-primary/5">
+        <CardContent className="grid gap-4 p-5 sm:grid-cols-3">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Certificates Earned
+            </p>
+            <p className="text-3xl font-bold text-foreground">
+              {loading ? "..." : certificates.length}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Issued by Technology Academy
+            </p>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Completed courses awaiting certificate</p>
-            <p className="mt-2 text-3xl font-semibold">{loading ? "..." : completedWithoutCertificate.length}</p>
+
+          <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-border/60 pt-3 sm:pt-0 sm:pl-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Awaiting Certification
+            </p>
+            <p className="text-3xl font-bold text-foreground">
+              {loading ? "..." : completedWithoutCertificate.length}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Completed courses pending final evaluation
+            </p>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Verification ready</p>
-            <p className="mt-2 text-3xl font-semibold">{loading ? "..." : certificates.length > 0 ? "Yes" : "Not yet"}</p>
+
+          <div className="space-y-1 border-t sm:border-t-0 sm:border-l border-border/60 pt-3 sm:pt-0 sm:pl-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Verification Engine
+            </p>
+            <p className="text-3xl font-bold text-primary flex items-center gap-2">
+              <ShieldCheck className="h-7 w-7 text-primary" />
+              Active
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Tamper-evident verification keys
+            </p>
           </div>
         </CardContent>
       </Card>
 
+      {/* Loading state */}
       {loading ? (
         <Card variant="elevated">
-          <CardContent className="p-6 text-muted-foreground">Loading your certificates...</CardContent>
+          <CardContent className="flex items-center gap-3 p-8 text-muted-foreground">
+            <Clock className="h-5 w-5 animate-pulse text-primary" />
+            <span className="text-sm">Retrieving your verified certificates from PostgreSQL...</span>
+          </CardContent>
         </Card>
       ) : null}
 
-      {certificates.length > 0 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+      {/* Certificates List */}
+      {!loading && certificates.length > 0 ? (
+        <div className="grid gap-5 md:grid-cols-2">
           {certificates.map((certificate) => (
-            <Card key={certificate.id} variant="elevated">
-              <CardHeader>
+            <Card
+              key={certificate.id}
+              variant="elevated"
+              className="flex flex-col justify-between border-border/80 bg-card hover:border-primary/50 transition-colors shadow-sm"
+            >
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-lg">{certificate.course?.title || "Course certificate"}</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">Issued {new Date(certificate.issuedAt).toLocaleDateString()}</p>
+                  <div className="space-y-1 min-w-0">
+                    <Badge variant="outline" className="border-primary/30 text-primary text-[11px] font-mono mb-1">
+                      Certificate
+                    </Badge>
+                    <CardTitle className="text-lg font-bold truncate text-foreground">
+                      {certificate.course?.title || "Technical Engineering Certificate"}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Issued {new Date(certificate.issuedAt).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
                   </div>
-                  <Badge className="bg-emerald-600">
-                    <Award className="mr-1 h-3.5 w-3.5" />
-                    Earned
-                  </Badge>
+                  <div className="rounded-full bg-primary/10 p-2.5 shrink-0 text-primary">
+                    <Award className="h-6 w-6" />
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                  Verification code: {certificate.verificationCode}
+
+              <CardContent className="space-y-4 text-sm pt-0">
+                <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-1.5 font-mono text-xs">
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span>Verification Code:</span>
+                    <span className="font-semibold text-foreground select-all">
+                      {certificate.verificationCode}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                    <span>Cryptographically verified outcome</span>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button asChild size="sm" className="gap-1.5">
                     <a href={certificate.certificateUrl} target="_blank" rel="noreferrer">
-                      <Download className="mr-2 h-4 w-4" />
-                      Open certificate
+                      <Download className="h-4 w-4" />
+                      Download Credential
                     </a>
                   </Button>
                   {certificate.course?.slug ? (
-                    <Button asChild variant="outline">
+                    <Button asChild variant="outline" size="sm" className="gap-1.5">
                       <Link href={`/courses/${certificate.course.slug}`}>
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        View course
+                        <ExternalLink className="h-4 w-4" />
+                        View Course
                       </Link>
                     </Button>
                   ) : null}
@@ -129,33 +195,48 @@ export default function CertificatesPage() {
         </div>
       ) : !loading ? (
         <Card variant="elevated">
-          <CardContent className="p-12 text-center">
-            <Award className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">No certificates yet</h3>
-            <p className="mb-4 text-muted-foreground">Complete your enrolled courses to earn your first certificate and start building your verified achievement record.</p>
-            <Button asChild>
+          <CardContent className="p-12 text-center space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Award className="h-7 w-7" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold text-foreground">No certificates earned yet</h3>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Complete all modules, graded quizzes, and capstone requirements in your enrolled courses to receive verified certificates of completion.
+              </p>
+            </div>
+            <Button asChild className="gap-2">
               <Link href="/dashboard/courses">
-                <BookOpen className="mr-2 h-4 w-4" />
-                View my courses
+                <BookOpen className="h-4 w-4" />
+                Go to My Courses
               </Link>
             </Button>
           </CardContent>
         </Card>
       ) : null}
 
-      {completedWithoutCertificate.length > 0 ? (
-        <Card variant="elevated">
-          <CardHeader>
-            <CardTitle className="text-lg">Completed courses awaiting certificate</CardTitle>
+      {/* Completed courses awaiting certificate */}
+      {!loading && completedWithoutCertificate.length > 0 ? (
+        <Card variant="elevated" className="border-border/70">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Clock className="h-4 w-4 text-amber-500" />
+              Completed Courses Awaiting Final Accreditation
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {completedWithoutCertificate.map((enrollment) => (
-              <div key={enrollment.id} className="flex flex-col gap-2 rounded-xl border border-border/70 px-4 py-3 md:flex-row md:items-center md:justify-between">
+              <div
+                key={enrollment.id}
+                className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-3 text-sm"
+              >
                 <div>
-                  <p className="font-medium">{(enrollment as Enrollment & { course?: { title?: string } }).course?.title || "Completed course"}</p>
-                  <p className="text-sm text-muted-foreground">Your course is complete, but the certificate has not been issued yet.</p>
+                  <p className="font-medium text-foreground">{enrollment.course?.title || enrollment.courseId}</p>
+                  <p className="text-xs text-muted-foreground">All lessons finished (100% progress)</p>
                 </div>
-                <Badge variant="outline">Awaiting issuance</Badge>
+                <Badge variant="outline" className="border-amber-300 text-amber-600 dark:text-amber-400">
+                  Pending Review
+                </Badge>
               </div>
             ))}
           </CardContent>

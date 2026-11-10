@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -35,6 +35,7 @@ import {
   Eye,
   EyeOff,
   Video,
+  Tags,
 } from "lucide-react"
 import type { Payment, User, Course, Enrollment, AdminLog } from "@/lib/types"
 import { formatDate } from "@/lib/utils/format"
@@ -203,12 +204,25 @@ export default function AdminDashboardPage() {
     const completedPayments = payments.filter((p) => p.status === "completed")
     const pendingPayments = payments.filter((p) => p.status === "pending")
 
-    const totalRevenue = completedPayments.reduce((sum, p) => {
-      if (p.currency === "NGN") return sum + p.amount
-      if (p.currency === "USD") return sum + p.amount * 1250
-      if (p.currency === "GBP") return sum + p.amount * 1580
-      return sum
-    }, 0)
+    const admins = users.filter((u) => u.role === "admin")
+    const finance = users.filter((u) => u.role === "finance")
+    const verifiedPayments = payments.filter((p) => p.status === "completed" || p.status === "success")
+    const publishedCourses = courses.filter((c) => c.published)
+    const draftCourses = courses.filter((c) => !c.published)
+    const pendingReviewCourses = courses.filter((c) => !c.approved)
+
+    const verifiedRevenueByCurrency = verifiedPayments.reduce<Record<string, number>>((acc, p) => {
+      const curr = p.currency || "NGN"
+      acc[curr] = (acc[curr] || 0) + (p.amount || 0)
+      return acc
+    }, {})
+
+
+
+
+
+
+
 
     return {
       totalUsers: users.length,
@@ -216,7 +230,12 @@ export default function AdminDashboardPage() {
       totalInstructors: instructors.length,
       totalCourses: courses.length,
       totalEnrollments: enrollments.length,
-      totalRevenue,
+      verifiedRevenueByCurrency,
+      publishedCourses: publishedCourses.length,
+      draftCourses: draftCourses.length,
+      pendingReviewCourses: pendingReviewCourses.length,
+      totalAdmins: admins.length,
+      totalFinance: finance.length,
       pendingPayments: pendingPayments.length,
     }
   }, [users, courses, enrollments, payments])
@@ -368,7 +387,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalCourses}</div>
-            <p className="text-xs text-muted-foreground">Across all categories</p>
+            <p className="text-xs text-muted-foreground">{stats.publishedCourses} published • {stats.draftCourses} drafts</p>
           </CardContent>
         </Card>
 
@@ -385,11 +404,24 @@ export default function AdminDashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Verified Revenue</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">NGN {stats.totalRevenue.toLocaleString()}</div>
+            <div className="space-y-1">
+              <div className="text-xl font-bold font-mono">
+                NGN {(stats.verifiedRevenueByCurrency["NGN"] || 0).toLocaleString()}
+              </div>
+              <div className="flex flex-wrap gap-1 text-[11px] text-muted-foreground font-mono">
+                {Object.entries(stats.verifiedRevenueByCurrency)
+                  .filter(([curr]) => curr !== "NGN")
+                  .map(([curr, val]) => (
+                    <span key={curr} className="bg-muted px-1.5 py-0.5 rounded border border-border/50">
+                      {curr} {val.toLocaleString()}
+                    </span>
+                  ))}
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground">{stats.pendingPayments} pending payments</p>
           </CardContent>
         </Card>
@@ -594,7 +626,7 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
         <Link href="/admin/analytics">
           <Card className="hover:border-primary transition-colors cursor-pointer">
             <CardHeader>
@@ -618,6 +650,19 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">Approve, edit, or archive courses.</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/categories">
+          <Card className="hover:border-primary transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tags className="h-5 w-5 text-primary" />
+                Category Architecture
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Configure engineering tracks and course taxonomy.</p>
             </CardContent>
           </Card>
         </Link>

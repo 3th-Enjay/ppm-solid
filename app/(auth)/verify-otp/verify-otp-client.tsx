@@ -22,8 +22,10 @@ import {
   maskEmailAddress,
 } from "@/lib/onboarding-flow"
 import { useAuthStore } from "@/lib/store"
+import { getAcademyName } from "@/lib/brand-config"
 
 export default function VerifyOtpClient() {
+  const academyName = getAcademyName()
   const router = useRouter()
   const searchParams = useSearchParams()
   const flags = getOnboardingFeatureFlags()
@@ -370,7 +372,7 @@ export default function VerifyOtpClient() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading || otp.length !== 6}>
+            <Button type="submit" variant="cta" className="w-full" disabled={loading || otp.length !== 6}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -431,7 +433,7 @@ export default function VerifyOtpClient() {
             <p className="inline-flex items-center gap-2 font-medium text-foreground">
               <ShieldCheck className="h-4 w-4 text-primary" /> OTP-first registration protection
             </p>
-            <p className="mt-2">Prompt Care only creates your account after OTP verification succeeds. If verification fails, you can safely restart with the same email and details.</p>
+            <p className="mt-2">{academyName} only creates your account after OTP verification succeeds. If verification fails, you can safely restart with the same email and details.</p>
           </div>
         </CardContent>
       </Card>

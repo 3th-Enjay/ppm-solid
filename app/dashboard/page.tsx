@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { AlertCircle, Award, BookOpen, CheckCircle2, Clock, Plus, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -252,10 +253,10 @@ export default function DashboardPage() {
 
   const nextActionToneClass =
     nextAction.tone === "warning"
-      ? "border-amber-300/50 bg-gradient-to-br from-amber-50 to-background"
+      ? "border-amber-300/50 bg-gradient-to-br from-amber-50 to-background dark:from-amber-950/20 dark:to-card"
       : nextAction.tone === "success"
-        ? "border-emerald-300/50 bg-gradient-to-br from-emerald-50 to-background"
-        : "border-primary/20 bg-gradient-to-br from-primary/5 to-accent/10"
+        ? "border-emerald-300/50 bg-gradient-to-br from-emerald-50 to-background dark:from-emerald-950/20 dark:to-card"
+        : "border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-card"
 
   const loadMoreHistory = async () => {
     if (!user || !token || historyLoadingMore || !historyHasMore) return
@@ -340,9 +341,14 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 p-4 md:p-6 lg:p-8">
-      <motion.div variants={fadeUp()} initial="hidden" animate="visible" className="space-y-2">
-        <h1 className="text-3xl font-bold md:text-4xl">Welcome back, {user?.name}!</h1>
-        <p className="text-muted-foreground">Focus on the next action that moves your learning forward.</p>
+      <motion.div variants={fadeUp()} initial="hidden" animate="visible" className="space-y-1">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="border-primary/40 text-primary text-xs font-mono">
+            Student Learning Portal
+          </Badge>
+        </div>
+        <h1 className="text-3xl font-bold md:text-4xl tracking-tight text-foreground">Welcome back, {user?.name}!</h1>
+        <p className="text-sm text-muted-foreground">Continue building your technical skills, submit practical deliverables, and track your progress.</p>
       </motion.div>
 
       <OnsiteTrainingBanner />

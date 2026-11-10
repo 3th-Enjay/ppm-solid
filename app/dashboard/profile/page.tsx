@@ -1585,7 +1585,7 @@ export default function ProfilePage() {
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                       <TrainingValueCard title="Program" value={studentProfile.formTitle} />
                       <TrainingValueCard title="Preferred Location" value={studentProfile.preferredLocation ? `${getTrainingLocationLabel(studentProfile.preferredLocation)} - ${studentProfile.preferredLocationStartDate}` : ""} missingLabels={getFieldMissingLabels(["preferredLocation"])} />
-                      <TrainingValueCard title="Healthcare Professional" value={studentProfile.isHealthcareProfessional ? "Yes" : "No"} missingLabels={getFieldMissingLabels(["isHealthcareProfessional"])} />
+                      <TrainingValueCard title="Domain Transition" value={studentProfile.isHealthcareProfessional ? "Yes (Healthcare / Domain Switcher)" : "No (Direct Tech Focus)"} missingLabels={getFieldMissingLabels(["isHealthcareProfessional"])} />
                       <TrainingValueCard title="Current Role or Field" value={studentProfile.currentRoleOrField} missingLabels={getFieldMissingLabels(["currentRoleOrField"])} />
                       <TrainingValueCard title="Current Address" value={studentProfile.currentAddress} missingLabels={getFieldMissingLabels(["currentAddress"])} />
                       <TrainingValueCard title="Training Interest" value={studentProfile.trainingInterest} missingLabels={getFieldMissingLabels(["trainingInterest"])} className="xl:col-span-3" />

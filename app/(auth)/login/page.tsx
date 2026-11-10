@@ -177,9 +177,9 @@ export default function LoginPage() {
         <CardHeader className="space-y-5 border-b bg-gradient-to-br from-primary/5 via-background to-accent/5">
           <div className="space-y-2 text-center">
             <p className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              Returning User Login
+              Academy Portal Access
             </p>
-            <CardTitle className="text-2xl md:text-3xl">Welcome back</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl">Welcome back to the Academy</CardTitle>
             <CardDescription className="mx-auto max-w-2xl text-sm md:text-base">{loginDescription}</CardDescription>
           </div>
 
@@ -187,8 +187,8 @@ export default function LoginPage() {
             <div className="flex items-start gap-3 text-sm text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
               <div>
-                <p className="font-medium text-foreground">Fast return, simple sign in</p>
-                <p>If a valid session exists, we help you continue immediately. If not, the form stays simple and focused.</p>
+                <p className="font-medium text-foreground">Secure learning session</p>
+                <p>Sign in with your academy credentials to access your courses, projects, and dashboard.</p>
               </div>
             </div>
           </div>
@@ -308,9 +308,9 @@ export default function LoginPage() {
                   When unchecked, your sign-in lasts for this browser session. When checked, we keep you signed in for 30 days.
                 </p>
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" variant="cta" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {loading ? "Signing in..." : "Sign in"}
+                  {loading ? "Signing in..." : "Sign in to Academy"}
                 </Button>
               </form>
 

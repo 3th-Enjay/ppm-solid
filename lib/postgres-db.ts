@@ -428,6 +428,14 @@ export class PostgresDatabase {
     return row ? toCategory(row) : undefined
   }
 
+  async deleteCategory(id: string): Promise<boolean> {
+    const rows = await this.db()
+      .delete(schema.categories)
+      .where(eq(schema.categories.id, id))
+      .returning()
+    return rows.length > 0
+  }
+
   // ==========================================
   // Courses, Modules, and Lessons
   // ==========================================

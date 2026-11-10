@@ -79,9 +79,9 @@ export function GuidedInstructorRegistrationForm() {
       { id: "password", title: "Password", description: "Create a secure password for your instructor account." },
       { id: "name", title: "Full name", description: "Tell students who you are." },
       { id: "phone", title: "Phone", description: "Add a direct contact number." },
-      { id: "headline", title: "Headline", description: "Summarize your teaching specialty." },
-      { id: "experience", title: "Experience", description: "How many years have you been teaching?" },
-      { id: "specialties", title: "Specialties", description: "List your core teaching topics." },
+      { id: "headline", title: "Headline", description: "Summarize your engineering and teaching specialty." },
+      { id: "experience", title: "Experience", description: "How many years have you been engineering or teaching technical topics?" },
+      { id: "specialties", title: "Specialties", description: "List your core technical teaching topics." },
       { id: "review", title: "Review", description: "Confirm details and accept the terms." },
     ],
     [],
@@ -354,14 +354,14 @@ export function GuidedInstructorRegistrationForm() {
     <>
       <Card className="border-primary/15">
         <CardHeader>
-          <CardTitle className="text-base">Teaching profile preview</CardTitle>
-          <CardDescription>Start with the essentials now, then complete the rest after verification.</CardDescription>
+          <CardTitle className="text-base">Engineering instructor preview</CardTitle>
+          <CardDescription>Start with your core technical background now, then complete the rest after verification.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p className="inline-flex items-center gap-2 font-medium text-foreground">
-            <User className="h-4 w-4 text-primary" /> Instructor essentials
+            <User className="h-4 w-4 text-primary" /> Technical Instructor Profile
           </p>
-          <p>Bio, avatar, and public profile polish can be completed inside instructor settings.</p>
+          <p>Technical portfolio, bio, avatar, and public profile polish can be completed inside instructor settings.</p>
         </CardContent>
       </Card>
 
@@ -373,7 +373,7 @@ export function GuidedInstructorRegistrationForm() {
           <p className="inline-flex items-center gap-2 font-medium text-foreground">
             <Sparkles className="h-4 w-4 text-primary" /> Verify your email, then activate your workspace.
           </p>
-          <p>Once verified, you can finish your teaching profile and create your first course.</p>
+          <p>Once verified, you can complete your instructor profile and begin structuring your first technical course.</p>
         </CardContent>
       </Card>
     </>
@@ -417,8 +417,8 @@ export function GuidedInstructorRegistrationForm() {
   return (
     <OnboardingShell
       badge="Instructor Registration"
-      title="Create your instructor account"
-      description="A guided signup that captures the essentials, then moves you to email verification."
+      title="Join as an Academy Instructor"
+      description="Share your engineering expertise with students building practical, modern software systems."
       currentStep={currentStep}
       steps={steps}
       aside={aside}
@@ -578,7 +578,7 @@ export function GuidedInstructorRegistrationForm() {
                 disabled={loading}
                 required
               />
-              <p className="text-xs text-muted-foreground">Example: Clinical Skills Tutor</p>
+              <p className="text-xs text-muted-foreground">Example: Senior Cloud Architect &amp; Backend Engineer</p>
             </div>
           </div>
         ) : null}
@@ -615,7 +615,7 @@ export function GuidedInstructorRegistrationForm() {
                 disabled={loading}
                 required
               />
-              <p className="text-xs text-muted-foreground">Example: Patient care, Clinical communication</p>
+              <p className="text-xs text-muted-foreground">Example: Full-Stack Web Development, Cloud Architecture, Databases</p>
             </div>
           </div>
         ) : null}

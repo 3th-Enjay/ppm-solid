@@ -108,26 +108,26 @@ export default function InstructorSettingsPage() {
             Back to Dashboard
           </Button>
         </Link>
-        <Card variant="elevated" className="overflow-hidden border-sky-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_36%),linear-gradient(135deg,rgba(255,255,255,1)_0%,rgba(248,250,252,0.92)_56%,rgba(240,249,255,0.88)_100%)]">
+        <Card variant="elevated" className="overflow-hidden border-border/80 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg">
           <CardContent className="grid gap-6 p-6 lg:grid-cols-[1.4fr_1fr] lg:p-8">
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-sm font-medium text-sky-700">
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 px-3 py-1 text-sm font-medium text-blue-300">
                 <Settings2 className="h-4 w-4" />
-                Instructor settings
+                Faculty Profile & Settings
               </div>
               <div>
-                <h1 className="text-3xl font-bold md:text-4xl">Complete your teaching profile</h1>
-                <p className="mt-2 max-w-2xl text-muted-foreground">
-                  Finish the public profile details that were deferred until after verification. This is the profile learners see when they decide whether to trust your courses.
+                <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Complete your teaching profile</h1>
+                <p className="mt-2 max-w-2xl text-slate-300 text-sm">
+                  Provide your software engineering background, technical specialties, and industry experience so students understand your faculty expertise.
                 </p>
               </div>
             </div>
-            <div className="rounded-2xl border border-white/60 bg-white/80 p-5 shadow-sm">
-              <p className="text-sm text-muted-foreground">Profile strength</p>
-              <p className="mt-2 text-3xl font-semibold">{completion}%</p>
+            <div className="rounded-2xl border border-slate-700/80 bg-slate-800/60 p-5 shadow-sm backdrop-blur-sm">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Profile Completeness</p>
+              <p className="mt-1 text-3xl font-bold text-white">{completion}%</p>
               <Progress value={completion} className="mt-3 h-2" />
-              <p className="mt-3 text-sm text-muted-foreground">
-                Fill in your bio, specialties, and teaching credentials so the instructor side feels complete and trustworthy.
+              <p className="mt-3 text-xs text-slate-400">
+                A thorough technical bio, clear specialties, and years of engineering experience build learner confidence in your courses.
               </p>
             </div>
           </CardContent>
@@ -135,7 +135,7 @@ export default function InstructorSettingsPage() {
       </div>
 
       {successMessage ? (
-        <Alert>
+        <Alert className="border-emerald-500/50 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
           <AlertTitle>Saved</AlertTitle>
           <AlertDescription>{successMessage}</AlertDescription>
         </Alert>
@@ -161,7 +161,13 @@ export default function InstructorSettingsPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="bio">Bio</Label>
-              <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell students about your background" className="min-h-32" />
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Describe your engineering background, production systems you've built, and what students will learn..."
+                className="min-h-32"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="avatar">Avatar URL</Label>
@@ -179,13 +185,23 @@ export default function InstructorSettingsPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="professionalHeadline">Professional Headline</Label>
-              <Input id="professionalHeadline" value={professionalHeadline} onChange={(e) => setProfessionalHeadline(e.target.value)} placeholder="Registered Nurse and Caregiving Instructor" />
+              <Input
+                id="professionalHeadline"
+                value={professionalHeadline}
+                onChange={(e) => setProfessionalHeadline(e.target.value)}
+                placeholder="Staff Software Engineer & Distributed Systems Instructor"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="specialties">Specialties (comma separated)</Label>
-              <Input id="specialties" value={specialties} onChange={(e) => setSpecialties(e.target.value)} placeholder="Elder care, CPR, Patient safety" />
+              <Input
+                id="specialties"
+                value={specialties}
+                onChange={(e) => setSpecialties(e.target.value)}
+                placeholder="TypeScript, Node.js, PostgreSQL, Distributed Systems, Cloud Architecture"
+              />
             </div>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving} className="bg-blue-600 text-white hover:bg-blue-700">
               <Save className="mr-2 h-4 w-4" />
               {saving ? "Saving..." : "Save Changes"}
             </Button>

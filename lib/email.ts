@@ -1,3 +1,5 @@
+import { getAcademyName } from "@/lib/brand-config"
+
 const RESEND_API_URL = "https://api.resend.com/emails"
 
 type WelcomeEmailRole = "student" | "instructor" | "admin" | "finance"
@@ -15,7 +17,7 @@ function getResendKey() {
 }
 
 function getFromEmail() {
-  return process.env.RESEND_FROM || "Promptcare Academy <no-reply@promptcareacademy.com>"
+  return process.env.RESEND_FROM || `${getAcademyName()} <no-reply@technologyacademy.org>`
 }
 
 function getAppBaseUrl() {
@@ -42,6 +44,7 @@ function getWelcomeEmailContent(params: { name: string; role?: string }) {
       : "student"
 
   const appUrl = getAppBaseUrl()
+  const academyName = getAcademyName()
 
   const content: Record<
     WelcomeEmailRole,
@@ -56,59 +59,59 @@ function getWelcomeEmailContent(params: { name: string; role?: string }) {
     }
   > = {
     student: {
-      subject: "Welcome to Promptcare Academy",
-      heading: "Welcome to Promptcare Academy",
-      intro: "Your account is verified and ready to use. You can now sign in, explore courses, and continue your learning journey.",
+      subject: `Welcome to ${academyName}`,
+      heading: `Welcome to ${academyName}`,
+      intro: "Your account is verified and ready. You can now explore software engineering tracks, enroll in industry-aligned courses, and begin your technical learning journey.",
       primaryActionLabel: "Open Student Dashboard",
       primaryActionUrl: `${appUrl}/dashboard`,
       importantDetails: [
-        "Browse available courses and complete checkout when you are ready to enroll.",
-        "If you selected onsite training, your full access depends on successful payment verification.",
-        "Keep your email and profile details current so you do not miss updates about your learning account.",
+        "Browse technical curricula spanning full-stack development, cloud engineering, AI/ML, and cybersecurity.",
+        "Complete code exercises, quizzes, assignments, and capstone projects to build your verified portfolio.",
+        "Keep your profile and repository links updated so faculty and mentors can review your work.",
       ],
-      closing: "If you need help with enrollment, payment, or access, reply to this email and our team will assist you.",
+      closing: "If you need assistance with admissions, enrollment, or platform access, reply directly to this email.",
     },
     instructor: {
-      subject: "Welcome to the Promptcare instructor portal",
-      heading: "Your instructor workspace is ready",
-      intro: "Your instructor account is active. This is your teaching workspace for building courses, uploading lessons, and preparing content for review and publishing.",
-      primaryActionLabel: "Open Instructor Workspace",
+      subject: `Welcome to the ${academyName} Faculty Portal`,
+      heading: "Your Faculty Workspace is Ready",
+      intro: "Your instructor account is active. This is your engineering workspace for architecting technical courses, managing code-driven modules, and preparing curriculum for academic review.",
+      primaryActionLabel: "Open Faculty Workspace",
       primaryActionUrl: `${appUrl}/instructor`,
       importantDetails: [
-        "Start by completing your bio, professional headline, and specialties so students can clearly understand your teaching profile.",
-        "Create your course structure, upload lessons, and review your materials carefully before submitting them for approval.",
-        "Course and lesson changes may require admin review before they become visible to students on the platform.",
-        "Monitor your dashboard for approval feedback, learner activity, and updates related to your published content.",
+        "Complete your engineering bio, GitHub profile, and technical specialties so learners understand your industry background.",
+        "Author module curricula, technical markdown guides, assignments, and capstone projects.",
+        "Submit new courses and lessons for academic review prior to student publication.",
+        "Track learner submissions, code evaluations, and course performance directly from your workspace.",
       ],
-      closing: "If you want help setting up your first course or preparing content for approval, reply to this email and we will guide you.",
+      closing: "If you need guidance on syllabus structure or technical evaluation tools, reply to this email.",
     },
     admin: {
-      subject: "Welcome to the Promptcare admin dashboard",
-      heading: "Welcome to the admin team",
-      intro: "Your admin account is ready. You now have access to the tools used to manage platform operations, users, courses, and payment oversight.",
-      primaryActionLabel: "Open Admin Dashboard",
+      subject: `Welcome to the ${academyName} Operations Workspace`,
+      heading: "Academic Operations Command Center",
+      intro: "Your administrator account is active. You have full access to manage platform operations, curriculum approval queues, category architecture, and financial transactions.",
+      primaryActionLabel: "Open Admin Workspace",
       primaryActionUrl: `${appUrl}/admin`,
       importantDetails: [
-        "Review users, courses, payments, and activity logs from the admin dashboard before making live changes.",
-        "Use suspend, delete, approval, and payment verification actions carefully because they affect real accounts and platform access.",
-        "If this account was provisioned for you by the team, sign in with the credentials you were given and change your password immediately.",
-        "Coordinate with finance and instructors when a change affects payments, publishing, or learner access.",
+        "Review courses awaiting approval, instructor verifications, and platform activity logs from your dashboard.",
+        "Manage technology taxonomy, student accounts, and payment verifications with care.",
+        "If your account was provisioned with a temporary password, please update your credentials immediately.",
+        "Coordinate with finance and faculty teams when scheduling releases or changes.",
       ],
-      closing: "If anything about your access looks wrong, reply to this email before making changes in production.",
+      closing: "For administrative support or systems assistance, reach out directly to the operations team.",
     },
     finance: {
-      subject: "Welcome to the Promptcare finance dashboard",
-      heading: "Welcome to the finance team",
-      intro: "Your finance account is active. You can now review transactions, investigate payment issues, and support reconciliation work from the finance dashboard.",
+      subject: `Welcome to the ${academyName} Finance Operations`,
+      heading: "Finance & Reconciliation Workspace",
+      intro: "Your finance account is active. You can now audit currency-specific transactions, review Paystack verifications, and oversee platform financial health.",
       primaryActionLabel: "Open Finance Dashboard",
       primaryActionUrl: `${appUrl}/finance`,
       importantDetails: [
-        "Use the finance dashboard to track transactions, review payment status, and investigate mismatches or pending cases.",
-        "Before approving or escalating any payment, confirm the reference, amount, currency, and customer email match the payment record.",
-        "Work closely with admin when a payment decision could change course access, onsite registration, or account activation.",
-        "If this account was provisioned for you by the team, change the temporary password after your first sign-in.",
+        "Monitor verified payments across NGN, USD, EUR, and GBP with real-time transaction records.",
+        "Confirm payment reference, gateway transaction status, and student credentials prior to manual verifications.",
+        "Work in tandem with academic administrators regarding enrollment-linked payment states.",
+        "Change your temporary password upon initial platform sign-in.",
       ],
-      closing: "If you need support with reconciliation or transaction review, reply to this email and we will help.",
+      closing: "If you need financial reconciliation guidance, reply to this email for support.",
     },
   }
 
@@ -120,26 +123,27 @@ function getWelcomeEmailContent(params: { name: string; role?: string }) {
   return {
     subject: selected.subject,
     html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 640px; margin: 0 auto; color: #1f2937;">
-        <div style="background: linear-gradient(135deg, #0f766e 0%, #10b981 100%); padding: 28px; border-radius: 10px 10px 0 0; text-align: center;">
-          <h1 style="margin: 0; font-size: 28px; color: #ffffff;">${selected.heading}</h1>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 640px; margin: 0 auto; color: #1e293b;">
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); padding: 32px 28px; border-radius: 12px 12px 0 0; text-align: center;">
+          <h1 style="margin: 0; font-size: 26px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em;">${selected.heading}</h1>
+          <p style="margin: 8px 0 0 0; font-size: 14px; color: #93c5fd;">${academyName}</p>
         </div>
-        <div style="border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px; background: #ffffff; padding: 28px;">
+        <div style="border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; background: #ffffff; padding: 32px 28px;">
           <p style="margin-top: 0; font-size: 16px;">Hi ${params.name},</p>
-          <p style="font-size: 16px;">${selected.intro}</p>
+          <p style="font-size: 16px; color: #334155;">${selected.intro}</p>
           <div style="margin: 28px 0; text-align: center;">
-            <a href="${selected.primaryActionUrl}" style="display: inline-block; background: #0f766e; color: #ffffff; text-decoration: none; padding: 14px 22px; border-radius: 8px; font-weight: 600;">
+            <a href="${selected.primaryActionUrl}" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 14px 26px; border-radius: 8px; font-weight: 600; font-size: 15px;">
               ${selected.primaryActionLabel}
             </a>
           </div>
-          <div style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
-            <h2 style="margin: 0 0 12px 0; font-size: 18px; color: #111827;">Important details</h2>
-            <ul style="padding-left: 20px; margin: 0; color: #374151;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 24px 0;">
+            <h2 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #0f172a;">Important Information</h2>
+            <ul style="padding-left: 20px; margin: 0; color: #475569; font-size: 14px;">
               ${detailsHtml}
             </ul>
           </div>
-          <p style="font-size: 15px;">${selected.closing}</p>
-          <p style="font-size: 13px; color: #6b7280; margin-bottom: 0;">- Promptcare Academy</p>
+          <p style="font-size: 14px; color: #475569;">${selected.closing}</p>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 0; border-top: 1px solid #f1f5f9; padding-top: 16px;">— ${academyName}</p>
         </div>
       </div>
     `,
@@ -162,15 +166,22 @@ export async function sendOtpEmail(params: { to: string; name: string; otp: stri
   const payload = {
     from: getFromEmail(),
     to: [params.to],
-    subject: "Your Promptcare Academy verification code",
+    subject: `Your ${getAcademyName()} verification code`,
     html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>Verify your email</h2>
-        <p>Hi ${params.name},</p>
-        <p>Your one-time password (OTP) is:</p>
-        <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">${params.otp}</div>
-        <p>This code expires in ${process.env.OTP_EXPIRES_MINUTES || 15} minutes. If you did not request this, you can ignore this email.</p>
-        <p>- Promptcare Academy</p>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 580px; margin: 0 auto; color: #1e293b;">
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
+          <h2 style="margin: 0; color: #ffffff; font-size: 20px;">Email Verification</h2>
+          <p style="margin: 4px 0 0 0; color: #93c5fd; font-size: 13px;">${getAcademyName()}</p>
+        </div>
+        <div style="background: #ffffff; padding: 28px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+          <p style="margin-top: 0;">Hi ${params.name},</p>
+          <p style="color: #475569;">Please use the following single-use verification code to authenticate your account:</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <span style="font-family: monospace; font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #1e40af; background: #eff6ff; padding: 12px 24px; border-radius: 8px; border: 1px solid #bfdbfe; display: inline-block;">${params.otp}</span>
+          </div>
+          <p style="font-size: 13px; color: #64748b;">This code expires in ${process.env.OTP_EXPIRES_MINUTES || 15} minutes. If you did not request this verification, you can safely disregard this message.</p>
+          <p style="font-size: 13px; color: #94a3b8; margin-bottom: 0; border-top: 1px solid #f1f5f9; padding-top: 14px;">— ${getAcademyName()}</p>
+        </div>
       </div>
     `,
   }
@@ -234,15 +245,23 @@ export async function sendLessonRejectedEmail(params: { to: string; name: string
   const payload = {
     from: getFromEmail(),
     to: [params.to],
-    subject: `Lesson rejected for ${params.courseTitle}`,
+    subject: `Curriculum Review: Changes Requested for "${params.courseTitle}"`,
     html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>Lesson review result</h2>
-        <p>Hi ${params.name},</p>
-        <p>Your lesson <strong>${params.lessonTitle}</strong> in <strong>${params.courseTitle}</strong> was reviewed and <strong>rejected</strong> by the admin team.</p>
-        <p><strong>Reason:</strong> ${params.note || "No reason provided."}</p>
-        <p>Please update the lesson and resubmit it for review.</p>
-        <p>- Promptcare Academy</p>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 580px; margin: 0 auto; color: #1e293b;">
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #dc2626 100%); padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
+          <h2 style="margin: 0; color: #ffffff; font-size: 20px;">Curriculum Review Update</h2>
+          <p style="margin: 4px 0 0 0; color: #fecaca; font-size: 13px;">${getAcademyName()} Academic Operations</p>
+        </div>
+        <div style="background: #ffffff; padding: 28px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+          <p style="margin-top: 0;">Hi ${params.name},</p>
+          <p style="color: #475569;">The academic review committee has reviewed your lesson <strong>"${params.lessonTitle}"</strong> in course <strong>"${params.courseTitle}"</strong> and requested revisions before publication.</p>
+          <div style="background: #fef2f2; border: 1px solid #fee2e2; border-left: 4px solid #ef4444; border-radius: 6px; padding: 16px; margin: 20px 0;">
+            <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: #991b1b;">Reviewer Notes & Feedback:</p>
+            <p style="margin: 0; font-size: 14px; color: #7f1d1d;">${params.note || "No specific feedback provided. Please review lesson objectives, code snippets, and curriculum completeness."}</p>
+          </div>
+          <p style="font-size: 13px; color: #64748b;">Please revise the technical content and resubmit for approval in your instructor workspace.</p>
+          <p style="font-size: 13px; color: #94a3b8; margin-bottom: 0; border-top: 1px solid #f1f5f9; padding-top: 14px;">— ${getAcademyName()} Academic Operations</p>
+        </div>
       </div>
     `,
   }
@@ -266,13 +285,19 @@ export async function sendLessonApprovedEmail(params: { to: string; name: string
   const payload = {
     from: getFromEmail(),
     to: [params.to],
-    subject: `Lesson approved for ${params.courseTitle}`,
+    subject: `Lesson Approved: "${params.lessonTitle}" in ${params.courseTitle}`,
     html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>Lesson approved</h2>
-        <p>Hi ${params.name},</p>
-        <p>Good news - your lesson <strong>${params.lessonTitle}</strong> in <strong>${params.courseTitle}</strong> has been <strong>approved</strong> and is now available to students.</p>
-        <p>- Promptcare Academy</p>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 580px; margin: 0 auto; color: #1e293b;">
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #16a34a 100%); padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
+          <h2 style="margin: 0; color: #ffffff; font-size: 20px;">Lesson Approved</h2>
+          <p style="margin: 4px 0 0 0; color: #bbf7d0; font-size: 13px;">${getAcademyName()} Academic Operations</p>
+        </div>
+        <div style="background: #ffffff; padding: 28px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+          <p style="margin-top: 0;">Hi ${params.name},</p>
+          <p style="color: #475569;">Great news! Your lesson <strong>"${params.lessonTitle}"</strong> in <strong>"${params.courseTitle}"</strong> has been approved by the academic committee and is now published to learners.</p>
+          <p style="font-size: 13px; color: #64748b;">You can track student engagement, quiz submissions, and feedback directly from your instructor workspace.</p>
+          <p style="font-size: 13px; color: #94a3b8; margin-bottom: 0; border-top: 1px solid #f1f5f9; padding-top: 14px;">— ${getAcademyName()} Academic Operations</p>
+        </div>
       </div>
     `,
   }
@@ -309,30 +334,31 @@ export async function sendPasswordResetEmail(params: { to: string; name: string;
   const payload = {
     from: getFromEmail(),
     to: [params.to],
-    subject: "Reset your Promptcare Academy password",
+    subject: `Reset your ${getAcademyName()} password`,
     html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #10B981 0%, #16A34A 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">Password Reset Request</h1>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; color: #1e293b;">
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Password Reset Request</h1>
+          <p style="color: #93c5fd; margin: 6px 0 0 0; font-size: 13px;">${getAcademyName()}</p>
         </div>
-        <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-          <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">Hi ${params.name},</p>
-          <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">We received a request to reset your password for your Promptcare Academy account.</p>
-          <p style="font-size: 16px; color: #374151; margin-bottom: 30px;">Click the button below to reset your password:</p>
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+          <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">Hi ${params.name},</p>
+          <p style="font-size: 15px; color: #334155; margin-bottom: 20px;">We received a request to reset your password for your ${getAcademyName()} account.</p>
+          <p style="font-size: 15px; color: #334155; margin-bottom: 30px;">Click the button below to choose a new password:</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${params.resetUrl}" style="background-color: #10B981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px;">Reset Password</a>
+            <a href="${params.resetUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 15px;">Reset Password</a>
           </div>
-          <div style="background: #f9fafb; padding: 20px; border-radius: 6px; margin: 30px 0;">
-            <p style="font-size: 14px; color: #6b7280; margin: 0 0 10px 0;"><strong>Or copy and paste this link into your browser:</strong></p>
-            <p style="font-size: 12px; color: #374151; word-break: break-all; margin: 0; font-family: monospace;">${params.resetUrl}</p>
+          <div style="background: #f8fafc; padding: 18px; border-radius: 6px; border: 1px solid #e2e8f0; margin: 24px 0;">
+            <p style="font-size: 13px; color: #64748b; margin: 0 0 8px 0;"><strong>Or copy and paste this link into your browser:</strong></p>
+            <p style="font-size: 12px; color: #1e293b; word-break: break-all; margin: 0; font-family: monospace;">${params.resetUrl}</p>
           </div>
-          <div style="background: #fef3c7; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b; margin: 20px 0;">
-            <p style="font-size: 14px; color: #92400e; margin: 0 0 8px 0;"><strong>Your reset code:</strong></p>
-            <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #92400e; margin: 0; font-family: monospace;">${params.token}</p>
+          <div style="background: #eff6ff; padding: 16px; border-radius: 6px; border-left: 4px solid #3b82f6; margin: 20px 0;">
+            <p style="font-size: 13px; color: #1e40af; margin: 0 0 6px 0;"><strong>Your verification code:</strong></p>
+            <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #1e3a8a; margin: 0; font-family: monospace;">${params.token}</p>
           </div>
-          <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">This link will expire in <strong>1 hour</strong>. If you did not request this password reset, you can safely ignore this email.</p>
-          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-          <p style="font-size: 12px; color: #9ca3af; margin: 0;">- Promptcare Academy</p>
+          <p style="font-size: 13px; color: #64748b; margin-top: 24px;">This link will expire in <strong>1 hour</strong>. If you did not request this password reset, you can safely ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+          <p style="font-size: 12px; color: #94a3b8; margin: 0;">— ${getAcademyName()}</p>
         </div>
       </div>
     `,

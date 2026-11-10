@@ -284,6 +284,7 @@ export default function AdminPaymentsPage() {
                 <SelectItem value="all">All Currencies</SelectItem>
                 <SelectItem value="NGN">NGN</SelectItem>
                 <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="EUR">EUR</SelectItem>
                 <SelectItem value="GBP">GBP</SelectItem>
               </SelectContent>
             </Select>

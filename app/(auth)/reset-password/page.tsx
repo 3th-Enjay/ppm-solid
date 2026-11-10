@@ -98,20 +98,25 @@ function ResetPasswordPageContent() {
 
   if (success) {
     return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Password Reset Successful</CardTitle>
-            <CardDescription>Your password has been reset successfully.</CardDescription>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-md py-6 md:py-8">
+        <Card className="border-primary/15 shadow-xl">
+          <CardHeader className="space-y-4 border-b bg-gradient-to-br from-primary/5 via-background to-accent/5 text-center">
+            <div className="space-y-2">
+              <p className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Security &amp; Access
+              </p>
+              <CardTitle className="text-2xl md:text-3xl font-bold">Password Reset Successful</CardTitle>
+              <CardDescription>Your password has been updated. You can now sign in with your new credentials.</CardDescription>
+            </div>
           </CardHeader>
-          <CardContent>
-            <Alert>
-              <CheckCircle2 className="h-4 w-4" />
+          <CardContent className="p-6 md:p-7 space-y-4">
+            <Alert className="border-primary/30 bg-primary/5">
+              <CheckCircle2 className="h-4 w-4 text-primary" />
               <AlertDescription>
-                Your password has been reset. Redirecting to login...
+                Your password has been reset successfully. Redirecting you to login...
               </AlertDescription>
             </Alert>
-            <Button className="w-full mt-4" asChild>
+            <Button variant="cta" className="w-full" asChild>
               <Link href="/login">Go to Login</Link>
             </Button>
           </CardContent>
@@ -121,13 +126,18 @@ function ResetPasswordPageContent() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-      <Card className="shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Reset password</CardTitle>
-          <CardDescription>Enter your new password below</CardDescription>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-md py-6 md:py-8">
+      <Card className="border-primary/15 shadow-xl">
+        <CardHeader className="space-y-4 border-b bg-gradient-to-br from-primary/5 via-background to-accent/5 text-center">
+          <div className="space-y-2">
+            <p className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              Security &amp; Access
+            </p>
+            <CardTitle className="text-2xl md:text-3xl font-bold">Reset password</CardTitle>
+            <CardDescription className="text-sm md:text-base">Enter your new secure password below to regain account access.</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 md:p-7">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">
@@ -216,7 +226,7 @@ function ResetPasswordPageContent() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" variant="cta" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {loading ? "Resetting..." : "Reset Password"}
             </Button>
@@ -238,15 +248,15 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-          <Card className="shadow-lg">
-            <CardHeader className="space-y-1 text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-md py-6 md:py-8">
+          <Card className="border-primary/15 shadow-xl">
+            <CardHeader className="space-y-4 border-b bg-gradient-to-br from-primary/5 via-background to-accent/5 text-center">
               <CardTitle className="text-2xl font-bold">Reset password</CardTitle>
               <CardDescription>Loading reset details...</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             </CardContent>
           </Card>

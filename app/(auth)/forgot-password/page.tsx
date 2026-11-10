@@ -53,28 +53,33 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-      <Card className="shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Forgot password?</CardTitle>
-          <CardDescription>
-            {success
-              ? "We've sent you an email with reset instructions"
-              : "Enter your email and we'll send you reset instructions"}
-          </CardDescription>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-md py-6 md:py-8">
+      <Card className="border-primary/15 shadow-xl">
+        <CardHeader className="space-y-4 border-b bg-gradient-to-br from-primary/5 via-background to-accent/5 text-center">
+          <div className="space-y-2">
+            <p className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              Account Recovery
+            </p>
+            <CardTitle className="text-2xl md:text-3xl font-bold">Forgot password?</CardTitle>
+            <CardDescription className="text-sm md:text-base">
+              {success
+                ? "We have dispatched password reset instructions to your email."
+                : "Enter your registered email and we will send you secure reset instructions."}
+            </CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 md:p-7">
           {success ? (
             <div className="space-y-6">
-              <Alert>
-                <CheckCircle2 className="h-4 w-4" />
+              <Alert className="border-primary/30 bg-primary/5">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
                 <AlertDescription>
                   Password reset link sent to <strong>{email}</strong>. Please check your inbox and spam folder.
                 </AlertDescription>
               </Alert>
 
-              <div className="space-y-4">
-                <Button className="w-full" onClick={() => setSuccess(false)}>
+              <div className="space-y-3">
+                <Button variant="cta" className="w-full" onClick={() => setSuccess(false)}>
                   Send another link
                 </Button>
                 <Button variant="outline" className="w-full bg-transparent" asChild>
@@ -88,7 +93,7 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
@@ -100,9 +105,9 @@ export default function ForgotPasswordPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" variant="cta" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {loading ? "Sending..." : "Send reset link"}
+                {loading ? "Sending link..." : "Send reset link"}
               </Button>
 
               <Button variant="ghost" className="w-full" asChild>

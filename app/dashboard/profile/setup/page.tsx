@@ -259,7 +259,7 @@ export default function ProfileSetupPage() {
         title: "Preferences",
         onEdit: () => setCurrentStep(1),
         items: [
-          { label: "Healthcare Professional", value: formData.isHealthcareProfessional === "yes" ? "Yes" : "No" },
+          { label: "Domain Transition", value: formData.isHealthcareProfessional === "yes" ? "Yes (Healthcare/Domain Switcher)" : "No (Direct Tech Focus)" },
           { label: "Current Role", value: formData.currentRoleOrField },
           { label: "Preferred Location", value: formatLocationLabel(formData.preferredLocation) },
           { label: "Training Interest", value: formData.trainingInterest },
@@ -429,7 +429,7 @@ export default function ProfileSetupPage() {
       {currentStep === 1 ? (
         <div className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="isHealthcareProfessional">Healthcare Professional</Label>
+            <Label htmlFor="isHealthcareProfessional">Cross-Industry Transition</Label>
             <Select
               value={formData.isHealthcareProfessional}
               onValueChange={(value) => setFormData({ ...formData, isHealthcareProfessional: value as "yes" | "no" })}
@@ -438,10 +438,13 @@ export default function ProfileSetupPage() {
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="yes">Yes</SelectItem>
-                <SelectItem value="no">No</SelectItem>
+                <SelectItem value="no">No — Purely software & engineering focus</SelectItem>
+                <SelectItem value="yes">Yes — Transitioning from healthcare, science, or non-tech</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Helps us tailor relevant domain capstones and tech career transition recommendations.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="currentRoleOrField">Current Role or Field</Label>

@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 import { SectionShell } from "@/components/skillup/section-shell"
 import { LegalSection } from "@/components/skillup/legal-section"
 import { TOCNav, type TOCSection } from "@/components/skillup/toc-nav"
+import { DEFAULT_ACADEMY_NAME } from "@/lib/brand-config"
 
 export const metadata: Metadata = {
-  title: "Refund Policy | Prompt Care Academy",
+  title: `Refund Policy | ${DEFAULT_ACADEMY_NAME}`,
   description: "Review eligibility, exclusions, and processing timelines for refunds.",
 }
 
@@ -43,7 +44,7 @@ export default function RefundPage() {
           <article id="legal-content" className="max-w-3xl space-y-4">
             <LegalSection id="general-policy" title="1. General Policy">
               <p>
-                Prompt Care Academy is committed to educational excellence. We encourage learners to review course details
+                {DEFAULT_ACADEMY_NAME} is committed to educational excellence. We encourage learners to review course details
                 before purchase to ensure the program aligns with career goals.
               </p>
             </LegalSection>
@@ -66,7 +67,7 @@ export default function RefundPage() {
                 <li>Administrative and registration fees.</li>
                 <li>Courses after a certificate or digital credential has been issued.</li>
                 <li>
-                  Physical, hands-on assessment fees once attendance has been recorded at Enugu or partner facilities.
+                  Physical, hands-on workshop assessment fees once attendance has been recorded at partner facilities.
                 </li>
               </ul>
             </LegalSection>
@@ -74,8 +75,8 @@ export default function RefundPage() {
             <LegalSection id="request-procedure" title="4. Request Procedure">
               <p>
                 Submit all refund requests by email to{" "}
-                <Link href="mailto:promptcareacademy.org2@gmail.com" className="font-medium text-primary hover:underline">
-                  promptcareacademy.org2@gmail.com
+                <Link href="mailto:admissions@techacademy.edu" className="font-medium text-primary hover:underline">
+                  admissions@techacademy.edu
                 </Link>
                 . Include your full name, transaction receipt, and reason for request.
               </p>

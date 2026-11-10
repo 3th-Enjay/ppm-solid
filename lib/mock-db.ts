@@ -389,6 +389,13 @@ class MockDatabase {
     return this.categories[idx]
   }
 
+  async deleteCategory(id: string): Promise<boolean> {
+    const idx = this.categories.findIndex((c) => c.id === id)
+    if (idx === -1) return false
+    this.categories.splice(idx, 1)
+    return true
+  }
+
   async createAdminLog(log: Omit<AdminLog, "id" | "createdAt">): Promise<AdminLog> {
     const newLog: AdminLog = {
       ...log,

@@ -402,7 +402,7 @@ export default function InstructorCourseEditPage() {
         </Card>
 
         <div className="flex gap-2">
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} className="bg-blue-600 text-white hover:bg-blue-700">
             <Save className="h-4 w-4 mr-2" />
             {saving ? "Saving..." : "Save Changes"}
           </Button>

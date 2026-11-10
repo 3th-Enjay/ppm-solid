@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import type { FormEvent } from "react"
@@ -653,7 +653,7 @@ export default function NewCoursePage() {
         </Card>
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="bg-blue-600 text-white hover:bg-blue-700">
             {isSubmitting ? "Creating..." : "Create Course"}
           </Button>
           <Button type="button" variant="outline" asChild>

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { SectionShell } from "@/components/skillup/section-shell"
+import { getAcademyName } from "@/lib/brand-config"
 
 const CLOSED_STORAGE_KEY = "home-scroll-video:closed"
 const DEMO_POSTER = "https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?auto=format&fit=crop&w=1600&q=80"
@@ -144,9 +145,9 @@ export function HomeScrollVideoSection() {
               <div className="space-y-4">
                 <Badge variant="secondary" className="rounded-full px-3 py-1">Inside The Learning Experience</Badge>
                 <div className="space-y-3">
-                  <h2 className="text-3xl font-bold md:text-4xl">Watch how Prompt Care Academy turns lessons into practical confidence</h2>
+                  <h2 className="text-3xl font-bold md:text-4xl">Watch how {getAcademyName()} turns lessons into practical engineering confidence</h2>
                   <p className="text-muted-foreground">
-                    This guided preview follows the learner journey from orientation to applied caregiving practice. It plays when the section reaches you, then stays available as a floating companion while you continue exploring the page.
+                    This guided preview follows the learner journey from core concepts to applied software engineering practice. It plays when the section reaches you, then stays available as a floating companion while you continue exploring the page.
                   </p>
                 </div>
                 <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
@@ -168,7 +169,7 @@ export function HomeScrollVideoSection() {
                     {hasLoadedVideo ? (
                       <iframe
                         ref={inlineFrameRef}
-                        title="Prompt Care Academy introductory video"
+                        title={`${getAcademyName()} introductory video`}
                         src={inlineEmbedUrl}
                         className="h-full w-full"
                         loading="lazy"
@@ -177,7 +178,7 @@ export function HomeScrollVideoSection() {
                         allowFullScreen
                       />
                     ) : (
-                      <img src={DEMO_POSTER} alt="Prompt Care Academy video preview" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                      <img src={DEMO_POSTER} alt={`${getAcademyName()} video preview`} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                     )}
                   </div>
                 </div>
@@ -212,7 +213,7 @@ export function HomeScrollVideoSection() {
                 {hasLoadedVideo ? (
                   <iframe
                     ref={floatingFrameRef}
-                    title="Prompt Care Academy introductory video floating player"
+                    title={`${getAcademyName()} introductory video floating player`}
                     src={floatingEmbedUrl}
                     className="h-full w-full"
                     loading="lazy"

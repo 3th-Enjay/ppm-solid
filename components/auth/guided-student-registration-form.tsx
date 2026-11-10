@@ -96,22 +96,22 @@ export function GuidedStudentRegistrationForm() {
       {
         id: "password",
         title: "Password",
-        description: "Create a secure password for your account.",
+        description: "Create a secure password for your academy account.",
       },
       {
         id: "name",
         title: "Name",
-        description: "Add your first and last name exactly how you want them shown.",
+        description: "Add your first and last name for your academy certificates and student records.",
       },
       {
         id: "contact",
         title: "Contact",
-        description: "Share a phone number and optional WhatsApp contact.",
+        description: "Share a phone number and optional WhatsApp for technical cohort updates.",
       },
       {
         id: "review",
         title: "Review",
-        description: "Confirm your details and accept the terms.",
+        description: "Confirm your details and accept the terms to launch your account.",
       },
     ],
     [],
@@ -364,14 +364,14 @@ export function GuidedStudentRegistrationForm() {
       <Card className="border-primary/15">
         <CardHeader>
           <CardTitle className="text-base">What happens next</CardTitle>
-          <CardDescription>A faster signup now, the rest of your profile after activation.</CardDescription>
+          <CardDescription>A streamlined signup now, your learning track setup after activation.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p className="inline-flex items-center gap-2 font-medium text-foreground">
             <Sparkles className="h-4 w-4 text-primary" /> 1-minute entry
           </p>
-          <p>We only collect the essentials here so you can get to OTP verification quickly.</p>
-          <p>Profile details like address, training preferences, and background can be completed later from your account.</p>
+          <p>We only collect the essentials here so you can verify your email and activate your account quickly.</p>
+          <p>Learning track preferences, project experience, and technical interests can be finalized from your student dashboard.</p>
           {redirectParam === "/dashboard/onsite-training" ? (
             <p className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-foreground">
               Because you came from the campaign page, successful verification will continue you straight into the onsite training flow.
@@ -433,7 +433,7 @@ export function GuidedStudentRegistrationForm() {
     <OnboardingShell
       badge="Student Registration"
       title="Create your student account"
-      description="A guided signup that keeps the entry light, then moves you straight into OTP verification."
+      description="Join the Technology Academy to build real-world software engineering, cloud, and modern web development skills."
       currentStep={currentStep}
       steps={steps}
       aside={aside}
@@ -597,7 +597,7 @@ export function GuidedStudentRegistrationForm() {
                 onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">We will only use this for training reminders.</p>
+              <p className="text-xs text-muted-foreground">We will only use this for cohort notifications and project review reminders.</p>
             </div>
           </div>
         ) : null}

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { Save, Bell, Mail, Shield, Video } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/lib/store"
+import { getAcademyName, DEFAULT_ACADEMY_DESCRIPTION } from "@/lib/brand-config"
 
 type AdminSettings = {
   siteName: string
@@ -25,10 +26,10 @@ type AdminSettings = {
 }
 
 const DEFAULT_SETTINGS: AdminSettings = {
-    siteName: "Prompt Care Academy",
-  siteDescription: "Professional online learning platform",
-  contactEmail: "admin@promptcareacademy.com",
-  supportEmail: "support@promptcareacademy.com",
+  siteName: getAcademyName(),
+  siteDescription: DEFAULT_ACADEMY_DESCRIPTION,
+  contactEmail: "admissions@techacademy.edu",
+  supportEmail: "support@techacademy.edu",
   emailNotifications: true,
   courseApproval: false,
   autoEnrollment: true,

@@ -3,7 +3,7 @@
 import type React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { BarChart3, BookOpen, CreditCard, MapPinned, Megaphone, Settings, Users } from "lucide-react"
+import { BarChart3, BookOpen, CreditCard, MapPinned, Megaphone, Settings, Tags, Users } from "lucide-react"
 import { useAuthStore } from "@/lib/store"
 import { getRoleHomePath } from "@/lib/role-routing"
 import { clientLogout, makeLogoutGuard } from "@/lib/client-logout"
@@ -13,12 +13,13 @@ import type { DashboardNavItem } from "@/components/skillup/dashboard-nav"
 const adminNavItems: DashboardNavItem[] = [
   { name: "Dashboard", href: "/admin", icon: BarChart3 },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-  { name: "Onsite Training", href: "/admin/onsite-training", icon: MapPinned },
-  { name: "Campaign", href: "/admin/campaign", icon: Megaphone },
-  { name: "Users", href: "/admin/users", icon: Users },
   { name: "Courses", href: "/admin/courses", icon: BookOpen },
+  { name: "Categories", href: "/admin/categories", icon: Tags },
+  { name: "Users", href: "/admin/users", icon: Users },
   { name: "Students", href: "/admin/students", icon: Users },
   { name: "Payments", href: "/admin/payments", icon: CreditCard },
+  { name: "Campaign", href: "/admin/campaign", icon: Megaphone },
+  { name: "Onsite Training", href: "/admin/onsite-training", icon: MapPinned },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ]
 

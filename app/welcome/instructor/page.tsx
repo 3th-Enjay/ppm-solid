@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -104,12 +104,12 @@ export default function InstructorWelcomePage() {
         <Card className="border-primary/15 shadow-xl">
           <CardHeader className="space-y-4 border-b bg-gradient-to-br from-primary/5 via-background to-accent/5">
             <p className="inline-flex w-fit rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              Instructor Welcome
+              Faculty Workspace Onboarding
             </p>
             <div className="space-y-2">
-              <CardTitle className="text-3xl">Welcome, {user.name}</CardTitle>
+              <CardTitle className="text-3xl">Welcome to the Faculty Workspace, {user.name}</CardTitle>
               <CardDescription className="max-w-2xl text-base">
-                Your instructor account is active. Core teaching details are already in place, and your public profile can now be finished inside the workspace.
+                Your instructor account is active. Prepare syllabus modules, author practical coding assignments, and publish high-impact technology courses.
               </CardDescription>
             </div>
           </CardHeader>
@@ -118,7 +118,7 @@ export default function InstructorWelcomePage() {
               <div className="mb-3 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold">Teaching profile completion</p>
-                  <p className="text-sm text-muted-foreground">Finish your bio and avatar, then start your first course.</p>
+                  <p className="text-sm text-muted-foreground">Add your engineering bio, technical specialties, and avatar to complete your public profile.</p>
                 </div>
                 <p className="text-sm font-semibold text-primary">{state.profileCompletionPercent}%</p>
               </div>
@@ -126,36 +126,36 @@ export default function InstructorWelcomePage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <Card className="border-primary/10">
+              <Card className="border-primary/10 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base"><UserRound className="h-4 w-4 text-primary" /> Complete profile</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
-                  <p>Add your bio, avatar, and any public-facing polish from instructor settings.</p>
+                  <p>Add your technical bio, engineering specialties, and avatar from settings.</p>
                   <Button asChild variant="outline" className="w-full bg-transparent">
                     <Link href="/instructor/settings">Open settings</Link>
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="border-primary/10">
+              <Card className="border-primary/10 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base"><Sparkles className="h-4 w-4 text-primary" /> Review guidelines</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
-                  <p>Confirm the publishing expectations, then continue into the workspace.</p>
+                  <p>Confirm syllabus standards, practical coding lab requirements, and rubric expectations.</p>
                   <Button variant="outline" className="w-full bg-transparent" onClick={handleReviewGuidelines} disabled={markingGuidelines}>
                     {markingGuidelines ? "Continuing..." : "Review and continue"}
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="border-primary/10">
+              <Card className="border-primary/10 transition-all duration-200 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base"><BookOpen className="h-4 w-4 text-primary" /> Create first course</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-base"><BookOpen className="h-4 w-4 text-primary" /> Author first course</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
-                  <p>Start building your course structure and teaching content.</p>
+                  <p>Create a course structure, add curriculum modules, and configure assignments.</p>
                   <Button asChild variant="cta" className="w-full">
                     <Link href="/instructor/courses/new">Create course</Link>
                   </Button>
@@ -169,39 +169,43 @@ export default function InstructorWelcomePage() {
           <Card className="border-primary/15">
             <CardHeader>
               <CardTitle className="text-base">First steps</CardTitle>
-              <CardDescription>Use this checklist to settle into the instructor workspace.</CardDescription>
+              <CardDescription>Your progression checklist as an academy instructor.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-start gap-3 rounded-2xl border bg-background p-3">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary" />
                 <div>
-                  <p className="font-medium">Email verified</p>
+                  <p className="font-medium">1. Email verified</p>
                   <p className="text-muted-foreground">Your instructor account is now active.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-2xl border bg-background p-3">
                 <CheckCircle2 className={`mt-0.5 h-4 w-4 ${state.checklist.completeProfile ? "text-primary" : "text-muted-foreground"}`} />
                 <div>
-                  <p className="font-medium">Complete teaching profile</p>
-                  <p className="text-muted-foreground">Current completion: {state.profileCompletionPercent}%.</p>
+                  <p className="font-medium">2. Teaching profile</p>
+                  <p className="text-muted-foreground">Profile completion: {state.profileCompletionPercent}%.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-2xl border bg-background p-3">
                 <CheckCircle2 className={`mt-0.5 h-4 w-4 ${state.checklist.reviewPublishingGuidelines ? "text-primary" : "text-muted-foreground"}`} />
                 <div>
-                  <p className="font-medium">Review publishing guidelines</p>
-                  <p className="text-muted-foreground">Confirm the workspace expectations before publishing content.</p>
+                  <p className="font-medium">3. Publishing guidelines</p>
+                  <p className="text-muted-foreground">Review technical expectations before publishing.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-2xl border bg-background p-3">
                 <CheckCircle2 className={`mt-0.5 h-4 w-4 ${state.checklist.createFirstCourse ? "text-primary" : "text-muted-foreground"}`} />
                 <div>
-                  <p className="font-medium">Create first course</p>
-                  <p className="text-muted-foreground">Start with a draft and iterate inside the workspace.</p>
+                  <p className="font-medium">4. Author first course</p>
+                  <p className="text-muted-foreground">Draft syllabus lessons and hands-on coding labs.</p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          <Button asChild variant="cta" className="h-auto w-full whitespace-normal px-4 py-3 text-center leading-snug">
+            <Link href="/instructor">Go to Instructor Dashboard</Link>
+          </Button>
         </div>
       </div>
     </div>

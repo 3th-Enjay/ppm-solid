@@ -5,32 +5,60 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Loader2,
+  BookOpen,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Layers,
+  Search,
+  ExternalLink,
+  Tags,
+  FileCode2,
+  AlertTriangle,
+  PlayCircle,
+  HelpCircle,
+  Sparkles,
+} from "lucide-react"
 import { useAuthStore } from "@/lib/store"
-import type { Category, Course } from "@/lib/types"
+import type { Course, Lesson, CourseModule } from "@/lib/types"
 import { AdminActionDialog } from "@/components/admin/AdminActionDialog"
+import { TechnicalContentRenderer } from "@/components/learning/TechnicalContentRenderer"
 
 type AdminCourseActionDialogState =
-  | { type: "toggle-approval"; course: Course }
+  | { type: "approve-course"; course: Course }
+  | { type: "reject-course"; course: Course }
   | { type: "toggle-publish"; course: Course }
   | { type: "delete-course"; course: Course }
   | { type: "approve-lesson"; courseId: string; lessonId: string; courseTitle: string; lessonTitle: string }
   | { type: "reject-lesson"; courseId: string; lessonId: string; courseTitle: string; lessonTitle: string }
 
+type CourseStatusFilter = "all" | "pending_review" | "approved" | "published" | "draft"
+
 export default function AdminCoursesPage() {
-  const { token } = useAuthStore()
+  const { token, user: currentUser } = useAuthStore()
   const [courses, setCourses] = useState<Course[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [newCategory, setNewCategory] = useState("")
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
-  const [editingCategoryName, setEditingCategoryName] = useState("")
-  const [categoryMessage, setCategoryMessage] = useState("")
-  const [actionMessage, setActionMessage] = useState("")
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<CourseStatusFilter>("all")
+  const [actionMessage, setActionMessage] = useState("")
   const [dialogState, setDialogState] = useState<AdminCourseActionDialogState | null>(null)
   const [pendingActionKey, setPendingActionKey] = useState<string | null>(null)
+
+  // Curriculum inspection drawer state
+  const [inspectCourse, setInspectCourse] = useState<Course | null>(null)
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
 
   useEffect(() => {
     load()
@@ -39,68 +67,15 @@ export default function AdminCoursesPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const [coursesRes, categoriesRes] = await Promise.all([
-        fetch("/api/courses?includeDrafts=true", {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }),
-        fetch("/api/categories"),
-      ])
+      const coursesRes = await fetch("/api/courses?includeDrafts=true", {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
       const data = await coursesRes.json()
-      const categoriesData = await categoriesRes.json()
       setCourses(data.courses || [])
-      setCategories(categoriesData.categories || [])
     } catch (error) {
-      console.error(error)
+      console.error("Failed to load courses:", error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleAddCategory = async () => {
-    const name = newCategory.trim()
-    if (!name) return
-    setCategoryMessage("")
-    try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token || ""}`,
-        },
-        body: JSON.stringify({ name }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to create category")
-      setCategories((prev) => [...prev, data.category])
-      setNewCategory("")
-      setCategoryMessage("Category created.")
-    } catch (err: any) {
-      setCategoryMessage(err?.message || "Failed to create category.")
-    }
-  }
-
-  const handleEditCategory = async () => {
-    if (!editingCategoryId) return
-    const name = editingCategoryName.trim()
-    if (!name) return
-    setCategoryMessage("")
-    try {
-      const res = await fetch(`/api/categories/${editingCategoryId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token || ""}`,
-        },
-        body: JSON.stringify({ name }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to update category")
-      setCategories((prev) => prev.map((c) => (c.id === editingCategoryId ? data.category : c)))
-      setEditingCategoryId(null)
-      setEditingCategoryName("")
-      setCategoryMessage("Category updated.")
-    } catch (err: any) {
-      setCategoryMessage(err?.message || "Failed to update category.")
     }
   }
 
@@ -120,7 +95,7 @@ export default function AdminCoursesPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to update course")
       setCourses((prev) => prev.map((c) => (c.id === courseId ? data.course : c)))
-      setActionMessage("Course updated.")
+      setActionMessage("Course updated successfully.")
     } catch (err: any) {
       const message = err?.message || "Failed to update course."
       setActionMessage(message)
@@ -201,231 +176,341 @@ export default function AdminCoursesPage() {
   }
 
   const pendingLessons = courses
-    .flatMap((course) => course.modules.flatMap((m) => m.lessons.map((l) => ({ course, module: m, lesson: l }))))
-    .filter((x: any) => x.lesson.pendingApproval)
+    .flatMap((course) =>
+      (course.modules || []).flatMap((m) =>
+        (m.lessons || []).map((l) => ({ course, module: m, lesson: l })),
+      ),
+    )
+    .filter((x: any) => x.lesson?.pendingApproval)
+
+  const counts = useMemo(() => {
+    return {
+      all: courses.length,
+      pending_review: courses.filter((c) => !c.approved).length,
+      approved: courses.filter((c) => c.approved).length,
+      published: courses.filter((c) => c.published).length,
+      draft: courses.filter((c) => !c.published).length,
+    }
+  }, [courses])
 
   const filteredCourses = useMemo(() => {
-    if (!search.trim()) return courses
-    const query = search.toLowerCase()
-    return courses.filter((course) =>
-      [course.title, course.description, course.category, course.level, course.instructorId]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(query)),
-    )
-  }, [courses, search])
+    let result = [...courses]
+
+    if (statusFilter === "pending_review") {
+      result = result.filter((c) => !c.approved)
+    } else if (statusFilter === "approved") {
+      result = result.filter((c) => c.approved)
+    } else if (statusFilter === "published") {
+      result = result.filter((c) => c.published)
+    } else if (statusFilter === "draft") {
+      result = result.filter((c) => !c.published)
+    }
+
+    if (search.trim()) {
+      const query = search.toLowerCase()
+      result = result.filter((course) =>
+        [course.title, course.description, course.category, course.level, course.instructorId, course.instructorName]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query)),
+      )
+    }
+
+    return result
+  }, [courses, statusFilter, search])
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Course Review</h1>
+    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-6">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary mb-3">
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Academic Governance</span>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Course Review & Academic Approval
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Review submitted engineering syllabi, inspect technical content, and authorize platform publication.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild size="sm">
+            <Link href="/admin/categories" className="flex items-center gap-1.5">
+              <Tags className="w-4 h-4 text-primary" />
+              <span>Category Architecture</span>
+            </Link>
+          </Button>
+        </div>
+      </div>
 
       {actionMessage && (
-        <Alert className="mb-6">
-          <AlertTitle>Info</AlertTitle>
+        <Alert>
+          <AlertTitle>Notification</AlertTitle>
           <AlertDescription>{actionMessage}</AlertDescription>
         </Alert>
       )}
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Manage Categories</CardTitle>
-          <CardDescription>Create or rename course categories.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {categoryMessage && (
-            <Alert>
-              <AlertTitle>Info</AlertTitle>
-              <AlertDescription>{categoryMessage}</AlertDescription>
-            </Alert>
-          )}
-          <div className="flex gap-2">
-            <Input
-              placeholder="New category name"
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-            />
-            <Button variant="outline" onClick={handleAddCategory}>
-              Add
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {categories.map((cat) => (
-              <div key={cat.id} className="flex items-center gap-2">
-                {editingCategoryId === cat.id ? (
-                  <>
-                    <Input value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} />
-                    <Button size="sm" onClick={handleEditCategory}>
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingCategoryId(null)
-                        setEditingCategoryName("")
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm flex-1">{cat.name}</span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingCategoryId(cat.id)
-                        setEditingCategoryName(cat.name)
-                      }}
-                    >
-                      Edit
-                    </Button>
-                  </>
-                )}
-              </div>
-            ))}
-            {categories.length === 0 && <p className="text-sm text-muted-foreground">No categories yet.</p>}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-3">
+        {(
+          [
+            { key: "all", label: "All Courses", count: counts.all },
+            { key: "pending_review", label: "Pending Review", count: counts.pending_review },
+            { key: "approved", label: "Approved", count: counts.approved },
+            { key: "published", label: "Published", count: counts.published },
+            { key: "draft", label: "Drafts", count: counts.draft },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatusFilter(tab.key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+              statusFilter === tab.key
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                statusFilter === tab.key
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-border text-muted-foreground"
+              }`}
+            >
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>All Courses</CardTitle>
-          <CardDescription>Approve, edit pricing, publish, or delete instructor courses.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <Input
-              placeholder="Search by title, category, level, or instructor ID..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+      {/* Search & Actions Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full sm:w-96">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by title, category, instructor, level..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9 text-xs"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Showing {filteredCourses.length} of {courses.length} courses
+        </p>
+      </div>
+
+      {/* Course List */}
+      <div className="space-y-4">
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-32 rounded-xl border border-border/50 bg-muted/20 animate-pulse" />
+            ))}
           </div>
-          {loading ? (
-            <p>Loading...</p>
-          ) : filteredCourses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No courses found.</p>
-          ) : (
-            <div className="space-y-4">
-              {filteredCourses.map((course) => (
-                <Card key={course.id}>
-                  <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{course.title}</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {course.category} - {course.level} - Instructor: {course.instructorId}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                      <span>Approved: {course.approved ? "Yes" : "No"}</span>
-                      <span>Published: {course.published ? "Yes" : "No"}</span>
-                      <span>NGN {course.price?.NGN ?? 0}</span>
+        ) : filteredCourses.length === 0 ? (
+          <Card className="border border-dashed border-border/80 p-8 text-center bg-card/40">
+            <BookOpen className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
+            <h3 className="text-base font-semibold text-foreground">No Courses Found</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              {search
+                ? `No courses matched "${search}".`
+                : "No courses found matching this review status filter."}
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredCourses.map((course) => {
+              const moduleCount = course.modules?.length || 0
+              const lessonCount =
+                course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0) || 0
+
+              return (
+                <Card
+                  key={course.id}
+                  className="border border-border/70 shadow-xs hover:border-primary/40 transition-all"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <CardTitle className="text-lg font-bold text-foreground">
+                            {course.title}
+                          </CardTitle>
+                          <Badge variant="outline" className="text-[11px] font-mono">
+                            {course.category}
+                          </Badge>
+                          <Badge variant="secondary" className="text-[11px]">
+                            {course.level}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Instructor:{" "}
+                          <strong className="text-foreground">
+                            {course.instructorName || course.instructorId}
+                          </strong>{" "}
+                          • Modules: {moduleCount} • Lessons: {lessonCount}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        {course.approved ? (
+                          <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-xs">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            Approved
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 text-xs">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending Review
+                          </Badge>
+                        )}
+
+                        {course.published ? (
+                          <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">
+                            Published
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            Draft
+                          </Badge>
+                        )}
+
+                        <span className="text-xs font-mono font-semibold text-muted-foreground px-2 py-0.5 rounded border border-border/60">
+                          NGN {course.price?.NGN?.toLocaleString() ?? 0}
+                        </span>
+                      </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <p className="text-sm text-muted-foreground line-clamp-2 md:max-w-xl">{course.description}</p>
-                    <div className="flex flex-wrap gap-2">
+
+                  <CardContent className="pt-0 space-y-4">
+                    <p className="text-xs text-muted-foreground line-clamp-2">{course.description}</p>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-3">
                       <Button
                         size="sm"
-                        className="w-full sm:w-auto"
-                        onClick={() => setDialogState({ type: "toggle-approval", course })}
-                        disabled={pendingActionKey === `course-update-${course.id}`}
+                        variant="ghost"
+                        onClick={() => {
+                          setInspectCourse(course)
+                          setSelectedLesson(course.modules?.[0]?.lessons?.[0] || null)
+                        }}
+                        className="text-xs text-primary hover:text-primary/90 h-8 px-2.5 font-medium"
                       >
-                        {pendingActionKey === `course-update-${course.id}` ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Updating...
-                          </>
-                        ) : course.approved ? (
-                          "Revoke Approval"
+                        <FileCode2 className="w-3.5 h-3.5 mr-1.5" />
+                        <span>Inspect Syllabus & Technical Content</span>
+                      </Button>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Approval Action */}
+                        {course.approved ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setDialogState({ type: "reject-course", course })}
+                            disabled={pendingActionKey === `course-update-${course.id}`}
+                            className="h-8 text-xs text-rose-600 hover:text-rose-700"
+                          >
+                            Revoke Approval
+                          </Button>
                         ) : (
-                          "Approve Course"
+                          <Button
+                            size="sm"
+                            onClick={() => setDialogState({ type: "approve-course", course })}
+                            disabled={pendingActionKey === `course-update-${course.id}`}
+                            className="h-8 text-xs"
+                          >
+                            Approve Course
+                          </Button>
                         )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full sm:w-auto"
-                        onClick={() => setDialogState({ type: "toggle-publish", course })}
-                        disabled={pendingActionKey === `course-update-${course.id}`}
-                      >
-                        {pendingActionKey === `course-update-${course.id}` ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Updating...
-                          </>
-                        ) : course.published ? (
-                          "Unpublish"
-                        ) : (
-                          "Publish"
-                        )}
-                      </Button>
-                      <Button size="sm" variant="outline" asChild className="w-full sm:w-auto">
-                        <Link href={`/admin/courses/${course.id}/edit`}>Edit Details</Link>
-                      </Button>
-                      <Button size="sm" variant="outline" asChild className="w-full sm:w-auto">
-                        <Link href={`/admin/courses/${course.id}/content`}>Edit Content</Link>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="w-full sm:w-auto"
-                        onClick={() => setDialogState({ type: "delete-course", course })}
-                        disabled={pendingActionKey === `course-delete-${course.id}`}
-                      >
-                        {pendingActionKey === `course-delete-${course.id}` ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Deleting...
-                          </>
-                        ) : (
-                          "Delete"
-                        )}
-                      </Button>
+
+                        {/* Publish Action (only if approved) */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDialogState({ type: "toggle-publish", course })}
+                          disabled={
+                            pendingActionKey === `course-update-${course.id}` ||
+                            (!course.approved && !course.published)
+                          }
+                          title={
+                            !course.approved && !course.published
+                              ? "Course must be approved before publication"
+                              : ""
+                          }
+                          className="h-8 text-xs"
+                        >
+                          {course.published ? "Unpublish" : "Publish"}
+                        </Button>
+
+                        <Button size="sm" variant="outline" asChild className="h-8 text-xs">
+                          <Link href={`/admin/courses/${course.id}/edit`}>Edit Details</Link>
+                        </Button>
+
+                        <Button size="sm" variant="outline" asChild className="h-8 text-xs">
+                          <Link href={`/admin/courses/${course.id}/content`}>Edit Content</Link>
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setDialogState({ type: "delete-course", course })}
+                          disabled={pendingActionKey === `course-delete-${course.id}`}
+                          className="h-8 text-xs"
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <h2 className="text-xl font-semibold mb-3">Lesson Approvals</h2>
-      {loading ? (
-        <p>Loading...</p>
-      ) : pendingLessons.length === 0 ? (
-        <p>No lessons pending review.</p>
-      ) : (
-        <div className="space-y-4">
-          {pendingLessons.map((item: any) => {
-            const url = item.lesson.content?.videoUrl as string | undefined
-            let embed: string | null = null
-            if (url) {
-              const match = url.match(
-                /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([A-Za-z0-9_-]{11})/,
               )
-              if (match && match[1]) embed = `https://www.youtube-nocookie.com/embed/${match[1]}`
-            }
+            })}
+          </div>
+        )}
+      </div>
 
-            return (
-              <Card key={item.lesson.id}>
-                <CardHeader>
-                  <CardTitle>
-                    {item.course.title} - {item.lesson.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {embed ? (
-                    <div className="aspect-video mb-3">
-                      <iframe src={embed} allowFullScreen className="w-full h-full" />
-                    </div>
-                  ) : (
-                    <p>No preview available.</p>
-                  )}
-                  <div className="flex gap-2">
+      {/* Lesson-Level Approvals Queue */}
+      <div className="space-y-4 border-t border-border/60 pt-8 mt-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Layers className="w-5 h-5 text-primary" />
+              <span>Lesson-Level Review Queue</span>
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Individual lessons flagged for academic approval by faculty.
+            </p>
+          </div>
+          <Badge variant="outline" className="font-mono text-xs">
+            {pendingLessons.length} Pending Lessons
+          </Badge>
+        </div>
+
+        {pendingLessons.length === 0 ? (
+          <Card className="p-6 text-center border-dashed border-border/70 bg-card/40">
+            <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-500 mb-2" />
+            <p className="text-sm font-semibold text-foreground">All Lessons Approved</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              There are no individual lessons awaiting academic review at this time.
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {pendingLessons.map((item: any) => (
+              <Card key={item.lesson.id} className="border border-border/70 p-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">
+                      {item.course.title} — {item.lesson.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Module: {item.module.title} • Instructor: {item.course.instructorId}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
                     <Button
+                      size="sm"
                       onClick={() =>
                         setDialogState({
                           type: "approve-lesson",
@@ -436,20 +521,12 @@ export default function AdminCoursesPage() {
                         })
                       }
                       disabled={pendingActionKey === `lesson-approve-${item.lesson.id}`}
+                      className="h-8 text-xs"
                     >
-                      {pendingActionKey === `lesson-approve-${item.lesson.id}` ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Approving...
-                        </>
-                      ) : (
-                        "Approve"
-                      )}
-                    </Button>
-                    <Button variant="outline" asChild>
-                      <Link href={`/admin/courses/${item.course.id}/edit`}>Edit Details</Link>
+                      Approve
                     </Button>
                     <Button
+                      size="sm"
                       variant="outline"
                       onClick={() =>
                         setDialogState({
@@ -461,88 +538,227 @@ export default function AdminCoursesPage() {
                         })
                       }
                       disabled={pendingActionKey === `lesson-reject-${item.lesson.id}`}
+                      className="h-8 text-xs text-rose-600 hover:text-rose-700"
                     >
-                      {pendingActionKey === `lesson-reject-${item.lesson.id}` ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Rejecting...
-                        </>
-                      ) : (
-                        "Reject"
-                      )}
+                      Reject with Reason
                     </Button>
                   </div>
-                </CardContent>
+                </div>
               </Card>
-            )
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
+      {/* Curriculum & Technical Content Inspection Dialog */}
+      <Dialog
+        open={Boolean(inspectCourse)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setInspectCourse(null)
+            setSelectedLesson(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-5xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-4 border-b border-border/60">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                  <FileCode2 className="w-5 h-5 text-primary" />
+                  <span>{inspectCourse?.title}</span>
+                </DialogTitle>
+                <DialogDescription className="text-xs mt-1">
+                  Category: {inspectCourse?.category} • Level: {inspectCourse?.level} • Instructor:{" "}
+                  {inspectCourse?.instructorName || inspectCourse?.instructorId}
+                </DialogDescription>
+              </div>
+              <Badge
+                variant={inspectCourse?.approved ? "default" : "outline"}
+                className="font-mono text-xs"
+              >
+                {inspectCourse?.approved ? "Approved" : "Awaiting Approval"}
+              </Badge>
+            </div>
+          </DialogHeader>
+
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left Column: Module & Lesson Tree */}
+            <div className="w-1/3 border-r border-border/60 overflow-y-auto p-4 space-y-4 bg-muted/10">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Syllabus Architecture
+              </h4>
+              {inspectCourse?.modules && inspectCourse.modules.length > 0 ? (
+                inspectCourse.modules.map((mod: CourseModule, mIdx: number) => (
+                  <div key={mod.id || mIdx} className="space-y-1.5">
+                    <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] flex items-center justify-center font-mono">
+                        {mIdx + 1}
+                      </span>
+                      <span>{mod.title}</span>
+                    </p>
+                    <div className="pl-5 space-y-1">
+                      {mod.lessons?.map((les: Lesson, lIdx: number) => (
+                        <button
+                          key={les.id || lIdx}
+                          onClick={() => setSelectedLesson(les)}
+                          className={`w-full text-left px-2.5 py-1.5 rounded text-xs transition-colors flex items-center justify-between cursor-pointer ${
+                            selectedLesson?.id === les.id
+                              ? "bg-primary text-primary-foreground font-medium"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          }`}
+                        >
+                          <span className="truncate">{les.title}</span>
+                          {les.content?.videoUrl && (
+                            <PlayCircle className="w-3 h-3 shrink-0 opacity-70 ml-1" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground">No modules created yet.</p>
+              )}
+            </div>
+
+            {/* Right Column: Technical Content Preview */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {selectedLesson ? (
+                <div className="space-y-4">
+                  <div className="border-b border-border/50 pb-3">
+                    <h3 className="text-lg font-bold text-foreground">{selectedLesson.title}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Duration: {selectedLesson.duration}m • Type: {selectedLesson.type || "markdown"}
+                    </p>
+                  </div>
+
+                  {selectedLesson.content?.videoUrl && (
+                    <div className="p-3 rounded-lg border border-border/60 bg-muted/20 text-xs space-y-1.5">
+                      <p className="font-semibold text-foreground flex items-center gap-1.5">
+                        <PlayCircle className="w-3.5 h-3.5 text-primary" />
+                        <span>Video Asset Reference:</span>
+                      </p>
+                      <code className="text-[11px] text-muted-foreground break-all">
+                        {selectedLesson.content.videoUrl}
+                      </code>
+                    </div>
+                  )}
+
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <TechnicalContentRenderer
+                      content={
+                        selectedLesson.content?.articleContent ||
+                        (selectedLesson.content as any)?.text ||
+                        "*(No markdown lesson body provided for this unit.)*"
+                      }
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-16 text-muted-foreground">
+                  <FileCode2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                  <p className="text-sm font-semibold">Select a Lesson to Preview</p>
+                  <p className="text-xs mt-1">
+                    Click any lesson from the syllabus tree on the left to inspect its technical curriculum.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="p-4 border-t border-border/60 bg-card">
+            <Button variant="outline" size="sm" onClick={() => setInspectCourse(null)}>
+              Close Preview
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Action Confirmation Dialog */}
       <AdminActionDialog
         open={Boolean(dialogState)}
         onOpenChange={(open) => {
           if (!open) setDialogState(null)
         }}
         title={
-          dialogState?.type === "toggle-approval"
-            ? dialogState.course.approved
-              ? "Revoke course approval"
-              : "Approve course"
-            : dialogState?.type === "toggle-publish"
-              ? dialogState.course.published
-                ? "Unpublish course"
-                : "Publish course"
-              : dialogState?.type === "delete-course"
-                ? "Delete course"
-                : dialogState?.type === "approve-lesson"
-                  ? "Approve lesson"
-                  : dialogState?.type === "reject-lesson"
-                    ? "Reject lesson"
-                    : "Confirm action"
+          dialogState?.type === "approve-course"
+            ? "Approve Course for Publication"
+            : dialogState?.type === "reject-course"
+              ? "Revoke / Reject Course Approval"
+              : dialogState?.type === "toggle-publish"
+                ? dialogState.course.published
+                  ? "Unpublish Course"
+                  : "Publish Course to Catalog"
+                : dialogState?.type === "delete-course"
+                  ? "Delete Course"
+                  : dialogState?.type === "approve-lesson"
+                    ? "Approve Lesson"
+                    : dialogState?.type === "reject-lesson"
+                      ? "Reject Lesson"
+                      : "Confirm Action"
         }
         description={
-          dialogState?.type === "toggle-approval"
-            ? `This will ${dialogState.course.approved ? "revoke approval for" : "approve"} "${dialogState.course.title}".`
-            : dialogState?.type === "toggle-publish"
-              ? `This will ${dialogState.course.published ? "unpublish" : "publish"} "${dialogState.course.title}".`
-              : dialogState?.type === "delete-course"
-                ? `This permanently deletes "${dialogState.course.title}" and all related content.`
-                : dialogState?.type === "approve-lesson"
-                  ? `Approve "${dialogState.lessonTitle}" in ${dialogState.courseTitle}.`
-                  : dialogState?.type === "reject-lesson"
-                    ? `Reject "${dialogState.lessonTitle}" in ${dialogState.courseTitle}.`
-                    : "Confirm this action."
+          dialogState?.type === "approve-course"
+            ? `Are you sure you want to approve "${dialogState.course.title}"? Approved courses are eligible for public publishing.`
+            : dialogState?.type === "reject-course"
+              ? `This will revoke approval for "${dialogState.course.title}" and automatically unpublish it if live.`
+              : dialogState?.type === "toggle-publish"
+                ? `This will ${dialogState.course.published ? "unpublish" : "publish"} "${dialogState.course.title}" on the public course catalog.`
+                : dialogState?.type === "delete-course"
+                  ? `This permanently deletes "${dialogState.course.title}" and its syllabus modules.`
+                  : dialogState?.type === "approve-lesson"
+                    ? `Approve "${dialogState.lessonTitle}" in ${dialogState.courseTitle}.`
+                    : dialogState?.type === "reject-lesson"
+                      ? `Reject "${dialogState.lessonTitle}" in ${dialogState.courseTitle}.`
+                      : "Confirm this administrative action."
         }
         warningBadge={
-          dialogState?.type === "delete-course" || dialogState?.type === "reject-lesson"
-            ? "Destructive Action"
-            : "Operational Action"
+          dialogState?.type === "delete-course" ||
+          dialogState?.type === "reject-course" ||
+          dialogState?.type === "reject-lesson"
+            ? "Destructive / Restrictive"
+            : "Academic Governance"
         }
         secondaryDescription={
-          dialogState?.type === "reject-lesson"
-            ? "A rejection note is required for instructor visibility."
+          dialogState?.type === "reject-lesson" || dialogState?.type === "reject-course"
+            ? "Please provide feedback or specific notes for the faculty instructor."
             : undefined
         }
-        noteLabel={dialogState?.type === "reject-lesson" ? "Rejection note" : undefined}
-        notePlaceholder="Provide clear feedback for the instructor..."
+        noteLabel={
+          dialogState?.type === "reject-lesson" || dialogState?.type === "reject-course"
+            ? "Feedback / Reason"
+            : undefined
+        }
+        notePlaceholder="Describe why revisions are required..."
         noteRequired={dialogState?.type === "reject-lesson"}
         confirmLabel={
           dialogState?.type === "delete-course"
             ? "Delete Course"
-            : dialogState?.type === "reject-lesson"
-              ? "Reject Lesson"
-              : "Confirm"
+            : dialogState?.type === "reject-course"
+              ? "Revoke Approval"
+              : dialogState?.type === "reject-lesson"
+                ? "Reject Lesson"
+                : dialogState?.type === "approve-course"
+                  ? "Approve Course"
+                  : "Confirm"
         }
-        successToast="Action completed."
-        errorToast="Action failed."
+        successToast="Action executed successfully."
+        errorToast="Failed to execute administrative action."
         executeAction={async (note) => {
           if (!dialogState) return
 
-          if (dialogState.type === "toggle-approval") {
+          if (dialogState.type === "approve-course") {
             await updateCourse(dialogState.course.id, {
-              approved: !dialogState.course.approved,
-              published: dialogState.course.approved ? false : dialogState.course.published,
+              approved: true,
+            })
+            return
+          }
+
+          if (dialogState.type === "reject-course") {
+            await updateCourse(dialogState.course.id, {
+              approved: false,
+              published: false,
             })
             return
           }

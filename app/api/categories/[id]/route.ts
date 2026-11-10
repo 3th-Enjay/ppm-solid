@@ -43,3 +43,55 @@ export async function PUT(
     return NextResponse.json({ error: "Failed to update category" }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params
+    const tokenHeader = request.headers.get("authorization")
+    const token = tokenHeader?.replace("Bearer ", "")
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    const user = await authService.getCurrentUser(token)
+    if (!user || user.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden: Admin privileges required" }, { status: 403 })
+    }
+
+    const db = getDB()
+    const categories = await db.getCategories()
+    const category = categories.find((c: any) => c.id === id)
+    if (!category) {
+      return NextResponse.json({ error: "Category not found" }, { status: 404 })
+    }
+
+    const courses = await db.getAllCourses()
+    const assignedCourses = courses.filter(
+      (c: any) => c.category && c.category.toLowerCase() === category.name.toLowerCase(),
+    )
+
+    if (assignedCourses.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete category "${category.name}" because ${assignedCourses.length} course(s) are assigned to it. Reassign or remove these courses first.`,
+        },
+        { status: 400 },
+      )
+    }
+
+    const deleted = await db.deleteCategory(id)
+    if (!deleted) {
+      return NextResponse.json({ error: "Failed to delete category" }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Category "${category.name}" deleted successfully`,
+    })
+  } catch (error) {
+    console.error("Delete category error:", error)
+    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 })
+  }
+}
