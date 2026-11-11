@@ -18,6 +18,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: VERCEL_TOKEN
 
     steps:
       - name: Checkout repository
