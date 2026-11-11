@@ -1,9 +1,19 @@
+
 name: Deploy to Vercel Hobby
 
 on:
   push:
     branches:
       - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-production
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -12,23 +22,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Install pnpm
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
-
-      - name: Set Vercel owner as commit author
-        run: |
-          git config user.name "ACCOUNT_B_USERNAME"
-          git config user.email "ACCOUNT_B_VERIFIED_EMAIL"
-          git commit --amend --no-edit --reset-author
+          cache: pnpm
 
       - name: Pull Vercel configuration
         run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
@@ -47,4 +49,3 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
